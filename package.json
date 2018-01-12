@@ -1,15 +1,18 @@
 {
-  "name": "statenet",
+  "name": "map-visualize",
   "version": "1.0.0",
   "description": "null",
   "license": "ISC",
-  "repository": "null",
+  "repository": "bitbucket:mapequation/map-visualize",
   "author": "Anton Eriksson",
   "main": "src/app.js",
   "scripts": {
-    "build": "browserify -t [ babelify --presets [ env ] ] src/app.js -o public/js/bundle.js",
+    "build": "browserify -d src/app.js -o public/js/bundle.js",
     "build:watch": "watch 'npm run build' src/",
     "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "browserify": {
+    "transform": [["babelify", { "presets": ["env"] }]]
   },
   "dependencies": {
     "d3": "^4.12.2"
