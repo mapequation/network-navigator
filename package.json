@@ -7,21 +7,14 @@
   "author": "Anton Eriksson",
   "main": "src/app.js",
   "scripts": {
-    "build": "browserify -d src/app.js -o public/js/bundle.js",
-    "build:watch": "watch 'npm run build' src/",
+    "build": "webpack",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "browserify": {
-    "transform": [["babelify", { "presets": ["env"] }]]
-  },
   "dependencies": {
-    "d3": "^4.12.2"
+    "d3": "^4.12.2",
+    "network-rendering": "^0.1.2"
   },
   "devDependencies": {
-    "babel-core": "latest",
-    "babel-preset-env": "latest",
-    "babelify": "latest",
-    "browserify": "latest",
-    "watch": "latest"
+    "webpack": "latest"
   }
 }
