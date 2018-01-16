@@ -5,7 +5,7 @@
  * @returns object with fields determined by *section(s) in string with array of fields,
  * or -- if no sections where found -- everything in the 'default' field
  */
-let Parser = function(str) {
+let Parser = function (str) {
     // Commented lines start with '#'
     function notCommented(line) {
         return line.indexOf('#') !== 0;
@@ -26,7 +26,7 @@ let Parser = function(str) {
                or
                anything except whitespace.
              */
-            const re = /"[^"]*"|[\w\S]+/g;
+            const re = /"[^"]*"|\S+/g;
             let found = line.match(re);
             if (!found) return;
             fileData[section].push(found);
