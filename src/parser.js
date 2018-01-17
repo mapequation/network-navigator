@@ -1,140 +1,40 @@
-/**
- * Parse whitespace separated multi-line strings to list of strings
- *
- * Example
- * '123 0.222 "aoeu htns"' -> ['123', '0.222', '"aoeu htns"']
- *
- * @param str The input string with whitespace separated values
- * @returns object with fields determined by *section(s) in string with array of fields,
- * or -- if no sections where found -- everything is in the 'default' field
- */
-import {isFloat, isInt, isNumeric, isQuoted, l} from "./utils";
+import Parsimmon from 'parsimmon';
+import { unQuote } from './utils';
 
-export function readString(str) {
-    let data = {};
-    const lines = str.split('\n');
-    const dataLines = lines.filter(notCommentedLine);
-
-    let section = 'default';
-    data[section] = [];
-
-    for (let line of dataLines) {
-
-        if (sectionLine(line)) {
-            section = line.substr(1).trim();
-            data[section] = data[section] || [];
-            continue;
-        }
-
-        const re = /"[^"]*"|\S+/g;
-        let found = line.match(re);
-
-        if (found) {
-            data[section].push(found);
-        }
-    }
-
-    return data;
-}
+const P = Parsimmon;
 
 /**
- * Removes quotes from strings and tries to parse numbers to integers or floats
- *
- * @param data
- * @returns object The parsed data
+ * File format parser for tree files
  */
-export function transformTreeData(data) {
-    let sections = Object.keys(data);
+const TreeParser = P.createLanguage({
+    commentLine: () => P.regex(/^#.*\n/)
+        .desc('Comment line'),
 
-    for (let section of sections) {
-        for (let line = 0; line < data[section].length; line++) {
-            data[section][line] = data[section][line]
-                .map(unQuote)
-                .map(parseTreePathField)
-                .map(parseNum);
-        }
-    }
+    treePath: () => P.regex(/([0-9]+:)+[0-9]+/)
+        .map(val => val.split(':').map(Number))
+        .desc('Tree Path'),
 
-    return data;
-}
+    flow: () => P.regexp(/-?(0|[1-9][0-9]*)([.][0-9]+)?([eE][+-]?[0-9]+)?/)
+        .map(Number)
+        .desc('Flow'),
 
-/**
- * Parse strings with three paths delimited by colon (:) to an array of integers
- * or the original string if there was no match
- *
- * Example
- * '1:1:1' -> [1, 1, 1]
- *
- * @param field
- * @returns {array | string}
- */
-function parseTreePathField(field) {
-    const re = /^([0-9]+:)+[0-9]+$/g;
-    if (field.match(re)) {
-        return field.split(':').map(parseNum);
-    }
+    name: () => P.regex(/"[^"]*"|\S+/)
+        .map(unQuote)
+        .desc('Name'),
 
-    return field;
-}
+    node: () => P.digits
+        .map(Number)
+        .desc('Node'),
 
-/**
- * Remove citation marks from beginning and end of string
- *
- * @param str
- * @returns {string}
- */
-function unQuote(str) {
-    if (isQuoted(str)) {
-        return str.substr(1, str.length - 2);
-    }
+    line: r => P.seq(
+        r.treePath,
+        P.whitespace.then(r.flow),
+        P.whitespace.then(r.name),
+        P.whitespace.then(r.node),
+        P.whitespace.then(r.node).skip(P.oneOf('\n')),
+    ),
 
-    return str;
-}
+    lines: r => r.commentLine.many().then(r.line.many()),
+});
 
-/**
- * A line is a comment if it starts with '#'
- *
- * @param line
- * @returns {boolean}
- */
-function commentedLine(line) {
-    return line.startsWith('#');
-}
-
-/**
- * Negated form of commentedLine
- *
- * @param line
- * @returns {boolean}
- */
-function notCommentedLine(line) {
-    return !commentedLine(line);
-}
-
-/**
- * A line defines a new section if it starts with '*'
- *
- * @param line
- * @returns {boolean}
- */
-function sectionLine(line) {
-    return line.startsWith('*');
-}
-
-/**
- * Parse string to int or float
- *
- * @param num
- * @returns {number | string} depending on success
- */
-function parseNum(num) {
-    if (isNumeric(num)) {
-        if (isFloat(+num)) {
-            return parseFloat(num);
-        } else if (isInt(+num)) {
-            return parseInt(num); // TODO not needed?
-        }
-    }
-
-    return num;
-}
+export default TreeParser;

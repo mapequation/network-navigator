@@ -2,8 +2,30 @@
  * Shorthand for console.log
  * @param msg
  */
-export function l(msg) {
+export default function log(msg) {
     console.log(msg);
+}
+
+/**
+ * Shorthand for hasOwnProperty
+ *
+ * @param obj The object
+ * @param prop The property
+ * @returns {boolean}
+ */
+export function has(obj, prop) {
+    return Object.prototype.hasOwnProperty.call(obj, prop);
+}
+
+/**
+ * Returns true if string is surrounded by the character
+ *
+ * @param str
+ * @param ch character
+ * @returns {boolean}
+ */
+export function isSurroundedBy(str, ch) {
+    return str[0] === ch && str[str.length - 1] === ch;
 }
 
 /**
@@ -17,14 +39,17 @@ export function isQuoted(str) {
 }
 
 /**
- * Returns true if string is surrounded by the character
+ * Remove citation marks from beginning and end of string
  *
  * @param str
- * @param ch character
- * @returns {boolean}
+ * @returns {string}
  */
-export function isSurroundedBy(str, ch) {
-    return str[0] === ch && str[str.length-1] === ch;
+export function unQuote(str) {
+    if (isQuoted(str)) {
+        return str.substr(1, str.length - 2);
+    }
+
+    return str;
 }
 
 /**
@@ -46,7 +71,7 @@ export function isNumeric(num) {
  * @returns {boolean}
  */
 export function isFloat(num) {
-    return num === +num && num !== (num|0);
+    return num === +num && num !== (num | 0);
 }
 
 /**
@@ -57,5 +82,5 @@ export function isFloat(num) {
  * @returns {boolean}
  */
 export function isInt(num) {
-    return num === +num && num === (num|0);
+    return num === +num && num === (num | 0);
 }

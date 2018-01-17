@@ -1,34 +1,30 @@
-
-//let d3 = require('d3');
-//let networkRendering = require('network-rendering');
-import {l} from './utils';
-import {transformTreeData, readString} from './parser';
-import {readFileList} from "./reader";
+import log from './utils';
+import TreeParser from './parser';
+import { readFileAsText } from './reader';
 
 function printFileList(files) {
-    let output = [];
-    for (let f of files) {
-        output.push('<li><strong>', encodeURIComponent(f.name), '</strong> (', f.type || 'n/a', ') - ',
-            f.size, ' bytes', '</li>');
-    }
-    document.getElementById('list').innerHTML = '<ul>' + output.join('') + '</ul>';
+    const output = [];
+    files.forEach((f) => {
+        output.push(`<li><strong>${encodeURIComponent(f.name)}</strong> (${f.type || 'n/a'}) - ${f.size} bytes</li>`);
+    });
+    document.getElementById('list').innerHTML = `<ul>${output.join('')}</ul>`;
 }
-
-function readerOnLoad(event) {
-    let pre = document.createElement('pre');
-    pre.innerHTML = event.target.result;
-    document.getElementById('list').insertBefore(pre, null);
-
-    l(transformTreeData(readString(event.target.result)));
-}
-
 
 function handleFileSelect(event) {
-    // files is a FileList of File objects
-    let files = event.target.files;
+    const files = Array.from(event.target.files);
+    log(files);
 
     printFileList(files);
-    readFileList(files, readerOnLoad);
+
+    files.forEach((f) => {
+        readFileAsText(f, (e) => {
+            const pre = document.createElement('pre');
+            pre.innerHTML = e.target.result;
+            document.getElementById('list').insertBefore(pre, null);
+
+            log(TreeParser.lines.tryParse(e.target.result));
+        });
+    });
 }
 
 document.getElementById('files').addEventListener('change', handleFileSelect, false);

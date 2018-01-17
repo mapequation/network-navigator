@@ -8,14 +8,14 @@
   "main": "src/app.js",
   "scripts": {
     "build": "webpack",
-    "test": "mocha"
+    "test": "echo No test specified && exit 1"
   },
   "dependencies": {
     "d3": "^4.12.2",
-    "network-rendering": "^0.1.2"
+    "network-rendering": "^0.1.2",
+    "parsimmon": "^1.6.4"
   },
   "devDependencies": {
-    "mocha": "^4.1.0",
     "webpack": "latest"
   }
 }
