@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "null",
   "license": "ISC",
-  "repository": "bitbucket:mapequation/map-visualize",
+  "repository": "github:mapequation/map-visualize",
   "author": "Anton Eriksson",
   "main": "src/app.js",
   "scripts": {
@@ -13,7 +13,8 @@
   "dependencies": {
     "d3": "^4.12.2",
     "network-rendering": "^0.1.2",
-    "parsimmon": "^1.6.4"
+    "parsimmon": "^1.6.4",
+    "promise-file-reader": "^1.0.0"
   },
   "devDependencies": {
     "webpack": "latest"

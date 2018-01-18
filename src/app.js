@@ -1,6 +1,6 @@
-import log from './utils';
-import TreeParser from './parser';
-import { readFileAsText } from './reader';
+import PromiseFileReader from 'promise-file-reader';
+import log from 'utils';
+import { TreeParser, StateNetParser } from 'parser';
 
 function printFileList(files) {
     const output = [];
@@ -10,21 +10,24 @@ function printFileList(files) {
     document.getElementById('list').innerHTML = `<ul>${output.join('')}</ul>`;
 }
 
-function handleFileSelect(event) {
+function processFile(file) {
+    const pre = document.createElement('pre');
+    pre.innerHTML = file;
+    document.getElementById('list').insertBefore(pre, null);
+
+    log(TreeParser.lines.tryParse(file));
+}
+
+function handleFiles(event) {
     const files = Array.from(event.target.files);
-    log(files);
 
     printFileList(files);
 
-    files.forEach((f) => {
-        readFileAsText(f, (e) => {
-            const pre = document.createElement('pre');
-            pre.innerHTML = e.target.result;
-            document.getElementById('list').insertBefore(pre, null);
-
-            log(TreeParser.lines.tryParse(e.target.result));
-        });
+    files.forEach((file) => {
+        PromiseFileReader.readAsText(file)
+            .then(processFile)
+            .catch(err => console.error(err));
     });
 }
 
-document.getElementById('files').addEventListener('change', handleFileSelect, false);
+document.getElementById('files').addEventListener('change', handleFiles, false);
