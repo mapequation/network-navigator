@@ -55,7 +55,7 @@ export const StateNetParser = P.createLanguage({
     sectionCount: () => P.regex(/(\s?[0-9]+)?\n/)
         .desc('Section count'),
 
-    sectionHeader: (r) =>
+    sectionHeader: r =>
         P.oneOf('*').then(P.optWhitespace)
             .then(P.letters.skip(r.sectionCount))
             .desc('Section header'),
@@ -65,7 +65,7 @@ export const StateNetParser = P.createLanguage({
         P.whitespace.then(r.name).skip(P.oneOf('\n')),
     ),
 
-    stateNode: (r) => P.seq(
+    stateNode: r => P.seq(
         (r.node.skip(P.whitespace)).many(),
         r.node.skip(P.oneOf('\n')),
     ),
