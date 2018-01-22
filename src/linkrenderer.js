@@ -125,15 +125,16 @@ export default class LinkRenderer {
             const oppositeTipLength = Math.min(lBetween / 3, 10 * (oppositeWidth ** (1 / 3)));
 
             // Bending
-            const bendMagnitude = Math.abs(bend);
-            const outerBendAddition = (bendMagnitude / 10) ** 0.4;
-
-            const signedBend = (() => {
+            const bending = (() => {
+                const bendMagnitude = Math.abs(bend);
                 const positiveCurvature = dir.x > 0 || (dir.x === 0 && dir.y < 0);
                 const curvatureSign = positiveCurvature ? 1 : -1;
                 const bendSign = bend > 0 ? 1 : -1;
                 const finalBendSign = curvatureSign * bendSign;
-                return finalBendSign * bendMagnitude;
+                return {
+                    signed: finalBendSign * bendMagnitude,
+                    outerAddition: (bendMagnitude / 10) ** 0.4,
+                };
             })();
 
             const midPoint = (() => {
@@ -151,12 +152,12 @@ export default class LinkRenderer {
             })();
 
             const CP1 = {
-                x: midPoint.x + (signedBend * right.x),
-                y: midPoint.y + (signedBend * right.y),
+                x: midPoint.x + (bending.signed * right.x),
+                y: midPoint.y + (bending.signed * right.y),
             };
             const CP2 = {
-                x: midPoint.x + ((signedBend + width + outerBendAddition) * right.x),
-                y: midPoint.y + ((signedBend + width + outerBendAddition) * right.y),
+                x: midPoint.x + ((bending.signed + width + bending.outerAddition) * right.x),
+                y: midPoint.y + ((bending.signed + width + bending.outerAddition) * right.y),
             };
 
             // points from source to control point
