@@ -1,81 +1,71 @@
-import Parsimmon from 'parsimmon';
-import { unQuote } from 'utils';
+import Papa from 'papaparse';
 
-const P = Parsimmon;
-
-function commentLine() {
-    return P.regex(/^#.*\n/)
-        .desc('Comment line');
-}
-
-function name() {
-    return P.regex(/"[^"]*"|\S+/)
-        .map(unQuote)
-        .desc('Name');
-}
-
-function node() {
-    return P.digits
-        .map(Number)
-        .desc('Node');
-}
+export default Papa;
 
 /**
- * File format parser for tree files
+ * Promise wrapper for Papa.parse
+ *
+ * @param {(File|string)} file The file passed to Papa.parse
+ * @param {Object} opts The config object passed to Papa.parse
+ * @returns {Promise}
  */
-export const TreeParser = P.createLanguage({
-    commentLine,
-    name,
-    node,
+Papa.parsePromise = function (file, opts) {
+    return new Promise((complete, error) =>
+        Papa.parse(file, Object.assign(opts, { complete, error })));
+};
 
-    treePath: () => P.regex(/([0-9]+:)+[0-9]+/)
-        .map(val => val.split(':').map(Number))
-        .desc('Tree Path'),
+/**
+ * Split a tree path string to array and parse to integer.
+ *
+ * @param {string} pathStr
+ * @return {number[]}
+ */
+export function treePathToArray(pathStr) {
+    const arr = pathStr.split(':');
+    return arr.map(Number);
+}
 
-    flow: () => P.regexp(/-?(0|[1-9][0-9]*)([.][0-9]+)?([eE][+-]?[0-9]+)?/)
-        .map(Number)
-        .desc('Flow'),
+function processFile(file) {
+    const parseOpts = {
+        comments: '#',
+        delimiter: ' ',
+        quoteChar: '"',
+        dynamicTyping: true,
+        skipEmptyLines: true,
+    };
 
-    line: r => P.seq(
-        r.treePath,
-        P.whitespace.then(r.flow),
-        P.whitespace.then(r.name),
-        P.whitespace.then(r.node),
-        P.whitespace.then(r.node).skip(P.oneOf('\n')),
-    ).desc('Data line'),
+    return Papa.parsePromise(file, parseOpts);
+}
 
-    lines: r => r.commentLine.many().then(r.line.many()),
-});
+function parseSections(arr) {
+    const net = {};
+    let currentSection = null;
+    let foundSection = false;
 
-export const StateNetParser = P.createLanguage({
-    commentLine,
-    node,
-    name,
+    arr.forEach((row) => {
+        if (row[0][0] === '*') {
+            // new section
+            currentSection = row[0].slice(1).toLowerCase();
+            net[currentSection] = net[currentSection] || [];
+            foundSection = true;
+        } else if (currentSection != null) {
+            // push all data to current section
+            net[currentSection].push(row);
+        }
+    });
 
-    sectionCount: () => P.regex(/(\s?[0-9]+)?\n/)
-        .desc('Section count'),
+    if (!foundSection) {
+        net.default = arr;
+    }
 
-    sectionHeader: r =>
-        P.oneOf('*').then(P.optWhitespace)
-            .then(P.letters.skip(r.sectionCount))
-            .desc('Section header'),
+    return net;
+}
 
-    physicalNode: r => P.seq(
-        r.node,
-        P.whitespace.then(r.name).skip(P.oneOf('\n')),
-    ),
+function connectLinks(data) {
+    data.links.forEach((link) => {
+        link[0] = data.vertices[link[0] - 1];
+        link[1] = data.vertices[link[1] - 1];
+    });
 
-    stateNode: r => P.seq(
-        (r.node.skip(P.whitespace)).many(),
-        r.node.skip(P.oneOf('\n')),
-    ),
-
-    nodeSection: r => P.seq(
-        r.sectionHeader,
-        r.commentLine.many(),
-        P.alt(r.physicalNode.many(), r.stateNode.many()),
-    ),
-
-    lines: r => r.commentLine.many()
-        .then(r.nodeSection.many()),
-});
+    return data;
+}

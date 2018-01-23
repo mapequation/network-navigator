@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "d3": "^4.12.2",
-    "parsimmon": "^1.6.4",
+    "papaparse": "^4.3.6",
     "promise-file-reader": "^1.0.0"
   },
   "devDependencies": {
