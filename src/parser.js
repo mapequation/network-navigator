@@ -25,7 +25,7 @@ export function treePathToArray(pathStr) {
     return arr.map(Number);
 }
 
-function processFile(file) {
+export function processFile(file) {
     const parseOpts = {
         comments: '#',
         delimiter: ' ',
@@ -37,7 +37,7 @@ function processFile(file) {
     return Papa.parsePromise(file, parseOpts);
 }
 
-function parseSections(arr) {
+export function parseSections(arr) {
     const net = {};
     let currentSection = null;
     let foundSection = false;
@@ -59,13 +59,4 @@ function parseSections(arr) {
     }
 
     return net;
-}
-
-function connectLinks(data) {
-    data.links.forEach((link) => {
-        link[0] = data.vertices[link[0] - 1];
-        link[1] = data.vertices[link[1] - 1];
-    });
-
-    return data;
 }
