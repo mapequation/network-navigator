@@ -95,6 +95,12 @@ export default class LinkRenderer {
             const target = this.target(link);
             const x0 = this.nodeX(source);
             const y0 = this.nodeY(source);
+
+            // Guard if network is not yet connected
+            if (!x0 || !y0) {
+                return '';
+            }
+
             const r0 = this.nodeRadius(source);
             const x1 = this.nodeX(target);
             const y1 = this.nodeY(target);
