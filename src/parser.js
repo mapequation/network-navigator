@@ -63,7 +63,7 @@ function isTreePath(path) {
 }
 
 /**
- * Parse ftree data to object.
+ * Parse ftree data to object, consuming data array in the process.
  *
  * The object representation is returned in the following structure:
  * @code
