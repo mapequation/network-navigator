@@ -1,7 +1,5 @@
 import Papa from 'papaparse';
 
-export default Papa;
-
 /**
  * Promise wrapper for Papa.parse
  *
@@ -20,7 +18,7 @@ Papa.parsePromise = function (file, opts) {
  * @param {(File|string)} file The file passed to Papa.parsePromise
  * @return {Promise}
  */
-export function processFile(file) {
+export function parseFile(file) {
     const defaultOpts = {
         comments: '#',
         delimiter: ' ',
@@ -65,39 +63,44 @@ function isTreePath(path) {
 }
 
 /**
+ * Parse ftree data to object.
  *
- * @param {array[]} arr parsed by Papa.parse
+ * The object representation is returned in the following structure:
+ * @code
+ *  {
+ *      data: {
+ *          tree: [
+ *              { path, flow, name, node },
+ *              ...
+ *          ],
+ *          links: [
+ *              {
+ *                  path,
+ *                  exitFlow,
+ *                  numEdges,
+ *                  numChildren,
+ *                  links: [
+ *                      { source, target, flow },
+ *                      ...
+ *                  ],
+ *              },
+ *              ...
+ *          ],
+ *      },
+ *      errors: [],
+ *      meta: {
+ *          linkType,
+ *      },
+ *  }
+ *
+ * @param {array[]} arr ftree-file parsed as array (lines) of arrays (fields)
  * @return {Object}
  */
 export function partitionSections(arr) {
     const result = {
         data: {
-            tree: [
-                /*
-                {
-                    path,
-                    flow,
-                    name,
-                    node,
-                },
-                ...
-                */
-            ],
-            links: [
-                /*
-                {
-                    path,
-                    exitFlow,
-                    numEdges,
-                    numChildren,
-                    links: [
-                        { source, target, flow },
-                        ...
-                    ],
-                },
-                ...
-                */
-            ],
+            tree: [],
+            links: [],
         },
         errors: [],
         meta: {
@@ -105,14 +108,14 @@ export function partitionSections(arr) {
         },
     };
 
-    let line = 0;
+    const { tree, links } = result.data;
 
-    for (; line < arr.length; line++) {
-        const row = arr[line];
+    while (arr.length) {
+        if (arr[0][0].toString().startsWith('*')) break;
 
-        if (row[0].toString().startsWith('*')) break;
+        const row = arr.shift();
 
-        result.data.tree.push({
+        tree.push({
             path: isTreePath(row[0]) ? treePathToArray(row[0]) : row[0],
             flow: row[1],
             name: row[2],
@@ -120,27 +123,23 @@ export function partitionSections(arr) {
         });
     }
 
-    if (result.data.tree.length === 0) {
+    if (tree.length === 0) {
         result.errors.push('No tree data found!');
     }
 
-    if (arr[line] && arr[line][1].match(/(un)?directed/i)) {
-        result.meta.linkType = arr[line][1].trim().toLowerCase();
-        line++;
+    if (arr[0] && arr[0][1].match(/(un)?directed/i)) {
+        const row = arr.shift();
+        result.meta.linkType = row[1].trim().toLowerCase();
     } else {
-        result.errors.push(`Expected link type at row ${line}!`);
+        result.errors.push('Expected link type!');
     }
 
     let link = {
-        path: null,
-        exitFlow: null,
-        numEdges: null,
-        numChildren: null,
         links: [],
     };
 
-    for (; line < arr.length; line++) {
-        const row = arr[line];
+    while (arr.length) {
+        const row = arr.shift();
 
         if (row[0].toString().match(/^\*Links/i)) {
             link = {
@@ -151,7 +150,7 @@ export function partitionSections(arr) {
                 links: [],
             };
 
-            result.data.links.push(link);
+            links.push(link);
         } else {
             link.links.push({
                 source: row[0],
@@ -161,7 +160,7 @@ export function partitionSections(arr) {
         }
     }
 
-    if (result.data.links.length === 0) {
+    if (links.length === 0) {
         result.errors.push('No link data found!');
     }
 

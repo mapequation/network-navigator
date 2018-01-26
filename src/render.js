@@ -1,7 +1,7 @@
 import * as d3 from 'd3';
 import LinkRenderer from 'linkrenderer';
 
-export default function render(graph) {
+export default function render(graph, linkType = 'undirected') {
     const svg = d3.select('svg');
     const width = +svg.attr('width');
     const height = +svg.attr('height');
@@ -17,24 +17,25 @@ export default function render(graph) {
         .range([30, 60]);
     const nodeBorderWidth = d3.scaleLinear()
         .domain(d3.extent(graph.nodes, node => node.exitFlow))
-        .range([3, 8]);
+        .range([1, 5]);
     const linkFillColor = d3.scaleLinear()
         .domain(d3.extent(graph.links, link => link.flow))
         .range(['#71B2D7', '#418EC7']);
     const linkWidth = d3.scaleLinear()
         .domain(d3.extent(graph.links, link => link.flow))
-        .range([3, 20]);
+        .range([5, 20]);
     const linkOpacity = d3.scaleLinear()
         .domain(d3.extent(graph.links, link => link.flow))
-        .range([0.7, 1]);
+        .range([0.75, 1]);
 
     const simulation = d3.forceSimulation()
         .force('link', d3.forceLink()
-            .distance(300)
+            .distance(200)
             .id(d => d.path[0]))
         .force('charge', d3.forceManyBody()
             .strength(() => -2000))
-        .force('collide', d3.forceCollide(30).radius(d => nodeRadius(d.flow)))
+        .force('collide', d3.forceCollide(30)
+            .radius(d => nodeRadius(d.flow)))
         .force('center', d3.forceCenter(width / 2, height / 2));
 
     function dragstarted(d) {
@@ -57,7 +58,6 @@ export default function render(graph) {
     const linkRenderer = new LinkRenderer();
     linkRenderer.nodeRadius = node => nodeRadius(node.flow);
     linkRenderer.width = link => linkWidth(link.flow);
-    //linkRenderer.oppositeLink = link => graph.links[link.oppositeLink];
 
     const link = svg.append('g')
         .attr('class', 'links')

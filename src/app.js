@@ -1,49 +1,59 @@
-import { processFile, partitionSections } from 'parser';
+import { parseFile, partitionSections } from 'parser';
 import render from 'render';
 
-function gatherRootLevel(data) {
-    const rootLevel = {
+/**
+ *
+ * @param {Object} graph
+ * @param {string|number[]} path
+ * @return {Object}
+ */
+function getLevel(graph, path) {
+    const subGraph = {
         nodes: [],
         links: [],
     };
 
-    data.links.forEach((link) => {
-        if (link.path === 'root') {
-            rootLevel.links = link.links;
+    // TODO
+    // Cases: path = 'root' or path == [1,1,...]
+
+    graph.links.forEach((link) => {
+        if (link.path === path) {
+            subGraph.links = link.links;
         } else if (link.path.length === 1) {
             link.flow = 0;
             link.links.forEach((subLink) => {
                 link.flow += subLink.flow;
             });
-            rootLevel.nodes.push(link);
+            subGraph.nodes.push(link);
         }
     });
 
-    const NUM = 8;
+    return subGraph;
+}
 
-    const largest = {
+function selectLargest(graph, num) {
+    const selected = {
         nodes: [],
         links: [],
     };
 
     const byFlow = (n1, n2) => n2.flow - n1.flow;
 
-    // Collect the NUM nodes with largest flow
-    rootLevel.nodes.forEach((node) => {
-        largest.nodes.push(node);
-        largest.nodes.sort(byFlow);
+    graph.nodes.forEach((node) => {
+        selected.nodes.push(node);
+        selected.nodes.sort(byFlow);
 
-        if (largest.nodes.length > NUM) {
-            largest.nodes.pop();
+        if (selected.nodes.length > num) {
+            selected.nodes.pop();
         }
     });
 
-    // Only add links between the largest nodes
-    rootLevel.links.forEach((link) => {
+    // Only add links between the selected nodes
+    graph.links.forEach((link) => {
         let source = false;
         let target = false;
 
-        largest.nodes.forEach((node) => {
+        selected.nodes.forEach((node) => {
             if (!source && link.source === node.path[0]) {
                 source = true;
             }
@@ -53,17 +63,22 @@ function gatherRootLevel(data) {
         });
 
         if (source && target) {
-            largest.links.push(link);
+            selected.links.push(link);
         }
     });
 
-    return largest;
+    return selected;
 }
 
-fetch('data/stockholm.ftree')
+function renderLargest(data, num) {
+    const level = getLevel(data.data, 'root');
+    const largest = selectLargest(level, num);
+    render(largest, data.meta.linkType);
+}
+
+fetch('data/cities2011_3grams_directed.ftree')
     .then(res => res.text())
-    .then(processFile)
+    .then(parseFile)
     .then(d => partitionSections(d.data))
-    .then(d => gatherRootLevel(d.data))
-    .then(render)
+    .then(d => renderLargest(d, 20))
     .catch(err => console.error(err));
