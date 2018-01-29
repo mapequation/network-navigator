@@ -1,5 +1,6 @@
 import { parseFile, partitionSections } from 'parser';
 import render from 'render';
+import { parseFTree } from './parser';
 
 /**
  *
@@ -71,14 +72,17 @@ function selectLargest(graph, num) {
 }
 
 function renderLargest(data, num) {
+    data.errors.map(console.error);
+
     const level = getLevel(data.data, 'root');
     const largest = selectLargest(level, num);
     render(largest, data.meta.linkType);
 }
 
+//fetch('data/stockholm.ftree')
 fetch('data/cities2011_3grams_directed.ftree')
     .then(res => res.text())
     .then(parseFile)
-    .then(d => partitionSections(d.data))
+    .then(d => parseFTree(d.data))
     .then(d => renderLargest(d, 20))
     .catch(err => console.error(err));

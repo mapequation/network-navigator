@@ -63,10 +63,27 @@ function isTreePath(path) {
 }
 
 /**
- * Parse ftree data to object, consuming data array in the process.
+ * Parse ftree data to object, consuming data array.
  *
- * The object representation is returned in the following structure:
- * @code
+ * Input example:
+ * @example
+ *  [
+ *      ["1:1:1", 0.0564732, "Atlanta, GA: Hartsfield-Jackson Atlanta International;", 29],
+ *      ["1:1:2", 0.00662063, "Memphis, TN: Memphis International;", 286],
+ *      ["1:1:3", 0.00251202, "Newark, NJ: Newark Liberty International;New York, NY: John F. Kennedy International;New York, NY: LaGuardia;", 146],
+ *      ["1:1:4", 0.00245953, "Fort Lauderdale, FL: Fort Lauderdale-Hollywood International;Miami, FL: Miami International;", 155],
+ *      ...
+ *      ["*Links", "directed"],
+ *      ["*Links", "root", 0, 68, 208],
+ *      [2, 1, 0.000107451],
+ *      [1, 2, 0.0000830222],
+ *      [3, 1, 0.00000900902],
+ *      ...
+ *  ]
+ *
+ *
+ * Return value structure:
+ * @example
  *  {
  *      data: {
  *          tree: [
@@ -93,10 +110,10 @@ function isTreePath(path) {
  *      },
  *  }
  *
- * @param {array[]} arr ftree-file parsed as array (lines) of arrays (fields)
+ * @param {Array[]} rows ftree-file as array (rows) of arrays (fields)
  * @return {Object}
  */
-export function partitionSections(arr) {
+export function parseFTree(rows) {
     const result = {
         data: {
             tree: [],
@@ -108,12 +125,19 @@ export function partitionSections(arr) {
         },
     };
 
+    const DEFAULT_FLOW = 1;
+
     const { tree, links } = result.data;
 
-    while (arr.length) {
-        if (arr[0][0].toString().startsWith('*')) break;
+    // 1. Parse tree section
+    // ftree-files has sections of *Links following the tree data
+    while (rows.length && !rows[0][0].toString().startsWith('*')) {
+        const row = rows.shift();
 
-        const row = arr.shift();
+        if (row.length !== 4) {
+            result.errors.push(`Malformed ftree data: expected 4 fields, found ${row.length}.`);
+            break;
+        }
 
         tree.push({
             path: isTreePath(row[0]) ? treePathToArray(row[0]) : row[0],
@@ -123,12 +147,13 @@ export function partitionSections(arr) {
         });
     }
 
-    if (tree.length === 0) {
+    if (!tree.length) {
         result.errors.push('No tree data found!');
     }
 
-    if (arr[0] && arr[0][1].match(/(un)?directed/i)) {
-        const row = arr.shift();
+    // 2. Get link type
+    if (rows[0] && rows[0][1].toString().match(/(un)?directed/i)) {
+        const row = rows.shift();
         result.meta.linkType = row[1].trim().toLowerCase();
     } else {
         result.errors.push('Expected link type!');
@@ -138,10 +163,17 @@ export function partitionSections(arr) {
         links: [],
     };
 
-    while (arr.length) {
-        const row = arr.shift();
+    // 3. Parse links section
+    while (rows.length) {
+        const row = rows.shift();
 
+        // 3a. Parse link header
         if (row[0].toString().match(/^\*Links/i)) {
+            if (row.length !== 5) {
+                result.errors.push(`Malformed ftree link header: expected 5 fields, found ${row.length}.`);
+                break;
+            }
+
             link = {
                 path: isTreePath(row[1]) ? treePathToArray(row[1]) : row[1],
                 exitFlow: row[2],
@@ -151,16 +183,23 @@ export function partitionSections(arr) {
             };
 
             links.push(link);
+
+        // 3b. Parse link data
         } else {
+            if (row.length < 2) {
+                result.errors.push(`Malformed ftree link data: expected at least 2 fields, found ${row.length}.`);
+                break;
+            }
+
             link.links.push({
                 source: row[0],
                 target: row[1],
-                flow: row[2] || 1,
+                flow: row[2] || DEFAULT_FLOW,
             });
         }
     }
 
-    if (links.length === 0) {
+    if (!links.length) {
         result.errors.push('No link data found!');
     }
 
