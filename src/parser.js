@@ -1,4 +1,5 @@
 import Papa from 'papaparse';
+import { Tree, Node } from 'tree';
 
 /**
  * Promise wrapper for Papa.parse
@@ -203,5 +204,63 @@ export function parseFTree(rows) {
         result.errors.push('No link data found!');
     }
 
+    console.log(result);
+
     return result;
+}
+
+/**
+ * Create Tree from ftree data
+ *
+ * @param {Object[]} treeData
+ * @param {Object[]} linkData
+ * @return {Tree}
+ */
+export function createTree(treeData, linkData) {
+    const tree = new Tree();
+
+    linkData.forEach((node) => {
+        // Get root node links
+        if (node.path === 'root') {
+            tree.root.links = node.links;
+
+        // For all other nodes
+        } else {
+            const { path } = node;
+            let parent = tree.root;
+
+            path.slice(0, -1).forEach((parentId) => {
+                parent = parent.getDefault(parentId);
+            });
+
+            const id = path[path.length - 1];
+            const child = parent.getDefault(id);
+
+            child.path = node.path.join(':');
+            child.exitFlow = node.exitFlow;
+            child.links = node.links;
+        }
+    });
+
+    treeData.forEach((node) => {
+        const { path } = node;
+        let parent = tree.root;
+        parent.flow += node.flow;
+
+        path.slice(0, -1).forEach((parentId) => {
+            parent = parent.getDefault(parentId);
+            parent.flow += node.flow;
+        });
+
+        const id = path[path.length - 1];
+        const child = parent.getDefault(id);
+
+        child.path = path.join(':');
+        child.flow = node.flow;
+        child.name = node.name;
+    });
+
+    console.log(tree);
+
+    return tree;
 }

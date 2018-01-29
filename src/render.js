@@ -9,10 +9,10 @@ const graphStyle = (graph) => {
 
     const nodeFillColor = scaleLinear(graph.nodes, node => node.flow, ['#DFF1C1', '#C5D7A8']);
     const nodeBorderColor = scaleLinear(graph.nodes, node => node.exitFlow, ['#ABD65B', '#95C056']);
-    const nodeRadius = scaleLinear(graph.nodes, node => node.flow, [40, 60]);
+    const nodeRadius = scaleLinear(graph.nodes, node => node.flow, [10, 60]);
     const nodeBorderWidth = scaleLinear(graph.nodes, node => node.exitFlow, [1, 5]);
     const linkFillColor = scaleLinear(graph.links, link => link.flow, ['#71B2D7', '#418EC7']);
-    const linkWidth = scaleLinear(graph.links, link => link.flow, [5, 20]);
+    const linkWidth = scaleLinear(graph.links, link => link.flow, [2, 15]);
     const linkOpacity = scaleLinear(graph.links, link => link.flow, [0.75, 1]);
 
     return {
@@ -30,20 +30,26 @@ const graphStyle = (graph) => {
     };
 };
 
-export default function render(graph, linkType = 'undirected') {
+/**
+ * Render all direct children to a given node.
+ *
+ * @param {Node} rootNode
+ * @param {string} linkType
+ */
+export default function render(rootNode, linkType = 'undirected') {
     const svg = d3.select('svg');
     const width = +svg.attr('width');
     const height = +svg.attr('height');
-    const style = graphStyle(graph);
+    const style = graphStyle(rootNode);
 
     // Forces
     const force = {
         link: d3.forceLink()
             .distance(200)
-            .id(d => d.path[0]),
+            .id(d => d.id),
         charge: d3.forceManyBody()
-            .strength(() => -2000),
-        collide: d3.forceCollide(30)
+            .strength(() => -1000),
+        collide: d3.forceCollide(20)
             .radius(style.node.radius),
         center: d3.forceCenter(width / 2, height / 2),
     };
@@ -78,7 +84,7 @@ export default function render(graph, linkType = 'undirected') {
     const link = svg.append('g')
         .attr('class', 'links')
         .selectAll('line')
-        .data(graph.links)
+        .data(rootNode.links)
         .enter()
         .append('path')
         .attr('class', 'link')
@@ -89,7 +95,7 @@ export default function render(graph, linkType = 'undirected') {
     const node = svg.append('g')
         .attr('class', 'nodes')
         .selectAll('circle')
-        .data(graph.nodes)
+        .data(rootNode.nodes)
         .enter()
         .append('circle')
         .attr('class', 'node')
@@ -114,10 +120,10 @@ export default function render(graph, linkType = 'undirected') {
     };
 
     simulation
-        .nodes(graph.nodes)
+        .nodes(rootNode.nodes)
         .on('tick', ticked);
 
     simulation
         .force('link')
-        .links(graph.links);
+        .links(rootNode.links);
 }
