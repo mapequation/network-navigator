@@ -1,50 +1,19 @@
 import * as d3 from 'd3';
-import networkRendering from 'network-rendering/network-rendering';
-
-const dragHandler = (simulation) => {
-    const started = (node) => {
-        if (!d3.event.active) simulation.alphaTarget(0.3).restart();
-        node.fx = node.x;
-        node.fy = node.y;
-    };
-    const drag = (node) => {
-        node.fx = d3.event.x;
-        node.fy = d3.event.y;
-    };
-    const ended = (node) => {
-        if (!d3.event.active) simulation.alphaTarget(0);
-        node.fx = null;
-        node.fy = null;
-    };
-
-    return d3.drag()
-        .on('start', started)
-        .on('drag', drag)
-        .on('end', ended);
-};
+import { halfLink } from 'network-rendering/network-rendering';
 
 const graphStyle = (graph) => {
-    const nodeFillColor = d3.scaleLinear()
-        .domain(d3.extent(graph.nodes, node => node.flow))
-        .range(['#DFF1C1', '#C5D7A8']);
-    const nodeBorderColor = d3.scaleLinear()
-        .domain(d3.extent(graph.nodes, node => node.exitFlow))
-        .range(['#ABD65B', '#95C056']);
-    const nodeRadius = d3.scaleLinear()
-        .domain(d3.extent(graph.nodes, node => node.flow))
-        .range([30, 60]);
-    const nodeBorderWidth = d3.scaleLinear()
-        .domain(d3.extent(graph.nodes, node => node.exitFlow))
-        .range([1, 5]);
-    const linkFillColor = d3.scaleLinear()
-        .domain(d3.extent(graph.links, link => link.flow))
-        .range(['#71B2D7', '#418EC7']);
-    const linkWidth = d3.scaleLinear()
-        .domain(d3.extent(graph.links, link => link.flow))
-        .range([5, 20]);
-    const linkOpacity = d3.scaleLinear()
-        .domain(d3.extent(graph.links, link => link.flow))
-        .range([0.75, 1]);
+    const scaleLinear = (array, accessor, range) =>
+        d3.scaleLinear()
+            .domain(d3.extent(array, accessor))
+            .range(range);
+
+    const nodeFillColor = scaleLinear(graph.nodes, node => node.flow, ['#DFF1C1', '#C5D7A8']);
+    const nodeBorderColor = scaleLinear(graph.nodes, node => node.exitFlow, ['#ABD65B', '#95C056']);
+    const nodeRadius = scaleLinear(graph.nodes, node => node.flow, [40, 60]);
+    const nodeBorderWidth = scaleLinear(graph.nodes, node => node.exitFlow, [1, 5]);
+    const linkFillColor = scaleLinear(graph.links, link => link.flow, ['#71B2D7', '#418EC7']);
+    const linkWidth = scaleLinear(graph.links, link => link.flow, [5, 20]);
+    const linkOpacity = scaleLinear(graph.links, link => link.flow, [0.75, 1]);
 
     return {
         node: {
@@ -65,22 +34,46 @@ export default function render(graph, linkType = 'undirected') {
     const svg = d3.select('svg');
     const width = +svg.attr('width');
     const height = +svg.attr('height');
-
     const style = graphStyle(graph);
 
-    const simulation = d3.forceSimulation()
-        .force('link', d3.forceLink()
+    // Forces
+    const force = {
+        link: d3.forceLink()
             .distance(200)
-            .id(d => d.path[0]))
-        .force('charge', d3.forceManyBody()
-            .strength(() => -2000))
-        .force('collide', d3.forceCollide(30)
-            .radius(style.node.radius))
-        .force('center', d3.forceCenter(width / 2, height / 2));
+            .id(d => d.path[0]),
+        charge: d3.forceManyBody()
+            .strength(() => -2000),
+        collide: d3.forceCollide(30)
+            .radius(style.node.radius),
+        center: d3.forceCenter(width / 2, height / 2),
+    };
 
-    const linkRenderer = networkRendering.halfLink()
-        .nodeRadius(style.node.radius)
-        .width(style.link.width);
+    const simulation = d3.forceSimulation()
+        .force('link', force.link)
+        .force('charge', force.charge)
+        .force('collide', force.collide)
+        .force('center', force.center);
+
+    const dragStarted = (node) => {
+        if (!d3.event.active) simulation.alphaTarget(0.3).restart();
+        node.fx = node.x;
+        node.fy = node.y;
+    };
+
+    const drag = (node) => {
+        node.fx = d3.event.x;
+        node.fy = d3.event.y;
+    };
+
+    const dragEnded = (node) => {
+        if (!d3.event.active) simulation.alphaTarget(0);
+        node.fx = null;
+        node.fy = null;
+    };
+
+    const onClick = (id) => {
+        console.log(id);
+    };
 
     const link = svg.append('g')
         .attr('class', 'links')
@@ -90,7 +83,8 @@ export default function render(graph, linkType = 'undirected') {
         .append('path')
         .attr('class', 'link')
         .style('fill', style.link.fillColor)
-        .style('opacity', style.link.opacity);
+        .style('opacity', style.link.opacity)
+        .on('click', onClick);
 
     const node = svg.append('g')
         .attr('class', 'nodes')
@@ -103,15 +97,25 @@ export default function render(graph, linkType = 'undirected') {
         .style('fill', style.node.fillColor)
         .style('stroke', style.node.borderColor)
         .style('stroke-width', style.node.borderWidth)
-        .call(dragHandler(simulation));
+        .on('click', onClick)
+        .call(d3.drag()
+            .on('start', dragStarted)
+            .on('drag', drag)
+            .on('end', dragEnded));
+
+    const linkSvgPath = halfLink()
+        .nodeRadius(style.node.radius)
+        .width(style.link.width);
+
+    const ticked = () => {
+        link.attr('d', linkSvgPath);
+        node.attr('cx', n => n.x)
+            .attr('cy', n => n.y);
+    };
 
     simulation
         .nodes(graph.nodes)
-        .on('tick', () => {
-            link.attr('d', linkRenderer);
-            node.attr('cx', n => n.x)
-                .attr('cy', n => n.y);
-        });
+        .on('tick', ticked);
 
     simulation
         .force('link')
