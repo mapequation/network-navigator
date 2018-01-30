@@ -8,15 +8,12 @@ import lumpNodes from 'transform';
 function renderTree(tree) {
     console.log(tree);
 
-    const selected = tree.root;
-    let branch = selected.clone();
-
-    const h1 = document.createElement('h1');
-    h1.innerText = `Rendering path ${branch.path}`;
-    document.body.insertBefore(h1, document.body.firstChild);
-
     const lumping = {
         lumpFactor: 0.3,
+    };
+
+    const path = {
+        path: 'root',
     };
 
     const renderParams = {
@@ -27,7 +24,7 @@ function renderTree(tree) {
 
     const renderBranch = () => {
         d3.select('svg').selectAll('*').remove();
-        branch = selected.clone();
+        const branch = tree.getNode(path.path).clone();
         lumpNodes(branch, lumping.lumpFactor);
         render(branch, renderParams);
     };
@@ -37,6 +34,7 @@ function renderTree(tree) {
     gui.add(renderParams, 'renderLump').onChange(renderBranch);
     gui.add(renderParams, 'linkDistance', 50, 500).step(25).onFinishChange(renderBranch);
     gui.add(renderParams, 'charge', 0, 2000).step(100).onFinishChange(renderBranch);
+    gui.add(path, 'path').onFinishChange(renderBranch);
 
     renderBranch();
 }

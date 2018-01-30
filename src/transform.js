@@ -16,7 +16,7 @@ export default function lumpNodes(rootNode, factor) {
     const flowTarget = factor * flowTotal;
 
     const lumpNode = new Node('lump');
-    lumpNode.path = [rootNode.path, lumpNode.id].join(':'); // FIXME
+    lumpNode.path = (rootNode.path === 'root') ? lumpNode.id : [rootNode.path, lumpNode.id].join(':');
 
     while (lumpNode.flow < flowTarget && children.length) {
         const node = children.pop();

@@ -75,4 +75,18 @@ export class Tree {
         this.root = new Node('root');
         this.root.path = 'root';
     }
+
+    getNode(path) {
+        if (path === 'root') {
+            return this.root;
+        }
+
+        let node = this.root;
+
+        path.split(':').map(Number).forEach((step) => {
+            node = node.getChild(step);
+        });
+
+        return node;
+    }
 }
