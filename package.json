@@ -12,10 +12,12 @@
   },
   "dependencies": {
     "d3": "^4.12.2",
+    "dat.gui": "^0.7.0",
     "papaparse": "^4.3.6",
     "promise-file-reader": "^1.0.0"
   },
   "devDependencies": {
+    "source-map-loader": "^0.2.3",
     "webpack": "latest"
   }
 }

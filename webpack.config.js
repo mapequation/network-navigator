@@ -19,4 +19,13 @@ module.exports = {
             path.resolve('./node_modules'),
         ],
     },
+    module: {
+        rules: [
+            {
+                test: /\.js$/,
+                use: ['source-map-loader'],
+                enforce: 'pre',
+            },
+        ],
+    },
 };

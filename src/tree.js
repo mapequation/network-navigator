@@ -10,6 +10,29 @@ export class Node {
         this.links = [];
     }
 
+    clone() {
+        const clone = new Node(this.id);
+        clone.path = this.path;
+        clone.parent = this.parent;
+        clone.name = this.name;
+        clone.flow = this.flow;
+        clone.exitFlow = this.exitFlow;
+
+        this.nodes.forEach((child) => {
+            clone.addChild(child.clone());
+        });
+
+        this.links.forEach((link) => {
+            clone.links.push({
+                source: link.source,
+                target: link.target,
+                flow: link.flow,
+            });
+        });
+
+        return clone;
+    }
+
     addChild(child) {
         this.children[child.id] = child;
         this.children[child.id].parent = this.path;
@@ -18,6 +41,14 @@ export class Node {
 
     getChild(id) {
         return this.children[id];
+    }
+
+    deleteChild(id) {
+        delete this.children[id];
+    }
+
+    get numChildren() {
+        return this.nodes.length;
     }
 
     getDefault(id) {
@@ -31,12 +62,11 @@ export class Node {
         return child;
     }
 
+    /**
+     * Getter for d3
+     */
     get nodes() {
         return Object.values(this.children);
-    }
-
-    toString() {
-        return `[Node ${this.id} {parent: ${this.parent}, flow: ${this.flow}, exitFlow: ${this.exitFlow}, children: ${this.children}, links: ${this.links}}]`;
     }
 }
 

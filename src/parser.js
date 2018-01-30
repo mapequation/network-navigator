@@ -1,5 +1,5 @@
 import Papa from 'papaparse';
-import { Tree, Node } from 'tree';
+import { Tree } from 'tree';
 
 /**
  * Promise wrapper for Papa.parse
@@ -204,8 +204,6 @@ export function parseFTree(rows) {
         result.errors.push('No link data found!');
     }
 
-    console.log(result);
-
     return result;
 }
 
@@ -259,8 +257,6 @@ export function createTree(treeData, linkData) {
         child.flow = node.flow;
         child.name = node.name;
     });
-
-    console.log(tree);
 
     return tree;
 }

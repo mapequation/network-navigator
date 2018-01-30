@@ -7,18 +7,22 @@ const graphStyle = (graph) => {
             .domain(d3.extent(array, accessor))
             .range(range);
 
+    const lumpFillColor = scaleLinear(graph.nodes, node => node.flow, ['#EF7518', '#D75908']);
+    const lumpBorderColor = scaleLinear(graph.nodes, node => node.exitFlow, ['#FFAE38', '#f9a327']);
+
     const nodeFillColor = scaleLinear(graph.nodes, node => node.flow, ['#DFF1C1', '#C5D7A8']);
     const nodeBorderColor = scaleLinear(graph.nodes, node => node.exitFlow, ['#ABD65B', '#95C056']);
     const nodeRadius = scaleLinear(graph.nodes, node => node.flow, [10, 60]);
     const nodeBorderWidth = scaleLinear(graph.nodes, node => node.exitFlow, [1, 5]);
+
     const linkFillColor = scaleLinear(graph.links, link => link.flow, ['#71B2D7', '#418EC7']);
-    const linkWidth = scaleLinear(graph.links, link => link.flow, [2, 15]);
-    const linkOpacity = scaleLinear(graph.links, link => link.flow, [0.75, 1]);
+    const linkWidth = scaleLinear(graph.links, link => link.flow, [3, 9]);
+    const linkOpacity = scaleLinear(graph.links, link => link.flow, [1, 1]);
 
     return {
         node: {
-            fillColor: node => nodeFillColor(node.flow),
-            borderColor: node => nodeBorderColor(node.exitFlow),
+            fillColor: node => (node.id === 'lump' ? lumpFillColor(node.flow) : nodeFillColor(node.flow)),
+            borderColor: node => (node.id === 'lump' ? lumpBorderColor(node.flow) : nodeBorderColor(node.exitFlow)),
             radius: node => nodeRadius(node.flow),
             borderWidth: node => nodeBorderWidth(node.exitFlow),
         },
@@ -31,24 +35,35 @@ const graphStyle = (graph) => {
 };
 
 /**
- * Render all direct children to a given node.
- *
+  * Render all direct children to a node.
+  *
  * @param {Node} rootNode
- * @param {string} linkType
+ * @param {Object} params
  */
-export default function render(rootNode, linkType = 'undirected') {
+export default function render(rootNode, { renderLump = false, charge = 1000, linkDistance = 100 } = {}) {
     const svg = d3.select('svg');
-    const width = +svg.attr('width');
-    const height = +svg.attr('height');
-    const style = graphStyle(rootNode);
+    const width = window.innerWidth;
+    const height = 900;
 
-    // Forces
+    svg.attr('width', width).attr('height', height);
+
+    const lumpNode = node => node.id === 'lump';
+    const linkToLump = link => link.source === 'lump' || link.target === 'lump';
+
+    const linkData = renderLump ? rootNode.links : rootNode.links.filter(l => !linkToLump(l));
+    const nodeData = renderLump ? rootNode.nodes : rootNode.nodes.filter(n => !lumpNode(n));
+
+    const style = graphStyle({
+        nodes: nodeData,
+        links: linkData,
+    });
+
     const force = {
         link: d3.forceLink()
-            .distance(200)
+            .distance(linkDistance)
             .id(d => d.id),
         charge: d3.forceManyBody()
-            .strength(() => -1000),
+            .strength(-charge),
         collide: d3.forceCollide(20)
             .radius(style.node.radius),
         center: d3.forceCenter(width / 2, height / 2),
@@ -84,7 +99,7 @@ export default function render(rootNode, linkType = 'undirected') {
     const link = svg.append('g')
         .attr('class', 'links')
         .selectAll('line')
-        .data(rootNode.links)
+        .data(linkData)
         .enter()
         .append('path')
         .attr('class', 'link')
@@ -95,7 +110,7 @@ export default function render(rootNode, linkType = 'undirected') {
     const node = svg.append('g')
         .attr('class', 'nodes')
         .selectAll('circle')
-        .data(rootNode.nodes)
+        .data(nodeData)
         .enter()
         .append('circle')
         .attr('class', 'node')
@@ -120,10 +135,10 @@ export default function render(rootNode, linkType = 'undirected') {
     };
 
     simulation
-        .nodes(rootNode.nodes)
+        .nodes(nodeData)
         .on('tick', ticked);
 
     simulation
         .force('link')
-        .links(rootNode.links);
+        .links(linkData);
 }
