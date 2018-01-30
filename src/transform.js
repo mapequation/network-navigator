@@ -1,5 +1,9 @@
 import { Node } from 'tree';
 
+function byFlow(obj1, obj2) {
+    return obj2.flow - obj1.flow;
+}
+
 /**
  * Lump nodes beneath root node so that a factor of the flow
  * are contained in a lumped node.
@@ -8,8 +12,7 @@ import { Node } from 'tree';
  * @param {Node} rootNode the node of which children are considered for lumping
  * @param {number} factor between 0 and 1
  */
-export default function lumpNodes(rootNode, factor) {
-    const byFlow = (n1, n2) => n2.flow - n1.flow;
+export function lumpNodes(rootNode, factor) {
     const children = rootNode.nodes.sort(byFlow);
     const numChildren = children.length;
     const flowTotal = children.reduce((tot, node) => tot + node.flow, 0);
@@ -60,4 +63,24 @@ export default function lumpNodes(rootNode, factor) {
     }
 
     rootNode.links = links.filter(link => !link.duplicate && !link.circular);
+}
+
+/**
+ * Prune links such that the remaining links represents a factor
+ * of the total initial flow.
+ *
+ * @param {Object[]} links an array of links
+ * @param {number} factor a number between 0 and 1
+ */
+export function pruneLinks(links, factor) {
+    const linksByFlow = links.sort(byFlow);
+    const flowTotal = linksByFlow.reduce((tot, link) => tot + link.flow, 0);
+    const flowTarget = factor * flowTotal;
+
+    let accumulatedFlow = 0;
+
+    while (accumulatedFlow < flowTarget && linksByFlow.length) {
+        const link = linksByFlow.pop();
+        accumulatedFlow += link.flow;
+    }
 }

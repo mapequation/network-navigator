@@ -62,9 +62,6 @@ export class Node {
         return child;
     }
 
-    /**
-     * Getter for d3
-     */
     get nodes() {
         return Object.values(this.children);
     }
