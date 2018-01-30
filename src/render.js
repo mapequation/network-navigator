@@ -41,11 +41,12 @@ const graphStyle = (graph) => {
  * @param {Object} params
  */
 export default function render(rootNode, { renderLump = false, charge = 1000, linkDistance = 100 } = {}) {
-    const svg = d3.select('svg');
     const width = window.innerWidth;
-    const height = 900;
+    const height = 700;
 
-    svg.attr('width', width).attr('height', height);
+    const svg = d3.select('svg')
+        .attr('width', width)
+        .attr('height', height);
 
     const lumpNode = node => node.id === 'lump';
     const linkToLump = link => link.source === 'lump' || link.target === 'lump';
@@ -128,10 +129,18 @@ export default function render(rootNode, { renderLump = false, charge = 1000, li
         .nodeRadius(style.node.radius)
         .width(style.link.width);
 
+    const updateConstrainedPosition = (n) => {
+        const padding = 1.5;
+        const radius = padding * style.node.radius(n);
+        n.x = Math.max(radius, Math.min(width - radius, n.x));
+        n.y = Math.max(radius, Math.min(height - radius, n.y));
+        return n.x;
+    };
+
     const ticked = () => {
-        link.attr('d', linkSvgPath);
-        node.attr('cx', n => n.x)
+        node.attr('cx', n => updateConstrainedPosition(n))
             .attr('cy', n => n.y);
+        link.attr('d', linkSvgPath);
     };
 
     simulation
