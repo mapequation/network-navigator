@@ -52,10 +52,6 @@ export default function render(
     const width = window.innerWidth;
     const height = 700;
 
-    const svg = d3.select('svg')
-        .attr('width', width)
-        .attr('height', height);
-
     const lumpNode = node => node.id === 'lump';
     const linkToLump = link => link.source === 'lump' || link.target === 'lump';
 
@@ -101,6 +97,10 @@ export default function render(
         node.fy = null;
     };
 
+    const svg = d3.select('svg')
+        .attr('width', width)
+        .attr('height', height);
+
     const link = svg.append('g')
         .attr('class', 'links')
         .selectAll('line')
@@ -114,20 +114,26 @@ export default function render(
 
     const node = svg.append('g')
         .attr('class', 'nodes')
-        .selectAll('circle')
+        .selectAll('.node')
         .data(nodeData)
         .enter()
-        .append('circle')
+        .append('g')
         .attr('class', 'node')
-        .attr('r', style.node.radius)
-        .style('fill', style.node.fillColor)
-        .style('stroke', style.node.borderColor)
-        .style('stroke-width', style.node.borderWidth)
         .on('click', d => console.log(d))
         .call(d3.drag()
             .on('start', dragStarted)
             .on('drag', drag)
             .on('end', dragEnded));
+
+    const circle = node.append('circle')
+        .attr('r', style.node.radius)
+        .style('fill', style.node.fillColor)
+        .style('stroke', style.node.borderColor)
+        .style('stroke-width', style.node.borderWidth);
+
+    const text = node.append('text')
+        .text(n => n.name || n.id)
+        .attr('text-anchor', 'middle');
 
     const linkTypeFunctions = {
         directed: halfLink,
@@ -147,9 +153,9 @@ export default function render(
     };
 
     const ticked = () => {
-        node.attr('cx', n => updateConstrainedPosition(n))
+        circle.attr('cx', n => updateConstrainedPosition(n))
             .attr('cy', n => n.y);
-        label.attr('x', n => n.x)
+        text.attr('x', n => n.x)
             .attr('y', n => n.y);
         link.attr('d', linkSvgPath);
     };
