@@ -2,8 +2,7 @@ import * as d3 from 'd3';
 import dat from 'dat.gui';
 import render from 'render';
 import { parseFile, parseFTree, createTree } from 'parser';
-import { lumpNodes, pruneLinks } from 'transform';
-
+import { lumpNodes, pruneLinks } from 'filter';
 
 function runApplication(ftree) {
     const tree = createTree(ftree.data.tree, ftree.data.links);
