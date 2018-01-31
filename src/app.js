@@ -5,7 +5,8 @@ import { parseFile, parseFTree, createTree } from 'parser';
 import { lumpNodes, pruneLinks } from 'transform';
 
 
-function renderTree(tree) {
+function runApplication(ftree) {
+    const tree = createTree(ftree.data.tree, ftree.data.links);
     console.log(tree);
 
     const filtering = {
@@ -21,6 +22,7 @@ function renderTree(tree) {
         renderLump: false,
         linkDistance: 100,
         charge: 500,
+        linkType: ftree.meta.linkType,
     };
 
     const renderBranch = () => {
@@ -36,6 +38,7 @@ function renderTree(tree) {
     const renderFolder = gui.addFolder('Rendering / simulation');
     renderFolder.add(renderParams, 'linkDistance', 50, 500).step(25).onFinishChange(renderBranch);
     renderFolder.add(renderParams, 'charge', 0, 2000).step(100).onFinishChange(renderBranch);
+    renderFolder.add(renderParams, 'linkType', ['directed', 'undirected']).onChange(renderBranch);
     renderFolder.open();
 
     const filteringFolder = gui.addFolder('Filtering');
@@ -53,6 +56,5 @@ fetch('data/stockholm.ftree')
     .then(res => res.text())
     .then(parseFile)
     .then(d => parseFTree(d.data))
-    .then(d => createTree(d.data.tree, d.data.links))
-    .then(renderTree)
+    .then(runApplication)
     .catch(err => console.error(err));

@@ -1,5 +1,5 @@
 import * as d3 from 'd3';
-import { halfLink } from 'network-rendering/network-rendering';
+import { halfLink, undirectedLink } from 'network-rendering/network-rendering';
 
 const graphStyle = (graph) => {
     const scaleLinear = (array, accessor, range) =>
@@ -40,7 +40,15 @@ const graphStyle = (graph) => {
  * @param {Node} rootNode
  * @param {Object} params
  */
-export default function render(rootNode, { renderLump = false, charge = 500, linkDistance = 100 } = {}) {
+export default function render(
+    rootNode,
+    {
+        renderLump = false,
+        charge = 500,
+        linkDistance = 100,
+        linkType = 'directed',
+    } = {},
+) {
     const width = window.innerWidth;
     const height = 700;
 
@@ -121,7 +129,12 @@ export default function render(rootNode, { renderLump = false, charge = 500, lin
             .on('drag', drag)
             .on('end', dragEnded));
 
-    const linkSvgPath = halfLink()
+    const linkTypeFunctions = {
+        directed: halfLink,
+        undirected: undirectedLink,
+    };
+
+    const linkSvgPath = linkTypeFunctions[linkType]()
         .nodeRadius(style.node.radius)
         .width(style.link.width);
 
