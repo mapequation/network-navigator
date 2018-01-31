@@ -20,7 +20,7 @@ function renderTree(tree) {
     const renderParams = {
         renderLump: false,
         linkDistance: 100,
-        charge: 1000,
+        charge: 500,
     };
 
     const renderBranch = () => {

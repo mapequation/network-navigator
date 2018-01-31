@@ -40,7 +40,7 @@ const graphStyle = (graph) => {
  * @param {Node} rootNode
  * @param {Object} params
  */
-export default function render(rootNode, { renderLump = false, charge = 1000, linkDistance = 100 } = {}) {
+export default function render(rootNode, { renderLump = false, charge = 500, linkDistance = 100 } = {}) {
     const width = window.innerWidth;
     const height = 700;
 
@@ -51,8 +51,8 @@ export default function render(rootNode, { renderLump = false, charge = 1000, li
     const lumpNode = node => node.id === 'lump';
     const linkToLump = link => link.source === 'lump' || link.target === 'lump';
 
-    const linkData = renderLump ? rootNode.links : rootNode.links.filter(l => !linkToLump(l));
-    const nodeData = renderLump ? rootNode.nodes : rootNode.nodes.filter(n => !lumpNode(n));
+    const linkData = renderLump ? rootNode.links : rootNode.links.filter(link => !linkToLump(link));
+    const nodeData = renderLump ? rootNode.nodes : rootNode.nodes.filter(node => !lumpNode(node));
 
     const style = graphStyle({
         nodes: nodeData,
@@ -93,10 +93,6 @@ export default function render(rootNode, { renderLump = false, charge = 1000, li
         node.fy = null;
     };
 
-    const onClick = (id) => {
-        console.log(id);
-    };
-
     const link = svg.append('g')
         .attr('class', 'links')
         .selectAll('line')
@@ -106,7 +102,7 @@ export default function render(rootNode, { renderLump = false, charge = 1000, li
         .attr('class', 'link')
         .style('fill', style.link.fillColor)
         .style('opacity', style.link.opacity)
-        .on('click', onClick);
+        .on('click', d => console.log(d));
 
     const node = svg.append('g')
         .attr('class', 'nodes')
@@ -119,7 +115,7 @@ export default function render(rootNode, { renderLump = false, charge = 1000, li
         .style('fill', style.node.fillColor)
         .style('stroke', style.node.borderColor)
         .style('stroke-width', style.node.borderWidth)
-        .on('click', onClick)
+        .on('click', d => console.log(d))
         .call(d3.drag()
             .on('start', dragStarted)
             .on('drag', drag)
@@ -129,17 +125,19 @@ export default function render(rootNode, { renderLump = false, charge = 1000, li
         .nodeRadius(style.node.radius)
         .width(style.link.width);
 
-    const updateConstrainedPosition = (n) => {
+    const updateConstrainedPosition = (node) => {
         const padding = 1.5;
-        const radius = padding * style.node.radius(n);
-        n.x = Math.max(radius, Math.min(width - radius, n.x));
-        n.y = Math.max(radius, Math.min(height - radius, n.y));
-        return n.x;
+        const radius = padding * style.node.radius(node);
+        node.x = Math.max(radius, Math.min(width - radius, node.x));
+        node.y = Math.max(radius, Math.min(height - radius, node.y));
+        return node.x;
     };
 
     const ticked = () => {
         node.attr('cx', n => updateConstrainedPosition(n))
             .attr('cy', n => n.y);
+        label.attr('x', n => n.x)
+            .attr('y', n => n.y);
         link.attr('d', linkSvgPath);
     };
 

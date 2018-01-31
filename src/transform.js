@@ -53,6 +53,10 @@ export function lumpNodes(rootNode, factor) {
             continue;
         }
 
+        if (link.duplicate) {
+            continue;
+        }
+
         for (let j = i + 1; j < links.length; j++) {
             const candidateLink = links[j];
             if (isDuplicate(link, candidateLink)) {

@@ -50,15 +50,15 @@ export function halfLink() {
         const right = { x: -dir.y, y: dir.x };
 
         // Size of arrowhead
-        const tipLength = Math.min(lBetween / 3, 10 * Math.pow(width, 1 / 3));
-        const tipWidth = 2 * Math.pow(width, 1 / 2); // excluding the line width
+        const tipLength = Math.min(lBetween / 3, 10 * (width ** (1 / 3)));
+        const tipWidth = 2 * (width ** (1 / 2)); // excluding the line width
 
         // Size of opposite arrowhead
-        const oppositeTipLength = Math.min(lBetween / 3, 10 * Math.pow(oppositeWidth, 1 / 3));
+        const oppositeTipLength = Math.min(lBetween / 3, 10 * (oppositeWidth ** (1 / 3)));
 
         // Bending
         const bendMagnitude = Math.abs(bend);
-        const outerBendAddition = Math.pow(bendMagnitude / 10, 0.4);
+        const outerBendAddition = (bendMagnitude / 10) ** 0.4;
         const positiveCurvature = dir.x > 0 || (dir.x === 0 && dir.y < 0);
         const curvatureSign = positiveCurvature ? 1 : -1;
         const bendSign = bend > 0 ? 1 : -1;

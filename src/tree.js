@@ -73,17 +73,20 @@ export class Tree {
         this.root.path = 'root';
     }
 
+    /**
+     * Get the Node at the end of the path.
+     *
+     * @param {string} path
+     * @return {Node}
+     */
     getNode(path) {
         if (path === 'root') {
             return this.root;
         }
 
-        let node = this.root;
-
-        path.split(':').map(Number).forEach((step) => {
-            node = node.getChild(step);
-        });
-
-        return node;
+        return path
+            .split(':')
+            .map(Number)
+            .reduce((pathNode, childId) => pathNode.getChild(childId), this.root);
     }
 }
