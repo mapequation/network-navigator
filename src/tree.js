@@ -51,17 +51,6 @@ export class Node {
         return this.nodes.length;
     }
 
-    getDefault(id) {
-        let child = this.getChild(id);
-
-        if (!child) {
-            child = new Node(id);
-            this.addChild(child);
-        }
-
-        return child;
-    }
-
     get nodes() {
         return Object.values(this.children);
     }

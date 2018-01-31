@@ -1,5 +1,5 @@
 import Papa from 'papaparse';
-import { Tree } from 'tree';
+import { Tree, Node } from 'tree';
 
 /**
  * Promise wrapper for Papa.parse
@@ -217,6 +217,15 @@ export function parseFTree(rows) {
 export function createTree(treeData, linkData) {
     const tree = new Tree();
 
+    const getOrCreateNode = (parent, childId) => {
+        let child = parent.getChild(childId);
+        if (!child) {
+            child = new Node(childId);
+            parent.addChild(child);
+        }
+        return child;
+    };
+
     linkData.forEach((node) => {
         // Get root node links
         if (node.path === 'root') {
@@ -224,15 +233,8 @@ export function createTree(treeData, linkData) {
 
         // For all other nodes
         } else {
-            const { path } = node;
-            let parent = tree.root;
-
-            path.slice(0, -1).forEach((parentId) => {
-                parent = parent.getDefault(parentId);
-            });
-
-            const id = path[path.length - 1];
-            const child = parent.getDefault(id);
+            const child = node.path
+                .reduce((pathNode, childId) => getOrCreateNode(pathNode, childId), tree.root);
 
             child.path = node.path.join(':');
             child.exitFlow = node.exitFlow;
@@ -241,19 +243,13 @@ export function createTree(treeData, linkData) {
     });
 
     treeData.forEach((node) => {
-        const { path } = node;
-        let parent = tree.root;
-        parent.flow += node.flow;
+        const child = node.path
+            .reduce((pathNode, childId) => {
+                pathNode.flow += node.flow;
+                return getOrCreateNode(pathNode, childId);
+            }, tree.root);
 
-        path.slice(0, -1).forEach((parentId) => {
-            parent = parent.getDefault(parentId);
-            parent.flow += node.flow;
-        });
-
-        const id = path[path.length - 1];
-        const child = parent.getDefault(id);
-
-        child.path = path.join(':');
+        child.path = node.path.join(':');
         child.flow = node.flow;
         child.name = node.name;
     });
