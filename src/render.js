@@ -50,7 +50,7 @@ export default function render(
     } = {},
 ) {
     const width = window.innerWidth;
-    const height = 700;
+    const height = window.innerHeight;
 
     const lumpNode = node => node.id === 'lump';
     const linkToLump = link => link.source === 'lump' || link.target === 'lump';
@@ -99,7 +99,9 @@ export default function render(
 
     const svg = d3.select('svg')
         .attr('width', width)
-        .attr('height', height);
+        .attr('height', height)
+        .call(d3.zoom().on('zoom', () => svg.attr('transform', d3.event.transform)))
+        .append('g');
 
     const link = svg.append('g')
         .attr('class', 'links')
@@ -133,7 +135,8 @@ export default function render(
 
     const text = node.append('text')
         .text(n => n.name || n.id)
-        .attr('text-anchor', 'middle');
+        .attr('text-anchor', 'middle')
+        .attr('dy', '0.35em');
 
     const linkTypeFunctions = {
         directed: halfLink,
@@ -144,16 +147,8 @@ export default function render(
         .nodeRadius(style.node.radius)
         .width(style.link.width);
 
-    const updateConstrainedPosition = (node) => {
-        const padding = 1.5;
-        const radius = padding * style.node.radius(node);
-        node.x = Math.max(radius, Math.min(width - radius, node.x));
-        node.y = Math.max(radius, Math.min(height - radius, node.y));
-        return node.x;
-    };
-
     const ticked = () => {
-        circle.attr('cx', n => updateConstrainedPosition(n))
+        circle.attr('cx', n => n.x)
             .attr('cy', n => n.y);
         text.attr('x', n => n.x)
             .attr('y', n => n.y);
