@@ -19,7 +19,7 @@ export class Node {
 
     addChild(childNode) {
         this.children[childNode.id] = childNode;
-        this.children[childNode.id].parent = this.path;
+        this.children[childNode.id].parent = this;
     }
 
     getChild(childId) {
