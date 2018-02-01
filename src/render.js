@@ -7,9 +7,6 @@ const makeGraphStyle = (graph) => {
             .domain(d3.extent(array, obj => obj[accessor]))
             .range(range);
 
-    const lumpFillColor = scaleLinear(graph.nodes, 'flow', ['#EF7518', '#D75908']);
-    const lumpBorderColor = scaleLinear(graph.nodes, 'exitFlow', ['#FFAE38', '#f9a327']);
-
     const nodeRadius = scaleLinear(graph.nodes, 'flow', [10, 60]);
     const nodeFillColor = scaleLinear(graph.nodes, 'flow', ['#DFF1C1', '#C5D7A8']);
     const nodeBorderColor = scaleLinear(graph.nodes, 'exitFlow', ['#ABD65B', '#95C056']);
@@ -21,8 +18,8 @@ const makeGraphStyle = (graph) => {
 
     return {
         node: {
-            fillColor: node => (node.id === 'lump' ? lumpFillColor(node.flow) : nodeFillColor(node.flow)),
-            borderColor: node => (node.id === 'lump' ? lumpBorderColor(node.flow) : nodeBorderColor(node.exitFlow)),
+            fillColor: node => nodeFillColor(node.flow),
+            borderColor: node => nodeBorderColor(node.exitFlow),
             radius: node => nodeRadius(node.flow),
             borderWidth: node => nodeBorderWidth(node.exitFlow),
         },
@@ -62,7 +59,6 @@ const makeDragHandler = simulation => ({
 export default function render(
     rootNode,
     {
-        renderLump = false,
         charge = 500,
         linkDistance = 100,
         linkType = 'directed',
@@ -71,16 +67,7 @@ export default function render(
     const width = window.innerWidth;
     const height = window.innerHeight;
 
-    const lumpNode = node => node.id === 'lump';
-    const linkToLump = link => link.source === 'lump' || link.target === 'lump';
-
-    const linkData = renderLump ? rootNode.links : rootNode.links.filter(link => !linkToLump(link));
-    const nodeData = renderLump ? rootNode.nodes : rootNode.nodes.filter(node => !lumpNode(node));
-
-    const style = makeGraphStyle({
-        nodes: nodeData,
-        links: linkData,
-    });
+    const style = makeGraphStyle(rootNode);
 
     const linkSvgPath = (linkType === 'directed' ? halfLink : undirectedLink)()
         .nodeRadius(style.node.radius)
@@ -108,7 +95,7 @@ export default function render(
     const link = svg.append('g')
         .attr('class', 'links')
         .selectAll('line')
-        .data(linkData)
+        .data(rootNode.links)
         .enter()
         .append('path')
         .attr('class', 'link')
@@ -119,7 +106,7 @@ export default function render(
     const node = svg.append('g')
         .attr('class', 'nodes')
         .selectAll('.node')
-        .data(nodeData)
+        .data(rootNode.nodes)
         .enter()
         .append('g')
         .attr('class', 'node')
@@ -149,10 +136,10 @@ export default function render(
     };
 
     simulation
-        .nodes(nodeData)
+        .nodes(rootNode.nodes)
         .on('tick', ticked);
 
     simulation
         .force('link')
-        .links(linkData);
+        .links(rootNode.links);
 }

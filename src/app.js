@@ -18,7 +18,6 @@ function runApplication(ftree) {
     };
 
     const renderParams = {
-        renderLump: false,
         linkDistance: 100,
         charge: 500,
         linkType: ftree.meta.linkType,
@@ -40,7 +39,6 @@ function runApplication(ftree) {
     renderFolder.open();
 
     const filteringFolder = gui.addFolder('Filtering');
-    filteringFolder.add(renderParams, 'renderLump').onChange(renderBranch);
     filteringFolder.add(filtering, 'lumpFactor', 0, 1).step(0.05).onFinishChange(renderBranch);
     filteringFolder.add(filtering, 'pruneFactor', 0, 1).step(0.05).onFinishChange(renderBranch);
     filteringFolder.open();
