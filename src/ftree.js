@@ -1,35 +1,4 @@
-import Papa from 'papaparse';
-import { Tree, Node } from 'tree';
-
-/**
- * Promise wrapper for Papa.parse
- *
- * @param {(File|string)} file The file passed to Papa.parse
- * @param {Object} opts The config object passed to Papa.parse
- * @returns {Promise}
- */
-Papa.parsePromise = function (file, opts) {
-    return new Promise((complete, error) =>
-        Papa.parse(file, Object.assign(opts, { complete, error })));
-};
-
-/**
- * Parse file with Papa.parsePromise using a default config object.
- *
- * @param {(File|string)} file The file passed to Papa.parsePromise
- * @return {Promise}
- */
-export function parseFile(file) {
-    const defaultOpts = {
-        comments: '#',
-        delimiter: ' ',
-        quoteChar: '"',
-        dynamicTyping: true,
-        skipEmptyLines: true,
-    };
-
-    return Papa.parsePromise(file, defaultOpts);
-}
+import { Tree } from 'tree';
 
 /**
  * Split a tree path string to array and parse to integer.
@@ -208,7 +177,7 @@ export function parseFTree(rows) {
 }
 
 /**
- * Create Tree from ftree data
+ * Create tree from ftree data
  *
  * @param {Object[]} treeData
  * @param {Object[]} linkData
@@ -217,15 +186,6 @@ export function parseFTree(rows) {
 export function createTree(treeData, linkData) {
     const tree = new Tree();
 
-    const getOrCreateNode = (parent, childId) => {
-        let child = parent.getChild(childId);
-        if (!child) {
-            child = new Node(childId);
-            parent.addChild(child);
-        }
-        return child;
-    };
-
     linkData.forEach((node) => {
         // Get root node links
         if (node.path === 'root') {
@@ -233,25 +193,25 @@ export function createTree(treeData, linkData) {
 
         // For all other nodes
         } else {
-            const child = node.path
-                .reduce((pathNode, childId) => getOrCreateNode(pathNode, childId), tree.root);
+            const childNode = node.path
+                .reduce((pathNode, childId) => pathNode.getChild(childId) || pathNode.createChild(childId), tree.root);
 
-            child.path = node.path.join(':');
-            child.exitFlow = node.exitFlow;
-            child.links = node.links;
+            childNode.path = node.path.join(':');
+            childNode.exitFlow = node.exitFlow;
+            childNode.links = node.links;
         }
     });
 
     treeData.forEach((node) => {
-        const child = node.path
+        const childNode = node.path
             .reduce((pathNode, childId) => {
                 pathNode.flow += node.flow;
-                return getOrCreateNode(pathNode, childId);
+                return pathNode.getChild(childId) || pathNode.createChild(childId);
             }, tree.root);
 
-        child.path = node.path.join(':');
-        child.flow = node.flow;
-        child.name = node.name;
+        childNode.path = node.path.join(':');
+        childNode.flow = node.flow;
+        childNode.name = node.name;
     });
 
     return tree;

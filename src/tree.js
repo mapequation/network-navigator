@@ -4,51 +4,59 @@ export class Node {
         this.path = null;
         this.parent = null;
         this.name = null;
+        this.visible = true;
         this.flow = 0;
         this.exitFlow = 0;
         this.children = {};
         this.links = [];
     }
 
+    createChild(childId) {
+        const childNode = new Node(childId);
+        this.addChild(childNode);
+        return childNode;
+    }
+
+    addChild(childNode) {
+        this.children[childNode.id] = childNode;
+        this.children[childNode.id].parent = this.path;
+    }
+
+    getChild(childId) {
+        return this.children[childId];
+    }
+
+    deleteChild(childNode) {
+        delete this.children[childNode.id];
+    }
+
+    equal(other) {
+        return this.id === other.id;
+    }
+
     clone() {
         const clone = new Node(this.id);
+
         clone.path = this.path;
         clone.parent = this.parent;
         clone.name = this.name;
+        clone.visible = this.visible;
         clone.flow = this.flow;
         clone.exitFlow = this.exitFlow;
 
-        this.nodes.forEach((child) => {
-            clone.addChild(child.clone());
+        this.nodes.forEach((childNode) => {
+            clone.addChild(childNode.clone());
         });
 
         this.links.forEach((link) => {
             clone.links.push({
-                source: link.source,
-                target: link.target,
+                source: typeof link.source === 'object' ? link.source.clone() : link.source,
+                target: typeof link.target === 'object' ? link.target.clone() : link.target,
                 flow: link.flow,
             });
         });
 
         return clone;
-    }
-
-    addChild(child) {
-        this.children[child.id] = child;
-        this.children[child.id].parent = this.path;
-        return this;
-    }
-
-    getChild(id) {
-        return this.children[id];
-    }
-
-    deleteChild(id) {
-        delete this.children[id];
-    }
-
-    get numChildren() {
-        return this.nodes.length;
     }
 
     get nodes() {
@@ -59,17 +67,16 @@ export class Node {
 export class Tree {
     constructor() {
         this.root = new Node('root');
-        this.root.path = 'root';
     }
 
-    /**
-     * Get the Node at the end of the path.
-     *
-     * @param {string} path
-     * @return {Node}
-     */
+    clone() {
+        const clone = new Tree();
+        clone.root = this.root.clone();
+        return clone;
+    }
+
     getNode(path) {
-        if (path === 'root') {
+        if (path === this.root.id) {
             return this.root;
         }
 
@@ -78,4 +85,25 @@ export class Tree {
             .map(Number)
             .reduce((pathNode, childId) => pathNode.getChild(childId), this.root);
     }
+
+    depthFirstTraverse(callback) {
+        const stack = [this.root];
+
+        while (stack.length) {
+            const node = stack.pop();
+            callback(node);
+            stack.push(...node.nodes);
+        }
+    }
+
+    breadthFirstTraverse(callback) {
+        const queue = [this.root];
+
+        while (queue.length) {
+            const node = queue.shift();
+            callback(node);
+            queue.push(...node.nodes);
+        }
+    }
 }
+

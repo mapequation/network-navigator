@@ -1,7 +1,8 @@
 import * as d3 from 'd3';
 import dat from 'dat.gui';
 import render from 'render';
-import { parseFile, parseFTree, createTree } from 'parser';
+import parseFile from 'parse';
+import { parseFTree, createTree } from 'ftree';
 import { lumpNodes, pruneLinks } from 'filter';
 
 function runApplication(ftree) {
