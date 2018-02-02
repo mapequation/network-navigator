@@ -27,11 +27,13 @@ export class Node {
     }
 
     deleteChild(childNode) {
-        delete this.children[childNode.id];
+        const id = childNode.id || childNode;
+        delete this.children[id];
     }
 
     equal(other) {
-        return this.id === other.id;
+        const id = other.id || other;
+        return this.id === id;
     }
 
     clone() {
