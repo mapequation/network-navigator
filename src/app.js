@@ -3,7 +3,7 @@ import dat from 'dat.gui';
 import render from 'render';
 import parseFile from 'parse';
 import { parseFTree, createTree } from 'ftree';
-import { lumpNodes, pruneLinks } from 'filter';
+import { filterNodes, pruneLinks, filterDisconnectedNodes } from 'filter';
 
 function runApplication(ftree) {
     const tree = createTree(ftree.data.tree, ftree.data.links);
@@ -27,8 +27,9 @@ function runApplication(ftree) {
     const renderBranch = () => {
         d3.select('svg').selectAll('*').remove();
         const branch = tree.getNode(path.path).clone();
-        lumpNodes(branch, filtering.lumpFactor);
+        filterNodes(branch, filtering.lumpFactor);
         pruneLinks(branch.links, filtering.pruneFactor);
+        filterDisconnectedNodes(branch);
         render(branch, renderParams);
     };
 

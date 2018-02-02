@@ -1,72 +1,34 @@
-import { Node } from 'tree';
-
 function byFlow(obj1, obj2) {
     return obj2.flow - obj1.flow;
 }
 
+function linkToNode(node) {
+    return link => link.source === node.id || link.target === node.id;
+}
+
 /**
- * Lump nodes beneath root node so that a factor of the flow
- * are contained in a lumped node.
+ * Filter nodes beneath root node so that a factor of the flow
+ * are removed.
  * This _will_ modify the children and links of the root node.
  *
- * @param {Node} rootNode the node of which children are considered for lumping
+ * @param {Node} rootNode the node of which children are considered for filtering
  * @param {number} factor between 0 and 1
  */
-export function lumpNodes(rootNode, factor) {
+export function filterNodes(rootNode, factor) {
     const children = rootNode.nodes.sort(byFlow);
-    const numChildren = children.length;
-    const flowTotal = children.reduce((tot, node) => tot + node.flow, 0);
+    const flowTotal = children.reduce((total, node) => total + node.flow, 0);
     const flowTarget = factor * flowTotal;
 
-    const lumpNode = new Node('lump');
-    lumpNode.path = (rootNode.path === 'root') ? lumpNode.id : [rootNode.path, lumpNode.id].join(':');
+    let accumulatedFlow = 0;
 
-    while (lumpNode.flow < flowTarget && children.length) {
+    const notLinkToNode = node => link => !linkToNode(node)(link);
+
+    while (accumulatedFlow < flowTarget && children.length) {
         const node = children.pop();
-        lumpNode.flow += node.flow;
-        lumpNode.exitFlow += node.exitFlow;
-        node.nodes.forEach(child => lumpNode.addChild(child));
-        rootNode.links.forEach((link) => {
-            if (link.source === node.id) link.source = lumpNode.id;
-            if (link.target === node.id) link.target = lumpNode.id;
-        });
-        rootNode.deleteChild(node.id);
+        accumulatedFlow += node.flow;
+        rootNode.links = rootNode.links.filter(notLinkToNode(node));
+        rootNode.deleteChild(node);
     }
-
-    if (rootNode.numChildren === numChildren) {
-        return;
-    }
-
-    rootNode.addChild(lumpNode);
-
-    const { links } = rootNode;
-
-    const isDuplicate = (l1, l2) => l1.source === l2.source && l1.target === l2.target;
-    const isCircular = link => link.source === link.target;
-
-    // Search for duplicate and circular links
-    for (let i = 0; i < links.length; i++) {
-        const link = links[i];
-
-        if (isCircular(link)) {
-            link.circular = true;
-            continue;
-        }
-
-        if (link.duplicate) {
-            continue;
-        }
-
-        for (let j = i + 1; j < links.length; j++) {
-            const candidateLink = links[j];
-            if (isDuplicate(link, candidateLink)) {
-                link.flow += candidateLink.flow;
-                candidateLink.duplicate = true;
-            }
-        }
-    }
-
-    rootNode.links = links.filter(link => !link.duplicate && !link.circular);
 }
 
 /**
@@ -77,13 +39,33 @@ export function lumpNodes(rootNode, factor) {
  * @param {number} factor a number between 0 and 1
  */
 export function pruneLinks(links, factor) {
-    const linksByFlow = links.sort(byFlow).reverse();
+    const linksByFlow = links.sort(byFlow);
     const flowTotal = linksByFlow.reduce((total, link) => total + link.flow, 0);
     const flowTarget = factor * flowTotal;
+
     let accumulatedFlow = 0;
 
     while (accumulatedFlow < flowTarget && linksByFlow.length) {
-        const link = linksByFlow.shift();
+        const link = linksByFlow.pop();
         accumulatedFlow += link.flow;
+    }
+}
+
+/**
+ * Remove all disconnected nodes under root node.
+ *
+ * @param {Node} rootNode
+ */
+export function filterDisconnectedNodes(rootNode) {
+    const hasLink = node => rootNode.links.filter(linkToNode(node)).length > 0;
+
+    const children = rootNode.nodes;
+
+    while (children.length) {
+        const node = children.pop();
+
+        if (!hasLink(node)) {
+            rootNode.deleteChild(node);
+        }
     }
 }
