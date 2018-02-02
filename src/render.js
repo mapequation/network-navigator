@@ -1,5 +1,5 @@
 import * as d3 from 'd3';
-import { halfLink, undirectedLink } from 'network-rendering/network-rendering';
+import { halfLink, undirectedLink } from 'network-rendering';
 
 const makeGraphStyle = (graph) => {
     const scaleLinear = (array, accessor, range) =>
