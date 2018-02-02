@@ -77,14 +77,13 @@ export function lumpNodes(rootNode, factor) {
  * @param {number} factor a number between 0 and 1
  */
 export function pruneLinks(links, factor) {
-    const linksByFlow = links.sort(byFlow);
-    const flowTotal = linksByFlow.reduce((tot, link) => tot + link.flow, 0);
+    const linksByFlow = links.sort(byFlow).reverse();
+    const flowTotal = linksByFlow.reduce((total, link) => total + link.flow, 0);
     const flowTarget = factor * flowTotal;
-
     let accumulatedFlow = 0;
 
     while (accumulatedFlow < flowTarget && linksByFlow.length) {
-        const link = linksByFlow.pop();
+        const link = linksByFlow.shift();
         accumulatedFlow += link.flow;
     }
 }

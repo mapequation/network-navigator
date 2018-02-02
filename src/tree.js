@@ -67,6 +67,7 @@ export class Node {
 export class Tree {
     constructor() {
         this.root = new Node('root');
+        this.root.path = this.root.id;
     }
 
     clone() {
@@ -76,17 +77,17 @@ export class Tree {
     }
 
     getNode(path) {
-        if (path === this.root.id) {
+        if (path === this.root.path) {
             return this.root;
         }
 
         return path
             .split(':')
             .map(Number)
-            .reduce((pathNode, childId) => pathNode.getChild(childId), this.root);
+            .reduce((pathNode, childId) => (pathNode ? pathNode.getChild(childId) : null), this.root);
     }
 
-    depthFirstTraverse(callback) {
+    traverseDepthFirst(callback) {
         const stack = [this.root];
 
         while (stack.length) {
@@ -96,7 +97,7 @@ export class Tree {
         }
     }
 
-    breadthFirstTraverse(callback) {
+    traverseBreadthFirst(callback) {
         const queue = [this.root];
 
         while (queue.length) {
