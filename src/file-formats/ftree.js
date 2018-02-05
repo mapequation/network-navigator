@@ -1,4 +1,4 @@
-import { Tree } from 'tree';
+import { Tree } from '../tree';
 
 /**
  * Split a tree path string to array and parse to integer.

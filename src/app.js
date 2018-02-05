@@ -2,7 +2,7 @@ import * as d3 from 'd3';
 import dat from 'dat.gui';
 import render from 'render';
 import parseFile from 'parse';
-import { parseFTree, createTree } from 'ftree';
+import { parseFTree, createTree } from 'file-formats/ftree';
 import { filterNodes, pruneLinks, filterDisconnectedNodes } from 'filter';
 
 function runApplication(ftree) {
