@@ -7,7 +7,7 @@ export class Node {
         this.visible = true;
         this.flow = 0;
         this.exitFlow = 0;
-        this._children = {};
+        this._children = new Map();
         this.links = [];
     }
 
@@ -18,25 +18,25 @@ export class Node {
     }
 
     addChild(childNode) {
-        this._children[childNode.id] = childNode;
-        this._children[childNode.id].parent = this;
+        childNode.parent = this;
+        this._children.set(childNode.id, childNode);
     }
 
     getChild(childId) {
-        return this._children[childId];
+        return this._children.get(childId);
     }
 
     deleteChild(childNode) {
         const id = childNode.id || childNode;
-        delete this._children[id];
+        this._children.delete(id);
     }
 
     get children() {
-        return Object.values(this._children);
+        return Array.from(this._children.values());
     }
 
     set children(children) {
-        this._children = {};
+        this._children.clear();
         children.forEach(this.addChild);
     }
 
