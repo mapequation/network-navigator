@@ -4,7 +4,6 @@ export class Node {
         this.path = null;
         this.parent = null;
         this.name = null;
-        this.visible = true;
         this.flow = 0;
         this.exitFlow = 0;
         this._children = new Map();

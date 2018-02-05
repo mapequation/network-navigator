@@ -1,4 +1,4 @@
-function byFlow(obj1, obj2) {
+export function byFlow(obj1, obj2) {
     return obj2.flow - obj1.flow;
 }
 
@@ -21,7 +21,7 @@ export function filterNodes(rootNode, factor) {
 
     let accumulatedFlow = 0;
 
-    const notLinkToNode = node => link => !linkToNode(node)(link);
+    const notLinkToNode = node => link => link.source !== node.id && link.target !== node.id;
 
     while (accumulatedFlow < flowTarget && children.length) {
         const node = children.pop();

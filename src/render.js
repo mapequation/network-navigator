@@ -1,7 +1,7 @@
 import * as d3 from 'd3';
 import { halfLink, undirectedLink } from 'network-rendering';
 
-const makeGraphStyle = (nodes, links) => {
+export function makeGraphStyle(nodes, links) {
     const scaleLinear = (array, accessor, range) =>
         d3.scaleLinear()
             .domain(d3.extent(array, obj => obj[accessor]))
@@ -29,26 +29,42 @@ const makeGraphStyle = (nodes, links) => {
             opacity: link => linkOpacity(link.flow),
         },
     };
-};
+}
 
-const makeDragHandler = simulation => ({
-    dragStarted: (node) => {
-        if (!d3.event.active) simulation.alphaTarget(0.3).restart();
-        node.fx = node.x;
-        node.fy = node.y;
-    },
+export function makeDragHandler(simulation) {
+    return {
+        dragStarted: (node) => {
+            if (!d3.event.active) simulation.alphaTarget(0.3).restart();
+            node.fx = node.x;
+            node.fy = node.y;
+        },
 
-    drag: (node) => {
-        node.fx = d3.event.x;
-        node.fy = d3.event.y;
-    },
+        drag: (node) => {
+            node.fx = d3.event.x;
+            node.fy = d3.event.y;
+        },
 
-    dragEnded: (node) => {
-        if (!d3.event.active) simulation.alphaTarget(0);
-        node.fx = null;
-        node.fy = null;
-    },
-});
+        dragEnded: (node) => {
+            if (!d3.event.active) simulation.alphaTarget(0);
+            node.fx = null;
+            node.fy = null;
+        },
+    };
+}
+
+export function makeTickCallback(elements, svgPath) {
+    return () => {
+        elements.circle
+            .attr('cx', n => n.x)
+            .attr('cy', n => n.y);
+        elements.text
+            .attr('x', n => n.x)
+            .attr('y', n => n.y);
+        elements.link
+            .attr('d', svgPath);
+    };
+}
+
 
 /**
   * Render all direct children to a node.
@@ -129,13 +145,7 @@ export default function render(
         .attr('text-anchor', 'middle')
         .attr('dy', '0.35em');
 
-    const ticked = () => {
-        circle.attr('cx', n => n.x)
-            .attr('cy', n => n.y);
-        text.attr('x', n => n.x)
-            .attr('y', n => n.y);
-        link.attr('d', linkSvgPath);
-    };
+    const ticked = makeTickCallback({ circle, text, link }, linkSvgPath)
 
     simulation
         .nodes(nodes)
