@@ -7,13 +7,13 @@ export function makeGraphStyle(nodes, links) {
             .domain(d3.extent(array, obj => obj[accessor]))
             .range(range);
 
-    const nodeRadius = scaleLinear(nodes, 'flow', [10, 60]);
+    const nodeRadius = d3.scaleLog().domain(d3.extent(nodes, n => n.flow)).range([20, 60]);
     const nodeFillColor = scaleLinear(nodes, 'flow', ['#DFF1C1', '#C5D7A8']);
     const nodeBorderColor = scaleLinear(nodes, 'exitFlow', ['#ABD65B', '#95C056']);
-    const nodeBorderWidth = scaleLinear(nodes, 'exitFlow', [1, 5]);
+    const nodeBorderWidth = scaleLinear(nodes, 'exitFlow', [2, 6]);
 
     const linkFillColor = scaleLinear(links, 'flow', ['#71B2D7', '#418EC7']);
-    const linkWidth = scaleLinear(links, 'flow', [3, 9]);
+    const linkWidth = scaleLinear(links, 'flow', [4, 10]);
     const linkOpacity = scaleLinear(links, 'flow', [1, 1]);
 
     return {
