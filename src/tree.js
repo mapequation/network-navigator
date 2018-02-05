@@ -7,7 +7,7 @@ export class Node {
         this.visible = true;
         this.flow = 0;
         this.exitFlow = 0;
-        this.children = {};
+        this._children = {};
         this.links = [];
     }
 
@@ -18,17 +18,26 @@ export class Node {
     }
 
     addChild(childNode) {
-        this.children[childNode.id] = childNode;
-        this.children[childNode.id].parent = this;
+        this._children[childNode.id] = childNode;
+        this._children[childNode.id].parent = this;
     }
 
     getChild(childId) {
-        return this.children[childId];
+        return this._children[childId];
     }
 
     deleteChild(childNode) {
         const id = childNode.id || childNode;
-        delete this.children[id];
+        delete this._children[id];
+    }
+
+    get children() {
+        return Object.values(this._children);
+    }
+
+    set children(children) {
+        this._children = {};
+        children.forEach(this.addChild);
     }
 
     equal(other) {
@@ -46,7 +55,7 @@ export class Node {
         clone.flow = this.flow;
         clone.exitFlow = this.exitFlow;
 
-        this.nodes.forEach((childNode) => {
+        this.children.forEach((childNode) => {
             clone.addChild(childNode.clone());
         });
 
@@ -59,10 +68,6 @@ export class Node {
         });
 
         return clone;
-    }
-
-    get nodes() {
-        return Object.values(this.children);
     }
 }
 

@@ -15,7 +15,7 @@ function linkToNode(node) {
  * @param {Number} factor between 0 and 1
  */
 export function filterNodes(rootNode, factor) {
-    const children = rootNode.nodes.sort(byFlow);
+    const children = rootNode.children.sort(byFlow);
     const flowTotal = children.reduce((total, node) => total + node.flow, 0);
     const flowTarget = factor * flowTotal;
 
@@ -57,9 +57,9 @@ export function pruneLinks(links, factor) {
  * @param {Node} rootNode
  */
 export function filterDisconnectedNodes(rootNode) {
-    const hasLink = node => rootNode.links.filter(linkToNode(node)).length > 0;
+    const hasLink = node => rootNode.links.some(linkToNode(node));
 
-    const children = rootNode.nodes;
+    const { children } = rootNode;
 
     while (children.length) {
         const node = children.pop();
