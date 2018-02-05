@@ -1,20 +1,20 @@
 import * as d3 from 'd3';
 import { halfLink, undirectedLink } from 'network-rendering';
 
-const makeGraphStyle = (graph) => {
+const makeGraphStyle = (nodes, links) => {
     const scaleLinear = (array, accessor, range) =>
         d3.scaleLinear()
             .domain(d3.extent(array, obj => obj[accessor]))
             .range(range);
 
-    const nodeRadius = scaleLinear(graph.nodes, 'flow', [10, 60]);
-    const nodeFillColor = scaleLinear(graph.nodes, 'flow', ['#DFF1C1', '#C5D7A8']);
-    const nodeBorderColor = scaleLinear(graph.nodes, 'exitFlow', ['#ABD65B', '#95C056']);
-    const nodeBorderWidth = scaleLinear(graph.nodes, 'exitFlow', [1, 5]);
+    const nodeRadius = scaleLinear(nodes, 'flow', [10, 60]);
+    const nodeFillColor = scaleLinear(nodes, 'flow', ['#DFF1C1', '#C5D7A8']);
+    const nodeBorderColor = scaleLinear(nodes, 'exitFlow', ['#ABD65B', '#95C056']);
+    const nodeBorderWidth = scaleLinear(nodes, 'exitFlow', [1, 5]);
 
-    const linkFillColor = scaleLinear(graph.links, 'flow', ['#71B2D7', '#418EC7']);
-    const linkWidth = scaleLinear(graph.links, 'flow', [3, 9]);
-    const linkOpacity = scaleLinear(graph.links, 'flow', [1, 1]);
+    const linkFillColor = scaleLinear(links, 'flow', ['#71B2D7', '#418EC7']);
+    const linkWidth = scaleLinear(links, 'flow', [3, 9]);
+    const linkOpacity = scaleLinear(links, 'flow', [1, 1]);
 
     return {
         node: {
@@ -53,11 +53,13 @@ const makeDragHandler = simulation => ({
 /**
   * Render all direct children to a node.
   *
- * @param {Node} rootNode
+ * @param {Node[]} nodes
+ * @param {Object[]} links
  * @param {Object} params
  */
 export default function render(
-    rootNode,
+    nodes,
+    links,
     {
         charge = 500,
         linkDistance = 100,
@@ -67,7 +69,7 @@ export default function render(
     const width = window.innerWidth;
     const height = window.innerHeight;
 
-    const style = makeGraphStyle(rootNode);
+    const style = makeGraphStyle(nodes, links);
 
     const linkSvgPath = (linkType === 'directed' ? halfLink : undirectedLink)()
         .nodeRadius(style.node.radius)
@@ -95,7 +97,7 @@ export default function render(
     const link = svg.append('g')
         .attr('class', 'links')
         .selectAll('line')
-        .data(rootNode.links)
+        .data(links)
         .enter()
         .append('path')
         .attr('class', 'link')
@@ -106,7 +108,7 @@ export default function render(
     const node = svg.append('g')
         .attr('class', 'nodes')
         .selectAll('.node')
-        .data(rootNode.nodes)
+        .data(nodes)
         .enter()
         .append('g')
         .attr('class', 'node')
@@ -136,10 +138,10 @@ export default function render(
     };
 
     simulation
-        .nodes(rootNode.nodes)
+        .nodes(nodes)
         .on('tick', ticked);
 
     simulation
         .force('link')
-        .links(rootNode.links);
+        .links(links);
 }

@@ -30,10 +30,7 @@ function runApplication(ftree) {
         filterNodes(branch, filtering.lumpFactor);
         pruneLinks(branch.links, filtering.pruneFactor);
         filterDisconnectedNodes(branch);
-        render({
-            nodes: branch.children,
-            links: branch.links,
-        }, renderParams);
+        render(branch.children, branch.links, renderParams);
     };
 
     const gui = new dat.GUI();
