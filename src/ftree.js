@@ -35,8 +35,8 @@ function isTreePath(path) {
 /**
  * Parse ftree data to object, consuming data array.
  *
- * Input example:
  * @example
+ *  // Input example
  *  [
  *      ["1:1:1", 0.0564732, "Atlanta, GA: Hartsfield-Jackson Atlanta International;", 29],
  *      ["1:1:2", 0.00662063, "Memphis, TN: Memphis International;", 286],
@@ -52,8 +52,8 @@ function isTreePath(path) {
  *  ]
  *
  *
- * Return value structure:
  * @example
+ *  // Return value structure
  *  {
  *      data: {
  *          tree: [

@@ -12,7 +12,7 @@ function linkToNode(node) {
  * This _will_ modify the children and links of the root node.
  *
  * @param {Node} rootNode the node of which children are considered for filtering
- * @param {number} factor between 0 and 1
+ * @param {Number} factor between 0 and 1
  */
 export function filterNodes(rootNode, factor) {
     const children = rootNode.nodes.sort(byFlow);
@@ -36,7 +36,7 @@ export function filterNodes(rootNode, factor) {
  * of the total initial flow.
  *
  * @param {Object[]} links an array of links
- * @param {number} factor a number between 0 and 1
+ * @param {Number} factor a number between 0 and 1
  */
 export function pruneLinks(links, factor) {
     const linksByFlow = links.sort(byFlow);
