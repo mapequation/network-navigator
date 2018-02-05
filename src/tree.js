@@ -93,25 +93,5 @@ export class Tree {
             .map(Number)
             .reduce((pathNode, childId) => (pathNode ? pathNode.getChild(childId) : null), this.root);
     }
-
-    traverseDepthFirst(callback) {
-        const stack = [this.root];
-
-        while (stack.length) {
-            const node = stack.pop();
-            callback(node);
-            stack.push(...node.nodes);
-        }
-    }
-
-    traverseBreadthFirst(callback) {
-        const queue = [this.root];
-
-        while (queue.length) {
-            const node = queue.shift();
-            callback(node);
-            queue.push(...node.nodes);
-        }
-    }
 }
 
