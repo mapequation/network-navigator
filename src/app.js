@@ -32,64 +32,60 @@ function runApplication(ftree) {
         linkType: ftree.meta.linkType,
     };
 
-    let branch = tree.getNode(path.path).clone();
+    const actions = {
+        branch: tree.getNode(path.path).clone(),
 
-    const renderBranch = () => {
-        render({
-            nodes: branch.nodes,
-            links: branch.links,
-            charge: renderParams.charge,
-            linkDistance: renderParams.linkDistance,
-            linkType: renderParams.linkType,
-        });
-    };
+        clone() {
+            this.branch = tree.getNode(path.path).clone();
+            return this;
+        },
 
-    const filterRender = () => {
-        branch = tree.getNode(path.path).clone();
+        filterGUI() {
+            this.branch.nodes = accumulateLargest(this.branch.nodes, filtering.nodeFlow);
+            this.branch.links = accumulateLargest(this.branch.links, filtering.linkFlow);
+            this.branch.links = connectedLinks(this.branch);
+            this.branch.nodes = connectedNodes(this.branch);
+            return this;
+        },
 
-        branch.nodes = accumulateLargest(branch.nodes, filtering.nodeFlow);
-        branch.links = accumulateLargest(branch.links, filtering.linkFlow);
-        branch.links = connectedLinks(branch);
-        branch.nodes = connectedNodes(branch);
+        filterNewPath() {
+            const flowBefore = sumFlow(this.branch.nodes);
+            this.branch.nodes = takeLargest(this.branch.nodes, 20);
+            filtering.nodeFlow = sumFlow(this.branch.nodes) / flowBefore;
 
-        renderBranch();
+            this.branch.links = accumulateLargest(this.branch.links, filtering.linkFlow);
+            this.branch.links = connectedLinks(this.branch);
+            this.branch.nodes = connectedNodes(this.branch);
+            return this;
+        },
+
+        renderBranch() {
+            render({
+                nodes: this.branch.nodes,
+                links: this.branch.links,
+                charge: renderParams.charge,
+                linkDistance: renderParams.linkDistance,
+                linkType: renderParams.linkType,
+            });
+            return this;
+        },
     };
 
     const gui = new dat.GUI();
 
     const renderFolder = gui.addFolder('Rendering / simulation');
-    renderFolder.add(renderParams, 'linkDistance', 50, 500).step(25).onFinishChange(renderBranch);
-    renderFolder.add(renderParams, 'charge', 0, 2000).step(100).onFinishChange(renderBranch);
+    renderFolder.add(renderParams, 'linkDistance', 50, 500).step(25).onFinishChange(actions.renderBranch);
+    renderFolder.add(renderParams, 'charge', 0, 2000).step(100).onFinishChange(actions.renderBranch);
     renderFolder.open();
 
     const filteringFolder = gui.addFolder('Filtering');
-    filteringFolder.add(filtering, 'nodeFlow', 0, 1).step(0.01).onFinishChange(filterRender).listen();
-    filteringFolder.add(filtering, 'linkFlow', 0, 1).step(0.01).onFinishChange(filterRender).listen();
+    filteringFolder.add(filtering, 'nodeFlow', 0, 1).step(0.01).onFinishChange(() => actions.clone().filterGUI().renderBranch()).listen();
+    filteringFolder.add(filtering, 'linkFlow', 0, 1).step(0.01).onFinishChange(() => actions.clone().filterGUI().renderBranch()).listen();
     filteringFolder.open();
 
-    gui.add(path, 'path').onFinishChange(() => {
-        branch = tree.getNode(path.path).clone();
+    gui.add(path, 'path').onFinishChange(() => actions.clone().filterNewPath().renderBranch());
 
-        const flowBefore = sumFlow(branch.nodes);
-        branch.nodes = takeLargest(branch.nodes, 20);
-        filtering.nodeFlow = sumFlow(branch.nodes) / flowBefore;
-
-        branch.links = accumulateLargest(branch.links, filtering.linkFlow);
-        branch.links = connectedLinks(branch);
-        branch.nodes = connectedNodes(branch);
-
-        renderBranch();
-    });
-
-    const flowBefore = sumFlow(branch.nodes);
-    branch.nodes = takeLargest(branch.nodes, 20);
-    filtering.nodeFlow = sumFlow(branch.nodes) / flowBefore;
-
-    branch.links = accumulateLargest(branch.links, filtering.linkFlow);
-    branch.links = connectedLinks(branch);
-    branch.nodes = connectedNodes(branch);
-
-    renderBranch();
+    actions.filterNewPath().renderBranch();
 }
 
 fetch('data/stockholm.ftree')
