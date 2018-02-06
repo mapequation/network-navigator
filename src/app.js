@@ -71,18 +71,14 @@ function runApplication(ftree) {
     gui.add(path, 'path').onFinishChange(() => {
         branch = tree.getNode(path.path).clone();
 
-        const { nodeFlow } = autoFilter(branch, 20);
-        filtering.nodeFlow = nodeFlow;
-
+        filtering.nodeFlow = autoFilter(branch, 20);
         filterLinks(branch.links, filtering.linkFlow);
         filterDisconnectedNodes(branch);
 
         renderBranch();
     });
 
-    const { nodeFlow } = autoFilter(branch, 20);
-    filtering.nodeFlow = nodeFlow;
-
+    filtering.nodeFlow = autoFilter(branch, 20);
     filterLinks(branch.links, filtering.linkFlow);
     filterDisconnectedNodes(branch);
 

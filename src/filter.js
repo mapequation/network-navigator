@@ -48,18 +48,11 @@ export function filterLinks(links, factor) {
  * @param {Node} rootNode
  */
 export function filterDisconnectedNodes(rootNode) {
-    const linkToNode = node => link => link.source === node.id || link.target === node.id;
-    const hasLink = node => rootNode.links.some(linkToNode(node));
+    const toNode = node => link => link.source === node.id || link.target === node.id;
+    const connected = node => rootNode.links.some(toNode(node));
 
     const { children } = rootNode;
-
-    while (children.length) {
-        const node = children.pop();
-
-        if (!hasLink(node)) {
-            rootNode.deleteChild(node);
-        }
-    }
+    rootNode.children = children.filter(connected);
 }
 
 /**
@@ -70,10 +63,11 @@ export function filterDisconnectedNodes(rootNode) {
 export function filterDanglingLinks(rootNode) {
     const { links, children } = rootNode;
 
-    rootNode.links = links
-        .filter(link =>
-            children.some(node => link.source === node.id) &&
-            children.some(node => link.target === node.id));
+    const isSource = link => node => link.source === node.id;
+    const isTarget = link => node => link.target === node.id;
+    const isNotDangling = link => children.some(isSource(link)) && children.some(isTarget(link));
+
+    rootNode.links = links.filter(isNotDangling);
 }
 
 /**
@@ -83,13 +77,14 @@ export function filterDanglingLinks(rootNode) {
  * @return {Number}
  */
 export function autoFilter(rootNode, numNodes) {
-    const children = rootNode.children.sort(byFlow);
-    const nodeFlowTotal = children.reduce((total, node) => total + node.flow, 0);
+    const { children } = rootNode;
 
-
-    if (children.length > numNodes) {
-        rootNode.children = children.splice(0, numNodes);
+    if (children.length <= numNodes) {
+        return 1;
     }
+
+    const nodeFlowTotal = children.reduce((total, node) => total + node.flow, 0);
+    rootNode.children = children.sort(byFlow).splice(0, numNodes);
 
     filterDanglingLinks(rootNode);
 
