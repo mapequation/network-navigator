@@ -39,6 +39,14 @@ export class Node {
         children.forEach(child => this.addChild(child));
     }
 
+    get nodes() {
+        return this.children;
+    }
+
+    set nodes(nodes) {
+        this.children = nodes;
+    }
+
     equal(other) {
         const id = other.id || other;
         return this.id === id;
