@@ -179,8 +179,9 @@ export function parseFTree(rows) {
 /**
  * Create tree from ftree data
  *
- * @param {Object[]} treeData
- * @param {Object[]} linkData
+ * @param {Object} opts
+ * @param {Object[]} opts.treeData
+ * @param {Object[]} opts.linkData
  * @return {Tree}
  */
 export function createTree({ treeData, linkData }) {
