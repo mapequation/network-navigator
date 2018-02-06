@@ -136,10 +136,7 @@ function runApplication(ftree) {
             .append('g')
             .attr('class', 'node')
             .on('dblclick', clicked)
-            .call(d3.drag()
-                .on('start', dragHandler.dragStarted)
-                .on('drag', dragHandler.drag)
-                .on('end', dragHandler.dragEnded));
+            .call(dragHandler);
 
         const circle = node.append('circle')
             .attr('r', style.node.radius)

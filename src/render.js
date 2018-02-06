@@ -3,24 +3,27 @@ import { halfLink, undirectedLink } from 'network-rendering';
 import makeGraphStyle from 'graph-style';
 
 export function makeDragHandler(simulation) {
-    return {
-        dragStarted: (node) => {
-            if (!d3.event.active) simulation.alphaTarget(0.3).restart();
-            node.fx = node.x;
-            node.fy = node.y;
-        },
-
-        drag: (node) => {
-            node.fx = d3.event.x;
-            node.fy = d3.event.y;
-        },
-
-        dragEnded: (node) => {
-            if (!d3.event.active) simulation.alphaTarget(0);
-            node.fx = null;
-            node.fy = null;
-        },
+    const dragStarted = (node) => {
+        if (!d3.event.active) simulation.alphaTarget(0.3).restart();
+        node.fx = node.x;
+        node.fy = node.y;
     };
+
+    const drag = (node) => {
+        node.fx = d3.event.x;
+        node.fy = d3.event.y;
+    };
+
+    const dragEnded = (node) => {
+        if (!d3.event.active) simulation.alphaTarget(0);
+        node.fx = null;
+        node.fy = null;
+    };
+
+    return d3.drag()
+        .on('start', dragStarted)
+        .on('drag', drag)
+        .on('end', dragEnded);
 }
 
 export function makeTickCallback({
@@ -105,10 +108,7 @@ export default function render(
         .append('g')
         .attr('class', 'node')
         .on('click', d => console.log(d))
-        .call(d3.drag()
-            .on('start', dragHandler.dragStarted)
-            .on('drag', dragHandler.drag)
-            .on('end', dragHandler.dragEnded));
+        .call(dragHandler);
 
     const circle = node.append('circle')
         .attr('r', style.node.radius)
