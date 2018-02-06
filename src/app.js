@@ -5,7 +5,8 @@ import { parseFTree, createTree } from 'file-formats/ftree';
 import { filterNodes, pruneLinks, filterDisconnectedNodes } from 'filter';
 
 import { halfLink, undirectedLink } from 'network-rendering';
-import { makeGraphStyle, makeDragHandler, makeTickCallback } from 'render';
+import { makeDragHandler, makeTickCallback } from 'render';
+import makeGraphStyle from 'graph-style';
 
 const ellipsis = text => (text.length > 13 ? `${text.substr(0, 10)}...` : text);
 
@@ -82,7 +83,7 @@ function runApplication(ftree) {
         const nodes = branch.children;
         const links = branch.links;
 
-        const style = makeGraphStyle(nodes, links);
+        const style = makeGraphStyle({ nodes, links });
 
         const linkSvgPath = (ftree.meta.linkType === 'directed' ? halfLink : undirectedLink)()
             .nodeRadius(style.node.radius)

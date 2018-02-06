@@ -1,35 +1,6 @@
 import * as d3 from 'd3';
 import { halfLink, undirectedLink } from 'network-rendering';
-
-export function makeGraphStyle(nodes, links) {
-    const nodeRadius = d3.scaleLog().domain(d3.extent(nodes, n => n.flow)).range([20, 60]);
-    const nodeFillColor = d3.scaleLinear().domain(d3.extent(nodes, n => n.flow)).range(['#DFF1C1', '#C5D7A8']);
-    const nodeBorderColor = d3.scaleLinear().domain(d3.extent(nodes, n => n.exitFlow)).range(['#ABD65B', '#95C056']);
-    const nodeBorderWidth = d3.scaleLinear().domain(d3.extent(nodes, n => n.exitFlow)).range([2, 6]);
-
-    const linkFillColor = d3.scaleLinear().domain(d3.extent(links, l => l.flow)).range(['#71B2D7', '#418EC7']);
-    const linkWidth = d3.scaleLinear().domain(d3.extent(links, l => l.flow)).range([4, 10]);
-    const linkOpacity = d3.scaleLinear().domain(d3.extent(links, l => l.flow)).range([0.8, 1]);
-
-    const textFontSize = d3.scaleLog().domain(d3.extent(nodes, n => n.flow)).range([7, 18]);
-
-    return {
-        node: {
-            radius: node => nodeRadius(node.flow),
-            fillColor: node => nodeFillColor(node.flow),
-            borderColor: node => nodeBorderColor(node.exitFlow),
-            borderWidth: node => nodeBorderWidth(node.exitFlow),
-        },
-        link: {
-            fillColor: link => linkFillColor(link.flow),
-            width: link => linkWidth(link.flow),
-            opacity: link => linkOpacity(link.flow),
-        },
-        text: {
-            fontSize: node => textFontSize(node.flow),
-        },
-    };
-}
+import makeGraphStyle from 'graph-style';
 
 export function makeDragHandler(simulation) {
     return {
@@ -90,7 +61,7 @@ export default function render(
     const width = window.innerWidth;
     const height = window.innerHeight;
 
-    const style = makeGraphStyle(nodes, links);
+    const style = makeGraphStyle({ nodes, links });
 
     const linkSvgPath = (linkType === 'directed' ? halfLink : undirectedLink)()
         .nodeRadius(style.node.radius)
