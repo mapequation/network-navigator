@@ -2,31 +2,31 @@ import * as d3 from 'd3';
 import { halfLink, undirectedLink } from 'network-rendering';
 
 export function makeGraphStyle(nodes, links) {
-    const scaleLinear = (array, accessor, range) =>
-        d3.scaleLinear()
-            .domain(d3.extent(array, obj => obj[accessor]))
-            .range(range);
-
     const nodeRadius = d3.scaleLog().domain(d3.extent(nodes, n => n.flow)).range([20, 60]);
-    const nodeFillColor = scaleLinear(nodes, 'flow', ['#DFF1C1', '#C5D7A8']);
-    const nodeBorderColor = scaleLinear(nodes, 'exitFlow', ['#ABD65B', '#95C056']);
-    const nodeBorderWidth = scaleLinear(nodes, 'exitFlow', [2, 6]);
+    const nodeFillColor = d3.scaleLinear().domain(d3.extent(nodes, n => n.flow)).range(['#DFF1C1', '#C5D7A8']);
+    const nodeBorderColor = d3.scaleLinear().domain(d3.extent(nodes, n => n.exitFlow)).range(['#ABD65B', '#95C056']);
+    const nodeBorderWidth = d3.scaleLinear().domain(d3.extent(nodes, n => n.exitFlow)).range([2, 6]);
 
-    const linkFillColor = scaleLinear(links, 'flow', ['#71B2D7', '#418EC7']);
-    const linkWidth = scaleLinear(links, 'flow', [4, 10]);
-    const linkOpacity = scaleLinear(links, 'flow', [1, 1]);
+    const linkFillColor = d3.scaleLinear().domain(d3.extent(links, l => l.flow)).range(['#71B2D7', '#418EC7']);
+    const linkWidth = d3.scaleLinear().domain(d3.extent(links, l => l.flow)).range([4, 10]);
+    const linkOpacity = d3.scaleLinear().domain(d3.extent(links, l => l.flow)).range([0.8, 1]);
+
+    const textFontSize = d3.scaleLog().domain(d3.extent(nodes, n => n.flow)).range([7, 18]);
 
     return {
         node: {
+            radius: node => nodeRadius(node.flow),
             fillColor: node => nodeFillColor(node.flow),
             borderColor: node => nodeBorderColor(node.exitFlow),
-            radius: node => nodeRadius(node.flow),
             borderWidth: node => nodeBorderWidth(node.exitFlow),
         },
         link: {
             fillColor: link => linkFillColor(link.flow),
             width: link => linkWidth(link.flow),
             opacity: link => linkOpacity(link.flow),
+        },
+        text: {
+            fontSize: node => textFontSize(node.flow),
         },
     };
 }
@@ -52,16 +52,21 @@ export function makeDragHandler(simulation) {
     };
 }
 
-export function makeTickCallback(elements, svgPath) {
+export function makeTickCallback({
+    circle,
+    text,
+    link,
+    linkSvgPath,
+}) {
     return () => {
-        elements.circle
+        circle
             .attr('cx', n => n.x)
             .attr('cy', n => n.y);
-        elements.text
+        text
             .attr('x', n => n.x)
             .attr('y', n => n.y);
-        elements.link
-            .attr('d', svgPath);
+        link
+            .attr('d', linkSvgPath);
     };
 }
 
