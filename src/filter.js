@@ -1,94 +1,89 @@
+/**
+ * Comparator for sorting objects by flow.
+ *
+ * @param {Object} obj1
+ * @param {Object} obj2
+ * @return {Boolean}
+ */
 export function byFlow(obj1, obj2) {
     return obj2.flow - obj1.flow;
 }
 
 /**
+ * Return the total flow of the array of objects.
  *
- * @param {Node} rootNode the node of which children are considered for filtering
- * @param {Number} factor between 0 and 1
+ * @param {Object[]} objects
+ * @return {Number} the total flow.
  */
-export function filterNodes(rootNode, factor) {
-    const children = rootNode.children.sort(byFlow);
-    const flowTotal = children.reduce((total, node) => total + node.flow, 0);
-    const flowTarget = (1 - factor) * flowTotal;
-
-    const notLinkToNode = node => link => link.source !== node.id && link.target !== node.id;
-
-    let accumulatedFlow = 0;
-
-    while (accumulatedFlow < flowTarget && children.length) {
-        const node = children.pop();
-        accumulatedFlow += node.flow;
-        rootNode.links = rootNode.links.filter(notLinkToNode(node));
-        rootNode.deleteChild(node);
-    }
+export function sumFlow(objects) {
+    return objects.reduce((total, obj) => total + obj.flow, 0);
 }
 
 /**
+ * Return all connected nodes, given a set nodes and links.
+ * That is; all the nodes which has at least one link pointing to it.
  *
- * @param {Object[]} links an array of links
- * @param {Number} factor a number between 0 and 1
+ * @param {Object} param
+ * @param {Node[]} param.nodes the nodes
+ * @param {Object[]} param.links the links
+ * @return {Node[]} the connected nodes
  */
-export function filterLinks(links, factor) {
-    const linksByFlow = links.sort(byFlow);
-    const flowTotal = linksByFlow.reduce((total, link) => total + link.flow, 0);
-    const flowTarget = (1 - factor) * flowTotal;
-
-    let accumulatedFlow = 0;
-
-    while (accumulatedFlow < flowTarget && linksByFlow.length) {
-        const link = linksByFlow.pop();
-        accumulatedFlow += link.flow;
-    }
+export function connectedNodes({ nodes, links }) {
+    const pointsTo = node => link => link.source === node.id || link.target === node.id;
+    return nodes.filter(node => links.some(pointsTo(node)));
 }
 
 /**
- * Remove all disconnected nodes under root node.
+ * Return all connected links, given a set of nodes and links.
+ * A link is _not_ connected if either the source or target node does not exist.
  *
- * @param {Node} rootNode
+ * @param {Object} param
+ * @param {Node[]} param.nodes the nodes
+ * @param {Object[]} param.links the links
+ * @return {Object[]} the connected links
  */
-export function filterDisconnectedNodes(rootNode) {
-    const toNode = node => link => link.source === node.id || link.target === node.id;
-    const connected = node => rootNode.links.some(toNode(node));
-
-    const { children } = rootNode;
-    rootNode.children = children.filter(connected);
+export function connectedLinks({ nodes, links }) {
+    const isSourceTo = link => node => link.source === node.id;
+    const isTargetTo = link => node => link.target === node.id;
+    return links.filter(link => nodes.some(isSourceTo(link)) && nodes.some(isTargetTo(link)));
 }
 
 /**
- * Remove all links under root node which point to a non-existing node.
+ * Return the num largest objects sorted by flow,
+ * or all objects if num is smaller or equal than the number of objects.
  *
- * @param {Node} rootNode
+ * @param {Object[]} objects the objects
+ * @param {Number} amount the amount to take
+ * @return {Object[]} the num largest by flow
  */
-export function filterDanglingLinks(rootNode) {
-    const { links, children } = rootNode;
-
-    const isSource = link => node => link.source === node.id;
-    const isTarget = link => node => link.target === node.id;
-    const isNotDangling = link => children.some(isSource(link)) && children.some(isTarget(link));
-
-    rootNode.links = links.filter(isNotDangling);
-}
-
-/**
- *
- * @param {Node} rootNode
- * @param {Number} numNodes
- * @return {Number}
- */
-export function autoFilter(rootNode, numNodes) {
-    const { children } = rootNode;
-
-    if (children.length <= numNodes) {
-        return 1;
+export function takeLargest(objects, amount) {
+    if (objects.length <= amount) {
+        return objects;
     }
 
-    const nodeFlowTotal = children.reduce((total, node) => total + node.flow, 0);
-    rootNode.children = children.sort(byFlow).splice(0, numNodes);
+    return objects
+        .sort(byFlow)
+        .slice(0, amount);
+}
 
-    filterDanglingLinks(rootNode);
+/**
+ * Return accumulated objects, sorted by flow, such that the sum
+ * of their flow is at least flowFactor times the total flow.
+ *
+ * @param {Object[]} objects the objects
+ * @param {Number} flowFactor between 0 and 1
+ * @return {Object[]} the accumulated objects
+ */
+export function accumulateLargest(objects, flowFactor) {
+    const sorted = objects.sort(byFlow);
+    const flowTotal = sumFlow(objects);
+    const targetFlow = flowFactor * flowTotal;
 
-    const nodeFlow = rootNode.children.reduce((total, node) => total + node.flow, 0);
+    const largest = [];
 
-    return nodeFlow / nodeFlowTotal;
+    while (sumFlow(largest) < targetFlow && sorted.length) {
+        largest.push(sorted.shift());
+    }
+
+    return largest;
 }

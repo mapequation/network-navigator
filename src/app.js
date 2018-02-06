@@ -4,11 +4,11 @@ import parseFile from 'parse';
 import { parseFTree, createTree } from 'file-formats/ftree';
 import render from 'render';
 import {
-    autoFilter,
-    filterNodes,
-    filterLinks,
-    filterDisconnectedNodes,
-    filterDanglingLinks,
+    sumFlow,
+    takeLargest,
+    accumulateLargest,
+    connectedNodes,
+    connectedLinks,
 } from 'filter';
 
 function runApplication(ftree) {
@@ -36,7 +36,7 @@ function runApplication(ftree) {
 
     const renderBranch = () => {
         render({
-            nodes: branch.children,
+            nodes: branch.nodes,
             links: branch.links,
             charge: renderParams.charge,
             linkDistance: renderParams.linkDistance,
@@ -47,11 +47,10 @@ function runApplication(ftree) {
     const filterRender = () => {
         branch = tree.getNode(path.path).clone();
 
-        filterNodes(branch, filtering.nodeFlow);
-        filterLinks(branch.links, filtering.linkFlow);
-
-        filterDisconnectedNodes(branch);
-        filterDanglingLinks(branch);
+        branch.nodes = accumulateLargest(branch.nodes, filtering.nodeFlow);
+        branch.links = accumulateLargest(branch.links, filtering.linkFlow);
+        branch.links = connectedLinks(branch);
+        branch.nodes = connectedNodes(branch);
 
         renderBranch();
     };
@@ -71,16 +70,24 @@ function runApplication(ftree) {
     gui.add(path, 'path').onFinishChange(() => {
         branch = tree.getNode(path.path).clone();
 
-        filtering.nodeFlow = autoFilter(branch, 20);
-        filterLinks(branch.links, filtering.linkFlow);
-        filterDisconnectedNodes(branch);
+        const flowBefore = sumFlow(branch.nodes);
+        branch.nodes = takeLargest(branch.nodes, 20);
+        filtering.nodeFlow = sumFlow(branch.nodes) / flowBefore;
+
+        branch.links = accumulateLargest(branch.links, filtering.linkFlow);
+        branch.links = connectedLinks(branch);
+        branch.nodes = connectedNodes(branch);
 
         renderBranch();
     });
 
-    filtering.nodeFlow = autoFilter(branch, 20);
-    filterLinks(branch.links, filtering.linkFlow);
-    filterDisconnectedNodes(branch);
+    const flowBefore = sumFlow(branch.nodes);
+    branch.nodes = takeLargest(branch.nodes, 20);
+    filtering.nodeFlow = sumFlow(branch.nodes) / flowBefore;
+
+    branch.links = accumulateLargest(branch.links, filtering.linkFlow);
+    branch.links = connectedLinks(branch);
+    branch.nodes = connectedNodes(branch);
 
     renderBranch();
 }
