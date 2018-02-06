@@ -50,7 +50,6 @@ export class Node {
         clone.path = this.path;
         clone.parent = this.parent;
         clone.name = this.name;
-        clone.visible = this.visible;
         clone.flow = this.flow;
         clone.exitFlow = this.exitFlow;
 

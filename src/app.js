@@ -8,32 +8,42 @@ import { halfLink, undirectedLink } from 'network-rendering';
 import { makeDragHandler, makeTickCallback } from 'render';
 import makeGraphStyle from 'graph-style';
 
-const ellipsis = text => (text.length > 13 ? `${text.substr(0, 10)}...` : text);
+const ellipsis = (text, len = 13) => (text.length > len ? `${text.substr(0, len - 3)}...` : text);
 
 const width = window.innerWidth;
 const height = window.innerHeight;
 
 let active = d3.select(null);
 
-const svg = d3.select('svg')
+const svg = d3.select('body').append('svg')
     .attr('width', width)
-    .attr('height', height)
-    .append('g');
+    .attr('height', height);
 
-const zoomed = () => {
-    svg.attr('transform', d3.event.transform);
-};
+const g = svg.append('g')
+    .attr('class', 'graph');
+
+const zoomed = () => g.attr('transform', d3.event.transform);
 
 const zoom = d3.zoom()
     .scaleExtent([0.1, 20])
     .on('zoom', zoomed);
 
-svg.call(zoom).on('dblclick.zoom', null);
-
 const reset = () => {
     active = d3.select(null);
-    svg.transition().duration(750).call(zoom.transform, d3.zoomIdentity);
+
+    return svg
+        .transition()
+        .duration(750)
+        .call(zoom.transform, d3.zoomIdentity);
 };
+
+svg.insert('rect', ':first-child')
+    .attr('class', 'background')
+    .attr('width', width)
+    .attr('height', height)
+    .on('click', reset);
+
+svg.call(zoom).on('dblclick.zoom', null);
 
 d3.select('body').on('keydown', () => {
     const key = d3.event.key || d3.event.keyCode;
@@ -54,8 +64,6 @@ function runApplication(ftree) {
         linkData: ftree.data.links,
     });
 
-    console.log(tree);
-
     const filtering = {
         lumpFactor: 0.2,
         pruneFactor: 0.2,
@@ -72,8 +80,6 @@ function runApplication(ftree) {
     };
 
     const renderBranch = () => {
-        svg.selectAll('*').remove();
-
         const branch = tree.getNode(path.path).clone();
 
         filterNodes(branch, filtering.lumpFactor);
@@ -82,6 +88,8 @@ function runApplication(ftree) {
 
         const nodes = branch.children;
         const links = branch.links;
+
+        g.selectAll('*').remove();
 
         const style = makeGraphStyle({ nodes, links });
 
@@ -102,16 +110,6 @@ function runApplication(ftree) {
 
         const dragHandler = makeDragHandler(simulation);
 
-        const link = svg.append('g')
-            .attr('class', 'links')
-            .selectAll('.link')
-            .data(links)
-            .enter()
-            .append('path')
-            .attr('class', 'link')
-            .style('fill', style.link.fillColor)
-            .style('opacity', style.link.opacity);
-
         function clicked(d) {
             if (active.node() === this) return reset();
             active = d3.select(this);
@@ -128,7 +126,17 @@ function runApplication(ftree) {
                 .call(zoom.transform, d3.zoomIdentity.translate(...translate).scale(scale));
         }
 
-        const node = svg.append('g')
+        const link = g.append('g')
+            .attr('class', 'links')
+            .selectAll('.link')
+            .data(links)
+            .enter()
+            .append('path')
+            .attr('class', 'link')
+            .style('fill', style.link.fillColor)
+            .style('opacity', style.link.opacity);
+
+        const node = g.append('g')
             .attr('class', 'nodes')
             .selectAll('.node')
             .data(nodes)
