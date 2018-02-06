@@ -7,6 +7,8 @@ import { filterNodes, pruneLinks, filterDisconnectedNodes } from 'filter';
 import { halfLink, undirectedLink } from 'network-rendering';
 import { makeGraphStyle, makeDragHandler, makeTickCallback } from 'render';
 
+const ellipsis = text => (text.length > 13 ? `${text.substr(0, 10)}...` : text);
+
 const width = window.innerWidth;
 const height = window.innerHeight;
 
@@ -145,7 +147,7 @@ function runApplication(ftree) {
             .style('stroke-width', style.node.borderWidth);
 
         const text = node.append('text')
-            .text(n => n.name || n.id)
+            .text(n => (n.name ? ellipsis(n.name) : n.id))
             .attr('text-anchor', 'middle')
             .attr('dy', '0.35em')
             .style('font-size', style.text.fontSize);
