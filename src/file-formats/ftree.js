@@ -183,7 +183,7 @@ export function parseFTree(rows) {
  * @param {Object[]} linkData
  * @return {Tree}
  */
-export function createTree(treeData, linkData) {
+export function createTree({ treeData, linkData }) {
     const tree = new Tree();
 
     linkData.forEach((node) => {
