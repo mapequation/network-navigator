@@ -2,7 +2,7 @@ import * as d3 from 'd3';
 import { halfLink, undirectedLink } from 'network-rendering';
 import makeGraphStyle from 'graph-style';
 
-export function makeDragHandler(simulation) {
+function makeDragHandler(simulation) {
     const dragStarted = (node) => {
         if (!d3.event.active) simulation.alphaTarget(0.3).restart();
         node.fx = node.x;
@@ -26,11 +26,8 @@ export function makeDragHandler(simulation) {
         .on('end', dragEnded);
 }
 
-export function makeTickCallback({
-    circle,
-    text,
-    link,
-    linkSvgPath,
+function makeTickCallback({
+    circle, text, link, linkSvgPath,
 }) {
     return () => {
         circle
@@ -44,25 +41,58 @@ export function makeTickCallback({
     };
 }
 
+const ellipsis = (text, len = 13) => (text.length > len ? `${text.substr(0, len - 3)}...` : text);
 
-/**
-  * Render all direct children to a node.
-  *
- * @param {Node[]} nodes
- * @param {Object[]} links
- * @param {Object} params
- */
-export default function render(
-    nodes,
-    links,
-    {
-        charge = 500,
-        linkDistance = 100,
-        linkType = 'directed',
-    } = {},
-) {
-    const width = window.innerWidth;
-    const height = window.innerHeight;
+const width = window.innerWidth;
+const height = window.innerHeight;
+
+let active = d3.select(null);
+
+const svg = d3.select('body').append('svg')
+    .attr('width', width)
+    .attr('height', height);
+
+const g = svg.append('g')
+    .attr('class', 'graph');
+
+const zoom = d3.zoom()
+    .scaleExtent([0.1, 20])
+    .on('zoom', () => g.attr('transform', d3.event.transform));
+
+const reset = () => {
+    active = d3.select(null);
+
+    return svg
+        .transition()
+        .duration(750)
+        .call(zoom.transform, d3.zoomIdentity);
+};
+
+svg.insert('rect', ':first-child')
+    .attr('class', 'background')
+    .attr('width', width)
+    .attr('height', height)
+    .on('click', reset);
+
+svg.call(zoom).on('dblclick.zoom', null);
+
+d3.select('body').on('keydown', () => {
+    const key = d3.event.key || d3.event.keyCode;
+    switch (key) {
+    case 'Esc':
+    case 'Escape':
+    case 27:
+        reset();
+        break;
+    default:
+        break;
+    }
+});
+
+export default function render({
+    nodes, links, charge, linkDistance, linkType,
+}) {
+    g.selectAll('*').remove();
 
     const style = makeGraphStyle({ nodes, links });
 
@@ -83,31 +113,40 @@ export default function render(
 
     const dragHandler = makeDragHandler(simulation);
 
-    const svg = d3.select('svg')
-        .attr('width', width)
-        .attr('height', height)
-        .call(d3.zoom().on('zoom', () => svg.attr('transform', d3.event.transform)))
-        .append('g');
+    function nodeClicked(d) {
+        if (active.node() === this) return reset();
+        active = d3.select(this);
 
-    const link = svg.append('g')
-        .attr('class', 'links')
-        .selectAll('line')
+        const { x, y } = d;
+        const r = style.node.radius(d);
+        const dx = 2 * r;
+        const scale = Math.max(1, Math.min(20, 0.9 / (dx / width)));
+        const translate = [width / 2 - scale * x, height / 2 - scale * y];
+
+        return svg
+            .transition()
+            .duration(750)
+            .call(zoom.transform, d3.zoomIdentity.translate(...translate).scale(scale));
+    }
+
+    const link = g.append('g')
+        .attr('id', 'links')
+        .selectAll('.link')
         .data(links)
         .enter()
         .append('path')
         .attr('class', 'link')
         .style('fill', style.link.fillColor)
-        .style('opacity', style.link.opacity)
-        .on('click', d => console.log(d));
+        .style('opacity', style.link.opacity);
 
-    const node = svg.append('g')
-        .attr('class', 'nodes')
+    const node = g.append('g')
+        .attr('id', 'nodes')
         .selectAll('.node')
         .data(nodes)
         .enter()
         .append('g')
         .attr('class', 'node')
-        .on('click', d => console.log(d))
+        .on('dblclick', nodeClicked)
         .call(dragHandler);
 
     const circle = node.append('circle')
@@ -117,11 +156,14 @@ export default function render(
         .style('stroke-width', style.node.borderWidth);
 
     const text = node.append('text')
-        .text(n => n.name || n.id)
+        .text(n => (n.name ? ellipsis(n.name) : n.id))
         .attr('text-anchor', 'middle')
-        .attr('dy', '0.35em');
+        .attr('dy', '0.35em')
+        .style('font-size', style.text.fontSize);
 
-    const ticked = makeTickCallback({ circle, text, link }, linkSvgPath)
+    const ticked = makeTickCallback({
+        circle, text, link, linkSvgPath,
+    });
 
     simulation
         .nodes(nodes)

@@ -6,3 +6,7 @@ body {
 .background {
     fill: none;
 }
+
+svg text {
+    pointer-events: none;
+}

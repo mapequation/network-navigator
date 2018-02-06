@@ -2,61 +2,14 @@ import * as d3 from 'd3';
 import dat from 'dat.gui';
 import parseFile from 'parse';
 import { parseFTree, createTree } from 'file-formats/ftree';
-import { filterNodes, pruneLinks, filterDisconnectedNodes } from 'filter';
-
-import { halfLink, undirectedLink } from 'network-rendering';
-import { makeDragHandler, makeTickCallback } from 'render';
-import makeGraphStyle from 'graph-style';
-
-const ellipsis = (text, len = 13) => (text.length > len ? `${text.substr(0, len - 3)}...` : text);
-
-const width = window.innerWidth;
-const height = window.innerHeight;
-
-let active = d3.select(null);
-
-const svg = d3.select('body').append('svg')
-    .attr('width', width)
-    .attr('height', height);
-
-const g = svg.append('g')
-    .attr('class', 'graph');
-
-const zoomed = () => g.attr('transform', d3.event.transform);
-
-const zoom = d3.zoom()
-    .scaleExtent([0.1, 20])
-    .on('zoom', zoomed);
-
-const reset = () => {
-    active = d3.select(null);
-
-    return svg
-        .transition()
-        .duration(750)
-        .call(zoom.transform, d3.zoomIdentity);
-};
-
-svg.insert('rect', ':first-child')
-    .attr('class', 'background')
-    .attr('width', width)
-    .attr('height', height)
-    .on('click', reset);
-
-svg.call(zoom).on('dblclick.zoom', null);
-
-d3.select('body').on('keydown', () => {
-    const key = d3.event.key || d3.event.keyCode;
-    switch (key) {
-    case 'Esc':
-    case 'Escape':
-    case 27:
-        reset();
-        break;
-    default:
-        break;
-    }
-});
+import render from 'render';
+import {
+    autoFilter,
+    filterNodes,
+    filterLinks,
+    filterDisconnectedNodes,
+    filterDanglingLinks,
+} from 'filter';
 
 function runApplication(ftree) {
     const tree = createTree({
@@ -65,8 +18,8 @@ function runApplication(ftree) {
     });
 
     const filtering = {
-        lumpFactor: 0.2,
-        pruneFactor: 0.2,
+        nodeFlow: 0.2,
+        linkFlow: 0.8,
     };
 
     const path = {
@@ -74,101 +27,33 @@ function runApplication(ftree) {
     };
 
     const renderParams = {
-        linkDistance: 100,
+        linkDistance: 200,
         charge: 500,
         linkType: ftree.meta.linkType,
     };
 
+    let branch = tree.getNode(path.path).clone();
+
     const renderBranch = () => {
-        const branch = tree.getNode(path.path).clone();
-
-        filterNodes(branch, filtering.lumpFactor);
-        pruneLinks(branch.links, filtering.pruneFactor);
-        filterDisconnectedNodes(branch);
-
-        const nodes = branch.children;
-        const links = branch.links;
-
-        g.selectAll('*').remove();
-
-        const style = makeGraphStyle({ nodes, links });
-
-        const linkSvgPath = (ftree.meta.linkType === 'directed' ? halfLink : undirectedLink)()
-            .nodeRadius(style.node.radius)
-            .width(style.link.width);
-
-        const simulation = d3.forceSimulation()
-            .force('collide', d3.forceCollide(20)
-                .radius(style.node.radius))
-            .force('link', d3.forceLink()
-                .distance(renderParams.linkDistance)
-                .id(d => d.id))
-            .force('charge', d3.forceManyBody()
-                .strength(-renderParams.charge)
-                .distanceMax(400))
-            .force('center', d3.forceCenter(width / 2, height / 2));
-
-        const dragHandler = makeDragHandler(simulation);
-
-        function clicked(d) {
-            if (active.node() === this) return reset();
-            active = d3.select(this);
-
-            const { x, y } = d;
-            const r = style.node.radius(d);
-            const dx = 2 * r;
-            const scale = Math.max(1, Math.min(20, 0.9 / (dx / width)));
-            const translate = [width / 2 - scale * x, height / 2 - scale * y];
-
-            return svg
-                .transition()
-                .duration(750)
-                .call(zoom.transform, d3.zoomIdentity.translate(...translate).scale(scale));
-        }
-
-        const link = g.append('g')
-            .attr('class', 'links')
-            .selectAll('.link')
-            .data(links)
-            .enter()
-            .append('path')
-            .attr('class', 'link')
-            .style('fill', style.link.fillColor)
-            .style('opacity', style.link.opacity);
-
-        const node = g.append('g')
-            .attr('class', 'nodes')
-            .selectAll('.node')
-            .data(nodes)
-            .enter()
-            .append('g')
-            .attr('class', 'node')
-            .on('dblclick', clicked)
-            .call(dragHandler);
-
-        const circle = node.append('circle')
-            .attr('r', style.node.radius)
-            .style('fill', style.node.fillColor)
-            .style('stroke', style.node.borderColor)
-            .style('stroke-width', style.node.borderWidth);
-
-        const text = node.append('text')
-            .text(n => (n.name ? ellipsis(n.name) : n.id))
-            .attr('text-anchor', 'middle')
-            .attr('dy', '0.35em')
-            .style('font-size', style.text.fontSize);
-
-        const ticked = makeTickCallback({
-            circle, text, link, linkSvgPath,
+        render({
+            nodes: branch.children,
+            links: branch.links,
+            charge: renderParams.charge,
+            linkDistance: renderParams.linkDistance,
+            linkType: renderParams.linkType,
         });
+    };
 
-        simulation
-            .nodes(nodes)
-            .on('tick', ticked);
+    const filterRender = () => {
+        branch = tree.getNode(path.path).clone();
 
-        simulation
-            .force('link')
-            .links(links);
+        filterNodes(branch, filtering.nodeFlow);
+        filterLinks(branch.links, filtering.linkFlow);
+
+        filterDisconnectedNodes(branch);
+        filterDanglingLinks(branch);
+
+        renderBranch();
     };
 
     const gui = new dat.GUI();
@@ -179,20 +64,34 @@ function runApplication(ftree) {
     renderFolder.open();
 
     const filteringFolder = gui.addFolder('Filtering');
-    filteringFolder.add(filtering, 'lumpFactor', 0, 1).step(0.01).onFinishChange(renderBranch);
-    filteringFolder.add(filtering, 'pruneFactor', 0, 1).step(0.01).onFinishChange(renderBranch);
+    filteringFolder.add(filtering, 'nodeFlow', 0, 1).step(0.01).onFinishChange(filterRender).listen();
+    filteringFolder.add(filtering, 'linkFlow', 0, 1).step(0.01).onFinishChange(filterRender).listen();
     filteringFolder.open();
 
     gui.add(path, 'path').onFinishChange(() => {
-        reset();
+        branch = tree.getNode(path.path).clone();
+
+        const { nodeFlow } = autoFilter(branch, 20);
+        filtering.nodeFlow = nodeFlow;
+
+        filterLinks(branch.links, filtering.linkFlow);
+        filterDisconnectedNodes(branch);
+
         renderBranch();
     });
+
+    const { nodeFlow } = autoFilter(branch, 20);
+    filtering.nodeFlow = nodeFlow;
+
+    filterLinks(branch.links, filtering.linkFlow);
+    filterDisconnectedNodes(branch);
 
     renderBranch();
 }
 
 fetch('data/stockholm.ftree')
 //fetch('data/cities2011_3grams_directed.ftree')
+//fetch('data/science2001.ftree')
     .then(res => res.text())
     .then(parseFile)
     .then(d => parseFTree(d.data))

@@ -36,7 +36,7 @@ export class Node {
 
     set children(children) {
         this._children.clear();
-        children.forEach(this.addChild);
+        children.forEach(child => this.addChild(child));
     }
 
     equal(other) {
