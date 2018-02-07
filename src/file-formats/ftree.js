@@ -16,9 +16,11 @@ import { Tree } from '../tree';
  * @param {string} pathStr A string in format "1:1:2:1"
  * @return {number[]}
  */
-function treePathToArray(pathStr) {
-    const arr = pathStr.toString().split(':');
-    return arr.map(Number);
+export function treePathToArray(pathStr) {
+    return pathStr
+        .toString()
+        .split(':')
+        .map(Number);
 }
 
 /**
@@ -28,8 +30,8 @@ function treePathToArray(pathStr) {
  * @param {*} path
  * @return {boolean}
  */
-function isTreePath(path) {
-    return path.toString().match(/^(\d+:)*\d+$/);
+export function isTreePath(path) {
+    return /^(\d+:)*\d+$/.test(path.toString());
 }
 
 /**
