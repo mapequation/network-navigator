@@ -8,7 +8,7 @@
   "main": "src/app.js",
   "scripts": {
     "build": "webpack",
-    "test": "echo No test specified && exit 1"
+    "test": "mocha --require babel-register --require babel-polyfill --watch"
   },
   "dependencies": {
     "d3": "^4.12.2",
@@ -18,6 +18,11 @@
     "promise-file-reader": "^1.0.0"
   },
   "devDependencies": {
+    "babel-polyfill": "^6.26.0",
+    "babel-preset-env": "^1.6.1",
+    "babel-register": "^6.26.0",
+    "chai": "^4.1.2",
+    "mocha": "^5.0.0",
     "source-map-loader": "^0.2.3",
     "webpack": "latest"
   }
