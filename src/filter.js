@@ -51,13 +51,14 @@ export function connectedLinks({ nodes, links }) {
 /**
  * Return the num largest objects sorted by flow,
  * or all objects if num is smaller or equal than the number of objects.
+ * As a side effect, input objects are sorted in place.
  *
  * @param {Object[]} objects the objects
  * @param {Number} amount the amount to take
  * @return {Object[]} the num largest by flow
  */
 export function takeLargest(objects, amount) {
-    if (objects.length <= amount) {
+    if (objects.length < amount) {
         return objects;
     }
 
@@ -69,6 +70,7 @@ export function takeLargest(objects, amount) {
 /**
  * Return accumulated objects, sorted by flow, such that the sum
  * of their flow is at least flowFactor times the total flow.
+ * As a side effect, input objects are sorted in place.
  *
  * @param {Object[]} objects the objects
  * @param {Number} flowFactor between 0 and 1
@@ -80,9 +82,14 @@ export function accumulateLargest(objects, flowFactor) {
     const targetFlow = flowFactor * flowTotal;
 
     const largest = [];
+    let accumulated = 0;
+    let i = 0;
 
-    while (sumFlow(largest) < targetFlow && sorted.length) {
-        largest.push(sorted.shift());
+    while (accumulated < targetFlow && i < sorted.length) {
+        const node = sorted[i];
+        largest.push(node);
+        accumulated += node.flow;
+        i++;
     }
 
     return largest;
