@@ -77,8 +77,8 @@ function runApplication(ftree) {
     const gui = new dat.GUI();
 
     const renderFolder = gui.addFolder('Rendering / simulation');
-    renderFolder.add(renderParams, 'linkDistance', 50, 500).step(25).onFinishChange(actions.renderBranch);
-    renderFolder.add(renderParams, 'charge', 0, 2000).step(100).onFinishChange(actions.renderBranch);
+    renderFolder.add(renderParams, 'linkDistance', 50, 500).step(25).onFinishChange(() => actions.renderBranch());
+    renderFolder.add(renderParams, 'charge', 0, 2000).step(100).onFinishChange(() => actions.renderBranch());
     renderFolder.open();
 
     const filteringFolder = gui.addFolder('Filtering');
