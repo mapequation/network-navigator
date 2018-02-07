@@ -108,14 +108,14 @@ export function parseFTree(rows) {
 
         if (row.length !== 4) {
             result.errors.push(`Malformed ftree data: expected 4 fields, found ${row.length}.`);
-            break;
+            continue;
         }
 
         tree.push({
             path: isTreePath(row[0]) ? treePathToArray(row[0]) : row[0],
-            flow: row[1],
+            flow: +row[1],
             name: row[2],
-            node: row[3],
+            node: +row[3],
         });
     }
 
@@ -143,14 +143,14 @@ export function parseFTree(rows) {
         if (row[0].toString().match(/^\*Links/i)) {
             if (row.length !== 5) {
                 result.errors.push(`Malformed ftree link header: expected 5 fields, found ${row.length}.`);
-                break;
+                continue;
             }
 
             link = {
                 path: isTreePath(row[1]) ? treePathToArray(row[1]) : row[1],
-                exitFlow: row[2],
-                numEdges: row[3],
-                numChildren: row[4],
+                exitFlow: +row[2],
+                numEdges: +row[3],
+                numChildren: +row[4],
                 links: [],
             };
 
@@ -160,13 +160,13 @@ export function parseFTree(rows) {
         } else {
             if (row.length < 2) {
                 result.errors.push(`Malformed ftree link data: expected at least 2 fields, found ${row.length}.`);
-                break;
+                continue;
             }
 
             link.links.push({
-                source: row[0],
-                target: row[1],
-                flow: row[2] || DEFAULT_FLOW,
+                source: +row[0],
+                target: +row[1],
+                flow: +row[2] || DEFAULT_FLOW,
             });
         }
     }
