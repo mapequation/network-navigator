@@ -3,18 +3,19 @@ import { expect } from 'chai';
 import * as filter from '../src/filter';
 
 describe('byFlow', function () {
-    it('should should return greater than 0 when obj1 is smaller than obj2', function () {
+    it('should return greater than 0 when obj1 has less flow than obj2', function () {
         const obj1 = { flow: 0 };
         const obj2 = { flow: 1 };
         expect(filter.byFlow(obj1, obj2)).to.be.greaterThan(0);
     });
 
-    it('should should return 0 when comparing the same object', function () {
-        const obj1 = { flow: 0 };
-        expect(filter.byFlow(obj1, obj1)).to.be.equal(0);
+    it('should return 0 when comparing objects with equal flow', function () {
+        const obj1 = { flow: 1 };
+        const obj2 = { flow: 1 };
+        expect(filter.byFlow(obj1, obj2)).to.be.equal(0);
     });
 
-    it('should should return less than 0 when obj1 is greater than obj2', function () {
+    it('should return less than 0 when obj1 has more flow than obj2', function () {
         const obj1 = { flow: 1 };
         const obj2 = { flow: 0 };
         expect(filter.byFlow(obj1, obj2)).to.be.lessThan(0);
@@ -57,7 +58,10 @@ describe('connectedNodes', function () {
         const links = [
             { source: 1, target: 2 },
         ];
-        expect(filter.connectedNodes({ nodes, links })).to.not.deep.include(nodes[2]);
+        expect(filter.connectedNodes({ nodes, links })).to.deep.equal([
+            { id: 1 },
+            { id: 2 },
+        ]);
     });
 });
 
@@ -82,12 +86,14 @@ describe('connectedLinks', function () {
             { source: 1, target: 2 },
             { source: 1, target: 3 },
         ];
-        expect(filter.connectedLinks({ nodes, links })).to.not.deep.include(links[1]);
+        expect(filter.connectedLinks({ nodes, links })).to.deep.equal([
+            { source: 1, target: 2 },
+        ]);
     });
 });
 
 describe('takeLargest', function () {
-    it('should return all objects if there are fewer objects than amount', function() {
+    it('should return all objects if there are fewer objects than "amount"', function() {
         const objs = [1, 2];
         expect(filter.takeLargest(objs, 3)).to.deep.equal(objs);
     });
@@ -170,7 +176,7 @@ describe('accumulateLargest', function () {
         ]);
     });
 
-    it('should not mutate the input objects', function () {
+    it('should not delete from input objects', function () {
         const objs = [
             { flow: 1 },
         ];

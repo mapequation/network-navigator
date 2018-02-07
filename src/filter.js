@@ -1,5 +1,5 @@
 /**
- * Comparator for sorting objects by flow.
+ * Comparator for sorting objects by flow (descending).
  *
  * @param {Object} obj1
  * @param {Object} obj2
