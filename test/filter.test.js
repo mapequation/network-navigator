@@ -21,3 +21,17 @@ describe('byFlow', function () {
     });
 });
 
+describe('sumFlow', function () {
+    it('should sum the flow', function () {
+        const objs = [
+            { flow: 1 },
+            { flow: 2 },
+            { flow: 3 },
+        ];
+        expect(filter.sumFlow(objs)).to.equal(6);
+    });
+
+    it('should return 0 for empty array', function () {
+        expect(filter.sumFlow([])).to.equal(0);
+    })
+});
