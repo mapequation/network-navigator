@@ -57,7 +57,7 @@ const g = svg.append('g')
     .attr('class', 'graph');
 
 const zoom = d3.zoom()
-    .scaleExtent([0.1, 20])
+    .scaleExtent([0.1, 50])
     .on('zoom', () => g.attr('transform', d3.event.transform));
 
 const simulation = d3.forceSimulation()
@@ -132,7 +132,7 @@ export default function render({
         const { x, y } = d;
         const r = style.node.radius(d);
         const dx = 2 * r;
-        const scale = Math.max(1, Math.min(20, 0.9 / (dx / width)));
+        const scale = Math.max(1, Math.min(50, 2 / (dx / width)));
         const translate = [width / 2 - scale * x, height / 2 - scale * y];
 
         return svg
