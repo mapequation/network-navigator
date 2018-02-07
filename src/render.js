@@ -60,14 +60,22 @@ const zoom = d3.zoom()
     .scaleExtent([0.1, 20])
     .on('zoom', () => g.attr('transform', d3.event.transform));
 
-const reset = () => {
+const simulation = d3.forceSimulation()
+    .alphaDecay(0.06)
+    .stop();
+
+const dragHandler = makeDragHandler(simulation);
+
+function reset() {
+    active.call(dragHandler);
     active = d3.select(null);
+    simulation.restart();
 
     return svg
         .transition()
         .duration(750)
         .call(zoom.transform, d3.zoomIdentity);
-};
+}
 
 svg.insert('rect', ':first-child')
     .attr('class', 'background')
@@ -75,7 +83,8 @@ svg.insert('rect', ':first-child')
     .attr('height', height)
     .on('click', reset);
 
-svg.call(zoom).on('dblclick.zoom', null);
+svg.call(zoom)
+    .on('dblclick.zoom', null);
 
 d3.select('body').on('keydown', () => {
     const key = d3.event.key || d3.event.keyCode;
@@ -101,7 +110,7 @@ export default function render({
         .nodeRadius(style.node.radius)
         .width(style.link.width);
 
-    const simulation = d3.forceSimulation()
+    simulation
         .force('collide', d3.forceCollide(20)
             .radius(style.node.radius))
         .force('link', d3.forceLink()
@@ -110,13 +119,15 @@ export default function render({
         .force('charge', d3.forceManyBody()
             .strength(-charge)
             .distanceMax(400))
-        .force('center', d3.forceCenter(width / 2, height / 2));
-
-    const dragHandler = makeDragHandler(simulation);
+        .force('center', d3.forceCenter(width / 2, height / 2))
+        .alpha(1)
+        .restart();
 
     function nodeClicked(d) {
         if (active.node() === this) return reset();
         active = d3.select(this);
+        active.on('.drag', null);
+        simulation.stop();
 
         const { x, y } = d;
         const r = style.node.radius(d);
