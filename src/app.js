@@ -60,7 +60,10 @@ function runApplication(ftree) {
         },
 
         renderBranch() {
+            const parent = d3.select('#id-root');
+
             render({
+                parent,
                 nodes: this.branch.nodes,
                 links: this.branch.links,
                 charge: renderParams.charge,

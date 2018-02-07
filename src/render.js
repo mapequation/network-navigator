@@ -53,6 +53,7 @@ const svg = d3.select('body').append('svg')
     .attr('height', height);
 
 const g = svg.append('g')
+    .attr('id', 'id-root')
     .attr('class', 'graph');
 
 const zoom = d3.zoom()
@@ -90,9 +91,9 @@ d3.select('body').on('keydown', () => {
 });
 
 export default function render({
-    nodes, links, charge, linkDistance, linkType,
+    parent, nodes, links, charge, linkDistance, linkType,
 }) {
-    g.selectAll('*').remove();
+    parent.selectAll('*').remove();
 
     const style = makeGraphStyle({ nodes, links });
 
@@ -129,8 +130,8 @@ export default function render({
             .call(zoom.transform, d3.zoomIdentity.translate(...translate).scale(scale));
     }
 
-    const link = g.append('g')
-        .attr('id', 'links')
+    const link = parent.append('g')
+        .attr('class', 'links')
         .selectAll('.link')
         .data(links)
         .enter()
@@ -139,12 +140,13 @@ export default function render({
         .style('fill', style.link.fillColor)
         .style('opacity', style.link.opacity);
 
-    const node = g.append('g')
-        .attr('id', 'nodes')
+    const node = parent.append('g')
+        .attr('class', 'nodes')
         .selectAll('.node')
         .data(nodes)
         .enter()
         .append('g')
+        .attr('id', n => `id-${n.path}`)
         .attr('class', 'node')
         .on('dblclick', nodeClicked)
         .call(dragHandler);
