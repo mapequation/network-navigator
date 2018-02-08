@@ -1,12 +1,12 @@
-import Subject from '../src/subject-observer';
+import Observable from '../src/observable';
 import { expect } from 'chai';
 
-describe('Subject', function () {
+describe('Observable', function () {
     let subject;
     const observer = { update(message) { } }
 
     beforeEach(function () {
-        subject = new Subject();
+        subject = new Observable();
     })
 
     it('should accept observers', function () {
