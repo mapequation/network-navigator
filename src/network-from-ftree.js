@@ -22,6 +22,7 @@ export default function networkFromFTree({ treeData, linkData }) {
     const root = new Network('root');
     root.path = 'root';
 
+    // Create the tree structure
     linkData.forEach((node) => {
         // Get root node links
         if (node.path === 'root') {
@@ -38,6 +39,7 @@ export default function networkFromFTree({ treeData, linkData }) {
         }
     });
 
+    // Add the actual nodes
     treeData.forEach((node) => {
         const childNode = node.path
             .reduce((pathNode, childId) => {

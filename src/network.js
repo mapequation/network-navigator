@@ -22,21 +22,44 @@ export default class Network {
         this.links = [];
     }
 
+    /**
+     * Construct a new node
+     *
+     * @param {number|string} id the id that the newly constructed node should have
+     * @return {Network} the constructed node
+     */
     createNode(id) {
         const node = new Network(id);
         this.addNode(node);
         return node;
     }
 
+    /**
+     * Add a node to this network
+     *
+     * @param {Network} node the node to add
+     */
     addNode(node) {
         node.parent = this;
         this.children.set(node.id, node);
     }
 
+    /**
+     * Get the node with a certain id
+     *
+     * @param {number|string} id the id of the node
+     * @return {?Network} the node
+     */
     getNode(id) {
         return this.children.get(id);
     }
 
+    /**
+     * Recursively search network for the child node that matches the path.
+     *
+     * @param {string} path the path formatted like "1:2:3"
+     * @return {?Network} the node
+     */
     getNodeByPath(path) {
         if (path === this.path) {
             return this;
@@ -48,21 +71,40 @@ export default class Network {
             .reduce((pathNode, childId) => (pathNode ? pathNode.getNode(childId) : null), this);
     }
 
+    /**
+     * Delete a node from the network.
+     *
+     * @param {number|string} node the node id or node reference to delete
+     */
     deleteNode(node) {
         const id = node.id || node;
         this.children.delete(id);
     }
 
+    /**
+     * Get an array of all nodes.
+     *
+     * @return {Network[]} the nodes
+     */
     get nodes() {
         return Array.from(this.children.values());
     }
 
+    /**
+     * Replace all nodes in this network.
+     *
+     * @param {Network[]} nodes the nodes
+     */
     set nodes(nodes) {
         this.children.clear();
         nodes.forEach(child => this.addNode(child));
     }
 
-
+    /**
+     * Deep clone this Network
+     *
+     * @return {Network} a clone of this Network
+     */
     clone() {
         const clone = new Network(this.id);
 
