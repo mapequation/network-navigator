@@ -1,9 +1,9 @@
 import * as d3 from 'd3';
 import dat from 'dat.gui';
 import parseFile from 'parse';
-import parseFTree from 'file-formats/ftree';
+import parseFTree, { treePathToArray } from 'file-formats/ftree';
 import networkFromFTree from 'network-from-ftree';
-import makeRenderFunction from 'render';
+import { makeRenderFunction, RenderNotifier } from 'render';
 import {
     sumFlow,
     takeLargest,
@@ -12,7 +12,6 @@ import {
     connectedLinks,
 } from 'filter';
 
-const render = makeRenderFunction();
 
 function runApplication(ftree) {
     const tree = networkFromFTree({
@@ -34,6 +33,30 @@ function runApplication(ftree) {
         charge: 500,
         linkType: ftree.meta.linkType,
     };
+
+    const renderNotifier = new RenderNotifier();
+
+    renderNotifier.attach({
+        update: (node) => {
+            if (node === 'parent' && path.path === 'root')
+                return;
+
+            if (node === 'parent') {
+                const p = treePathToArray(path.path);
+                if (p.length === 1) {
+                    path.path = 'root';
+                } else {
+                    p.pop()
+                    path.path = p.join(':');
+                }
+            } else {
+                path.path = node.path;
+            }
+            actions.clone().filterNewPath().renderBranch();
+        }
+    });
+
+    const render = makeRenderFunction(renderNotifier);
 
     const actions = {
         branch: tree.getNodeByPath(path.path).clone(),
@@ -86,7 +109,7 @@ function runApplication(ftree) {
     filteringFolder.add(filtering, 'linkFlow', 0, 1).step(0.01).onFinishChange(() => actions.clone().filterGUI().renderBranch()).listen();
     filteringFolder.open();
 
-    gui.add(path, 'path').onFinishChange(() => actions.clone().filterNewPath().renderBranch());
+    gui.add(path, 'path').onFinishChange(() => actions.clone().filterNewPath().renderBranch()).listen();
 
     actions.filterNewPath().renderBranch();
 }

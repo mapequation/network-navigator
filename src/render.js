@@ -10,7 +10,9 @@
 import * as d3 from 'd3';
 import { halfLink, undirectedLink } from 'network-rendering';
 import makeGraphStyle from 'graph-style';
+import Subject from 'subject';
 
+export class RenderNotifier extends Subject {}
 
 function makeDragHandler(simulation) {
     const dragStarted = (node) => {
@@ -42,9 +44,10 @@ const ellipsis = (text, len = 13) => (text.length > len ? `${text.substr(0, len 
  * Factory function to set up svg canvas and return
  * a render function to render a network to this canvas.
  *
+ * @param {RenderNotifier} notifier network layer changes are broadcasted here
  * @return {makeRenderFunction~render} the render function
  */
-export default function makeRenderFunction() {
+export function makeRenderFunction(notifier) {
     const width = window.innerWidth;
     const height = window.innerHeight;
 
@@ -67,14 +70,14 @@ export default function makeRenderFunction() {
 
     const dragHandler = makeDragHandler(simulation);
 
-    function reset() {
+    function reset(duration = 750) {
         active.call(dragHandler);
         active = d3.select(null);
         simulation.restart();
 
         return svg
             .transition()
-            .duration(750)
+            .duration(duration)
             .call(zoom.transform, d3.zoomIdentity);
     }
 
@@ -82,6 +85,10 @@ export default function makeRenderFunction() {
         // Use function keyword to get correct 'this'
         return function nodeClicked(node) {
             if (active.node() === this) return reset();
+
+            // Do nothing if node has no child nodes
+            if (!node.nodes.length) return;
+
             active = d3.select(this);
             active.on('.drag', null);
             simulation.stop();
@@ -92,10 +99,12 @@ export default function makeRenderFunction() {
             const scale = Math.max(1, Math.min(50, 2 / (dx / width)));
             const translate = [width / 2 - scale * x, height / 2 - scale * y];
 
-            return svg
-                .transition()
+            setTimeout(() => notifier.notify(node), 750);
+
+            const zoomIn = svg.transition()
                 .duration(750)
-                .call(zoom.transform, d3.zoomIdentity.translate(...translate).scale(scale));
+                .on('end', () => reset(0))
+                .call(zoom.transform, d3.zoomIdentity.translate(...translate).scale(scale))
         }
     }
 
@@ -114,7 +123,7 @@ export default function makeRenderFunction() {
         case 'Esc':
         case 'Escape':
         case 27:
-            reset();
+            notifier.notify('parent');
             break;
         default:
             break;
