@@ -2,7 +2,7 @@ import * as d3 from 'd3';
 import dat from 'dat.gui';
 import parseFile from 'parse';
 import parseFTree from 'file-formats/ftree';
-import { createTree } from 'tree';
+import networkFromFTree from 'network-from-ftree';
 import makeRenderFunction from 'render';
 import {
     sumFlow,
@@ -15,7 +15,7 @@ import {
 const render = makeRenderFunction();
 
 function runApplication(ftree) {
-    const tree = createTree({
+    const tree = networkFromFTree({
         treeData: ftree.data.tree,
         linkData: ftree.data.links,
     });
@@ -36,10 +36,10 @@ function runApplication(ftree) {
     };
 
     const actions = {
-        branch: tree.getNode(path.path).clone(),
+        branch: tree.getNodeByPath(path.path).clone(),
 
         clone() {
-            this.branch = tree.getNode(path.path).clone();
+            this.branch = tree.getNodeByPath(path.path).clone();
             return this;
         },
 
