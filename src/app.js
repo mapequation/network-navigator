@@ -14,58 +14,31 @@ import {
 
 
 function runApplication(ftree) {
-    const tree = networkFromFTree(ftree.data);
+    const network = networkFromFTree(ftree.data);
 
-    const filtering = {
+    const state = {
         nodeFlow: 0.2,
         linkFlow: 0.8,
-    };
-
-    const path = {
         path: 'root',
-    };
-
-    const renderParams = {
         linkDistance: 200,
         charge: 500,
         linkType: ftree.meta.linkType,
     };
 
     const renderNotifier = new RenderNotifier();
-
-    renderNotifier.attach({
-        update: (node) => {
-            if (node === 'parent' && path.path === 'root')
-                return;
-
-            if (node === 'parent') {
-                const p = treePathToArray(path.path);
-                if (p.length === 1) {
-                    path.path = 'root';
-                } else {
-                    p.pop()
-                    path.path = p.join(':');
-                }
-            } else {
-                path.path = node.path;
-            }
-            actions.clone().filterNewPath().renderBranch();
-        }
-    });
-
     const render = makeRenderFunction(renderNotifier);
 
     const actions = {
-        branch: tree.getNodeByPath(path.path).clone(),
+        branch: network.getNodeByPath(state.path).clone(),
 
         clone() {
-            this.branch = tree.getNodeByPath(path.path).clone();
+            this.branch = network.getNodeByPath(state.path).clone();
             return this;
         },
 
         filterGUI() {
-            this.branch.nodes = accumulateLargest(this.branch.nodes, filtering.nodeFlow);
-            this.branch.links = accumulateLargest(this.branch.links, filtering.linkFlow);
+            this.branch.nodes = accumulateLargest(this.branch.nodes, state.nodeFlow);
+            this.branch.links = accumulateLargest(this.branch.links, state.linkFlow);
             this.branch.links = connectedLinks(this.branch);
             this.branch.nodes = connectedNodes(this.branch);
             return this;
@@ -74,9 +47,9 @@ function runApplication(ftree) {
         filterNewPath() {
             const flowBefore = sumFlow(this.branch.nodes);
             this.branch.nodes = takeLargest(this.branch.nodes, 20);
-            filtering.nodeFlow = sumFlow(this.branch.nodes) / flowBefore;
+            state.nodeFlow = sumFlow(this.branch.nodes) / flowBefore;
 
-            this.branch.links = accumulateLargest(this.branch.links, filtering.linkFlow);
+            this.branch.links = accumulateLargest(this.branch.links, state.linkFlow);
             this.branch.links = connectedLinks(this.branch);
             this.branch.nodes = connectedNodes(this.branch);
             return this;
@@ -86,27 +59,48 @@ function runApplication(ftree) {
             render({
                 nodes: this.branch.nodes,
                 links: this.branch.links,
-                charge: renderParams.charge,
-                linkDistance: renderParams.linkDistance,
-                linkType: renderParams.linkType,
+                charge: state.charge,
+                linkDistance: state.linkDistance,
+                linkType: state.linkType,
             });
             return this;
         },
+
+        update(node) {
+            if (node === 'parent' && state.path === 'root')
+                return;
+
+            if (node === 'parent') {
+                const p = treePathToArray(state.path);
+                if (p.length === 1) {
+                    state.path = 'root';
+                } else {
+                    p.pop()
+                    state.path = p.join(':');
+                }
+            } else {
+                state.path = node.path;
+            }
+
+            this.clone().filterNewPath().renderBranch();
+        },
     };
+
+    renderNotifier.attach(actions);
 
     const gui = new dat.GUI();
 
     const renderFolder = gui.addFolder('Rendering / simulation');
-    renderFolder.add(renderParams, 'linkDistance', 50, 500).step(25).onFinishChange(() => actions.renderBranch());
-    renderFolder.add(renderParams, 'charge', 0, 2000).step(100).onFinishChange(() => actions.renderBranch());
+    renderFolder.add(state, 'linkDistance', 50, 500).step(25).onFinishChange(() => actions.renderBranch());
+    renderFolder.add(state, 'charge', 0, 2000).step(100).onFinishChange(() => actions.renderBranch());
     renderFolder.open();
 
     const filteringFolder = gui.addFolder('Filtering');
-    filteringFolder.add(filtering, 'nodeFlow', 0, 1).step(0.01).onFinishChange(() => actions.clone().filterGUI().renderBranch()).listen();
-    filteringFolder.add(filtering, 'linkFlow', 0, 1).step(0.01).onFinishChange(() => actions.clone().filterGUI().renderBranch()).listen();
+    filteringFolder.add(state, 'nodeFlow', 0, 1).step(0.01).onFinishChange(() => actions.clone().filterGUI().renderBranch()).listen();
+    filteringFolder.add(state, 'linkFlow', 0, 1).step(0.01).onFinishChange(() => actions.clone().filterGUI().renderBranch()).listen();
     filteringFolder.open();
 
-    gui.add(path, 'path').onFinishChange(() => actions.clone().filterNewPath().renderBranch()).listen();
+    gui.add(state, 'path').onFinishChange(() => actions.clone().filterNewPath().renderBranch()).listen();
 
     actions.filterNewPath().renderBranch();
 }
