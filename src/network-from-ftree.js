@@ -13,17 +13,17 @@ import Network from 'network';
 /**
  * Create tree of networks from FTree data.
  *
- * @param {Object} opts
- * @param {Object[]} opts.treeData
- * @param {Object[]} opts.linkData
+ * @param {Object} params
+ * @param {Object[]} params.tree
+ * @param {Object[]} params.link
  * @return {Network}
  */
-export default function networkFromFTree({ treeData, linkData }) {
+export default function networkFromFTree({ tree, links }) {
     const root = new Network('root');
     root.path = 'root';
 
     // Create the tree structure
-    linkData.forEach((node) => {
+    links.forEach((node) => {
         // Get root node links
         if (node.path === 'root') {
             root.links = node.links;
@@ -40,7 +40,7 @@ export default function networkFromFTree({ treeData, linkData }) {
     });
 
     // Add the actual nodes
-    treeData.forEach((node) => {
+    tree.forEach((node) => {
         const childNode = node.path
             .reduce((pathNode, childId) => {
                 pathNode.flow += node.flow;

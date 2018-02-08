@@ -14,10 +14,7 @@ import {
 
 
 function runApplication(ftree) {
-    const tree = networkFromFTree({
-        treeData: ftree.data.tree,
-        linkData: ftree.data.links,
-    });
+    const tree = networkFromFTree(ftree.data);
 
     const filtering = {
         nodeFlow: 0.2,
