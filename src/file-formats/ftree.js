@@ -1,5 +1,3 @@
-import { Tree } from '../tree';
-
 /**
  * Split a tree path string to array and parse to integer.
  *
@@ -85,7 +83,7 @@ export function isTreePath(path) {
  * @param {Array[]} rows ftree-file as array (rows) of arrays (fields)
  * @return {Object}
  */
-export function parseFTree(rows) {
+export default function parseFTree(rows) {
     const result = {
         data: {
             tree: [],
@@ -176,46 +174,4 @@ export function parseFTree(rows) {
     }
 
     return result;
-}
-
-/**
- * Create tree from ftree data
- *
- * @param {Object} opts
- * @param {Object[]} opts.treeData
- * @param {Object[]} opts.linkData
- * @return {Tree}
- */
-export function createTree({ treeData, linkData }) {
-    const tree = new Tree();
-
-    linkData.forEach((node) => {
-        // Get root node links
-        if (node.path === 'root') {
-            tree.root.links = node.links;
-
-        // For all other nodes
-        } else {
-            const childNode = node.path
-                .reduce((pathNode, childId) => pathNode.getChild(childId) || pathNode.createChild(childId), tree.root);
-
-            childNode.path = node.path.join(':');
-            childNode.exitFlow = node.exitFlow;
-            childNode.links = node.links;
-        }
-    });
-
-    treeData.forEach((node) => {
-        const childNode = node.path
-            .reduce((pathNode, childId) => {
-                pathNode.flow += node.flow;
-                return pathNode.getChild(childId) || pathNode.createChild(childId);
-            }, tree.root);
-
-        childNode.path = node.path.join(':');
-        childNode.flow = node.flow;
-        childNode.name = node.name;
-    });
-
-    return tree;
 }

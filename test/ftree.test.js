@@ -1,50 +1,44 @@
 /* eslint-env mocha */
 import { expect } from 'chai';
-import * as ft from '../src/file-formats/ftree';
+import parseFTree, { treePathToArray, isTreePath } from '../src/file-formats/ftree';
 
 describe('treePathToArray', function () {
     it('should parse integers', function () {
-        expect(ft.treePathToArray(1)).to.deep.equal([1]);
+        expect(treePathToArray(1)).to.deep.equal([1]);
     });
 
     it('should parse integer strings', function () {
-        expect(ft.treePathToArray('1')).to.deep.equal([1]);
+        expect(treePathToArray('1')).to.deep.equal([1]);
     });
 
     it('should parse integer strings separated by colon', function () {
-        expect(ft.treePathToArray('1:2:3')).to.deep.equal([1, 2, 3]);
+        expect(treePathToArray('1:2:3')).to.deep.equal([1, 2, 3]);
     });
 });
 
 describe('isTreePath', function () {
     it('should return true for integers', function () {
-        expect(ft.isTreePath(1)).to.equal(true);
+        expect(isTreePath(1)).to.equal(true);
     });
 
     it('should return true for integer strings', function () {
-        expect(ft.isTreePath('1')).to.equal(true);
+        expect(isTreePath('1')).to.equal(true);
     });
 
     it('should return true for integer strings separated by colon', function () {
-        expect(ft.isTreePath('1:2:3')).to.equal(true);
+        expect(isTreePath('1:2:3')).to.equal(true);
     });
 
     it('should return false if an otherwise correct path ends with colon', function () {
-        expect(ft.isTreePath('1:1:')).to.equal(false);
+        expect(isTreePath('1:1:')).to.equal(false);
     });
 
     it('should return false for a non-integer string', function () {
-        expect(ft.isTreePath('root')).to.equal(false);
+        expect(isTreePath('root')).to.equal(false);
     })
 });
 
-describe('parseFtree', function () {
-    it('should work', function () {
-
-    });
-});
-
-describe('createTree', function () {
+describe('parseFTree', function () {
     it('should parse simple data', function () {
         const data = [
             ['1:1', 0.1, 'Name 1', 1],
@@ -54,7 +48,7 @@ describe('createTree', function () {
             [1, 2, 0.1],
             [2, 1, 0.1],
         ];
-        expect(ft.parseFTree(data)).to.deep.equal({
+        expect(parseFTree(data)).to.deep.equal({
             data: {
                 tree: [
                     { path: [1, 1], flow: 0.1, name: 'Name 1', node: 1},
@@ -89,7 +83,7 @@ describe('createTree', function () {
             [1, 2, 0.1],
             [2, 1, 0.1],
         ];
-        const result = ft.parseFTree(data);
+        const result = parseFTree(data);
         expect(result.errors.length).to.equal(1);
     });
 
@@ -100,7 +94,7 @@ describe('createTree', function () {
             [1, 2, 0.1],
             [2, 1, 0.1],
         ];
-        const result = ft.parseFTree(data);
+        const result = parseFTree(data);
         expect(result.errors.length).to.equal(1);
     });
 
@@ -112,7 +106,7 @@ describe('createTree', function () {
             [1, 2, 0.1],
             [2, 1, 0.1],
         ];
-        const result = ft.parseFTree(data);
+        const result = parseFTree(data);
         expect(result.errors.length).to.equal(1);
     });
 
@@ -125,7 +119,7 @@ describe('createTree', function () {
             [1, 2, 0.1],
             [2, 1, 0.1],
         ];
-        const result = ft.parseFTree(data);
+        const result = parseFTree(data);
         expect(result.errors.length).to.equal(2);
     });
 
@@ -138,7 +132,7 @@ describe('createTree', function () {
             [1],
             [2, 1, 0.1],
         ];
-        const result = ft.parseFTree(data);
+        const result = parseFTree(data);
         expect(result.errors.length).to.equal(1);
     });
 
@@ -148,7 +142,7 @@ describe('createTree', function () {
             ['1:2', 0.1, 'Name 2', 2],
             ['*Links', 'directed'],
         ];
-        const result = ft.parseFTree(data);
+        const result = parseFTree(data);
         expect(result.errors.length).to.equal(1);
     });
 });

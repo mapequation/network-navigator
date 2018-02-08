@@ -1,7 +1,8 @@
 import * as d3 from 'd3';
 import dat from 'dat.gui';
 import parseFile from 'parse';
-import { parseFTree, createTree } from 'file-formats/ftree';
+import parseFTree from 'file-formats/ftree';
+import { createTree } from 'tree';
 import render from 'render';
 import {
     sumFlow,
