@@ -10,7 +10,7 @@
 import * as d3 from 'd3';
 import { halfLink, undirectedLink } from 'network-rendering';
 import makeGraphStyle from 'graph-style';
-import Subject from 'subject';
+import Subject from 'subject-observer';
 
 export class RenderNotifier extends Subject {}
 
