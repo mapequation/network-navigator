@@ -1,4 +1,14 @@
 /**
+ * @file This file deals with parsing data in the
+ * [FTree format]{@link http://www.mapequation.org/code.html#FTree-format}
+ * to an object representation.
+ * The data should be split into lines and fields.
+ *
+ * @author Anton Eriksson
+ */
+
+
+/**
  * Split a tree path string to array and parse to integer.
  *
  * @example
@@ -38,17 +48,17 @@ export function isTreePath(path) {
  * @example
  *  // Input example
  *  [
- *      ["1:1:1", 0.0564732, "Atlanta, GA: Hartsfield-Jackson Atlanta International;", 29],
- *      ["1:1:2", 0.00662063, "Memphis, TN: Memphis International;", 286],
- *      ["1:1:3", 0.00251202, "Newark, NJ: Newark Liberty International;New York, NY: John F. Kennedy International;New York, NY: LaGuardia;", 146],
- *      ["1:1:4", 0.00245953, "Fort Lauderdale, FL: Fort Lauderdale-Hollywood International;Miami, FL: Miami International;", 155],
- *      ...
+ *      ["1:1:1", 0.0564732, "Name 1", 29],
+ *      ["1:1:2", 0.0066206, "Name 2", 286],
+ *      ["1:1:3", 0.0025120, "Name 3", 146],
+ *      ["1:1:4", 0.0024595, "Name 4", 155],
+ *      // ...
  *      ["*Links", "directed"],
  *      ["*Links", "root", 0, 68, 208],
  *      [2, 1, 0.000107451],
  *      [1, 2, 0.0000830222],
  *      [3, 1, 0.00000900902],
- *      ...
+ *      // ...
  *  ]
  *
  *
@@ -58,7 +68,7 @@ export function isTreePath(path) {
  *      data: {
  *          tree: [
  *              { path, flow, name, node },
- *              ...
+ *              // ...
  *          ],
  *          links: [
  *              {
@@ -68,10 +78,10 @@ export function isTreePath(path) {
  *                  numChildren,
  *                  links: [
  *                      { source, target, flow },
- *                      ...
+ *                      // ...
  *                  ],
  *              },
- *              ...
+ *              // ...
  *          ],
  *      },
  *      errors: [],

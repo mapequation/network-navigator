@@ -1,5 +1,14 @@
+/**
+ * @file This file dictates the appearance of the rendered network.
+ * It defines a factory function that, given a set of nodes and links,
+ * maps the defined ranges to the domain found in the data.
+ *
+ * @author Anton Eriksson
+ */
+
 import { scaleLinear, scaleLog } from 'd3-scale';
 import { extent } from 'd3-array';
+
 
 /**
  * Factory function to create graph style functions.

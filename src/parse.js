@@ -1,4 +1,12 @@
+/**
+ * @file This file contains helper functions for parsing files
+ * that are not related to a specific file format.
+ *
+ * @author Anton Eriksson
+ */
+
 import Papa from 'papaparse';
+
 
 /**
  * Promise wrapper for Papa.parse

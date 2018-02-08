@@ -1,9 +1,19 @@
 /**
+ * @file This file contains functions for filtering network data,
+ * summing and sorting. Typically the functions work on arrays of
+ * objects that has the 'flow' property.
+ * The exception is the functions for filtering disconnected nodes
+ * and links which both need a set of nodes and links to work.
+ *
+ * @author Anton Eriksson
+ */
+
+/**
  * Comparator for sorting objects by flow (descending).
  *
  * @param {Object} obj1
  * @param {Object} obj2
- * @return {Boolean}
+ * @return {boolean}
  */
 export function byFlow(obj1, obj2) {
     return obj2.flow - obj1.flow;
@@ -13,7 +23,7 @@ export function byFlow(obj1, obj2) {
  * Return the total flow of the array of objects.
  *
  * @param {Object[]} objects
- * @return {Number} the total flow.
+ * @return {number} the total flow.
  */
 export function sumFlow(objects) {
     return objects.reduce((total, obj) => total + obj.flow, 0);
@@ -54,7 +64,7 @@ export function connectedLinks({ nodes, links }) {
  * As a side effect, input objects are sorted in place.
  *
  * @param {Object[]} objects the objects
- * @param {Number} amount the amount to take
+ * @param {number} amount the amount to take
  * @return {Object[]} the num largest by flow
  */
 export function takeLargest(objects, amount) {
@@ -73,7 +83,7 @@ export function takeLargest(objects, amount) {
  * As a side effect, input objects are sorted in place.
  *
  * @param {Object[]} objects the objects
- * @param {Number} flowFactor between 0 and 1
+ * @param {number} flowFactor between 0 and 1
  * @return {Object[]} the accumulated objects
  */
 export function accumulateLargest(objects, flowFactor) {
