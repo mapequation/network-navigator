@@ -1,6 +1,16 @@
+/**
+ * @file This file is the rendering part of the app
+ * and contains a factory function for setting up the
+ * svg canvas with callbacks for interaction from the user
+ * and returning a render function.
+ *
+ * @author Anton Eriksson
+ */
+
 import * as d3 from 'd3';
 import { halfLink, undirectedLink } from 'network-rendering';
 import makeGraphStyle from 'graph-style';
+
 
 function makeDragHandler(simulation) {
     const dragStarted = (node) => {
@@ -28,6 +38,12 @@ function makeDragHandler(simulation) {
 
 const ellipsis = (text, len = 13) => (text.length > len ? `${text.substr(0, len - 3)}...` : text);
 
+/**
+ * Factory function to set up svg canvas and return
+ * a render function to render a network to this canvas.
+ *
+ * @return {makeRenderFunction~render} the render function
+ */
 export default function makeRenderFunction() {
     const width = window.innerWidth;
     const height = window.innerHeight;
@@ -62,6 +78,27 @@ export default function makeRenderFunction() {
             .call(zoom.transform, d3.zoomIdentity);
     }
 
+    function makeNodeClicked(radiusFunction) {
+        // Use function keyword to get correct 'this'
+        return function nodeClicked(node) {
+            if (active.node() === this) return reset();
+            active = d3.select(this);
+            active.on('.drag', null);
+            simulation.stop();
+
+            const { x, y } = node;
+            const r = radiusFunction(node);
+            const dx = 2 * r;
+            const scale = Math.max(1, Math.min(50, 2 / (dx / width)));
+            const translate = [width / 2 - scale * x, height / 2 - scale * y];
+
+            return svg
+                .transition()
+                .duration(750)
+                .call(zoom.transform, d3.zoomIdentity.translate(...translate).scale(scale));
+        }
+    }
+
     svg.insert('rect', ':first-child')
         .attr('class', 'background')
         .attr('width', width)
@@ -84,45 +121,20 @@ export default function makeRenderFunction() {
         }
     });
 
-    return ({ nodes, links, charge, linkDistance, linkType }) => {
-        g.selectAll('*').remove();
-
+    /**
+     * Render a network of nodes and links to svg.
+     *
+     * @param {Object} params
+     * @param {Node[]} params.nodes the nodes
+     * @param {Object[]} params.links the links
+     * @param {number} params.charge the charge strength between nodes
+     * @param {number} params.linkDistance the rest length between nodes
+     * @param {string} params.linkType directed or undirected links, affects link appearance
+     */
+    const render = ({ nodes, links, charge, linkDistance, linkType }) => {
         const style = makeGraphStyle({ nodes, links });
 
-        const linkSvgPath = (linkType === 'directed' ? halfLink : undirectedLink)()
-            .nodeRadius(style.node.radius)
-            .width(style.link.width);
-
-        simulation
-            .force('collide', d3.forceCollide(20)
-                .radius(style.node.radius))
-            .force('link', d3.forceLink()
-                .distance(linkDistance)
-                .id(d => d.id))
-            .force('charge', d3.forceManyBody()
-                .strength(-charge)
-                .distanceMax(400))
-            .force('center', d3.forceCenter(width / 2, height / 2))
-            .alpha(1)
-            .restart();
-
-        function nodeClicked(d) {
-            if (active.node() === this) return reset();
-            active = d3.select(this);
-            active.on('.drag', null);
-            simulation.stop();
-
-            const { x, y } = d;
-            const r = style.node.radius(d);
-            const dx = 2 * r;
-            const scale = Math.max(1, Math.min(50, 2 / (dx / width)));
-            const translate = [width / 2 - scale * x, height / 2 - scale * y];
-
-            return svg
-                .transition()
-                .duration(750)
-                .call(zoom.transform, d3.zoomIdentity.translate(...translate).scale(scale));
-        }
+        g.selectAll('*').remove();
 
         const link = g.append('g')
             .attr('class', 'links')
@@ -142,7 +154,7 @@ export default function makeRenderFunction() {
             .append('g')
             .attr('id', n => `id-${n.path}`)
             .attr('class', 'node')
-            .on('dblclick', nodeClicked)
+            .on('dblclick', makeNodeClicked(style.node.radius))
             .call(dragHandler);
 
         const circle = node.append('circle')
@@ -156,6 +168,25 @@ export default function makeRenderFunction() {
             .attr('text-anchor', 'middle')
             .attr('dy', '0.35em')
             .style('font-size', style.text.fontSize);
+
+        const linkSvgPath = (linkType === 'directed' ? halfLink : undirectedLink)()
+            .nodeRadius(style.node.radius)
+            .width(style.link.width);
+
+        // The simulation object is reused between render calls.
+        // Set the new forces and restart with alpha = 1 (which is the default)
+        simulation
+            .force('collide', d3.forceCollide(20)
+                .radius(style.node.radius))
+            .force('link', d3.forceLink()
+                .distance(linkDistance)
+                .id(d => d.id))
+            .force('charge', d3.forceManyBody()
+                .strength(-charge)
+                .distanceMax(400))
+            .force('center', d3.forceCenter(width / 2, height / 2))
+            .alpha(1)
+            .restart();
 
         simulation
             .nodes(nodes)
@@ -173,6 +204,8 @@ export default function makeRenderFunction() {
         simulation
             .force('link')
             .links(links);
-    }
+    };
+
+    return render;
 }
 
