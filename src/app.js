@@ -3,7 +3,7 @@ import dat from 'dat.gui';
 import parseFile from 'parse';
 import parseFTree from 'file-formats/ftree';
 import { createTree } from 'tree';
-import render from 'render';
+import makeRenderFunction from 'render';
 import {
     sumFlow,
     takeLargest,
@@ -11,6 +11,8 @@ import {
     connectedNodes,
     connectedLinks,
 } from 'filter';
+
+const render = makeRenderFunction();
 
 function runApplication(ftree) {
     const tree = createTree({
@@ -61,10 +63,7 @@ function runApplication(ftree) {
         },
 
         renderBranch() {
-            const parent = d3.select('#id-root');
-
             render({
-                parent,
                 nodes: this.branch.nodes,
                 links: this.branch.links,
                 charge: renderParams.charge,
