@@ -1,6 +1,5 @@
 /**
- * @file This file deals with creating a tree of Networks
- * from FTree data.
+ * @file This file deals with creating a tree of Networks from FTree data.
  * The FTree data is typically generated from the function parseFTree.
  *
  * @see parseFTree
@@ -10,13 +9,14 @@
 
 import Network from 'network';
 
+
 /**
  * Create tree of networks from FTree data.
  *
  * @param {Object} opts
  * @param {Object[]} opts.treeData
  * @param {Object[]} opts.linkData
- * @return {Tree}
+ * @return {Network}
  */
 export default function networkFromFTree({ treeData, linkData }) {
     const root = new Network('root');
