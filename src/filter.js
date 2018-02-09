@@ -63,13 +63,13 @@ export function connectedLinks({ nodes, links }) {
 }
 
 /**
- * Return the num largest objects sorted by flow,
- * or all objects if num is smaller or equal than the number of objects.
+ * Return the num largest objects sorted by flow, or all objects
+ * if amount is larger or equal to the number of objects.
  * As a side effect, input objects are sorted in place.
  *
  * @param {Object[]} objects the objects
  * @param {number} amount the amount to take
- * @return {Object[]} the num largest by flow
+ * @return {Object[]} the amount largest by flow
  */
 export function takeLargest(objects, amount) {
     return objects
