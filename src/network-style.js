@@ -11,10 +11,10 @@ import { extent } from 'd3-array';
 
 
 /**
- * Factory function to create graph style functions.
+ * Factory function to create style functions.
  *
  * @example
- *  const style = makeGraphStyle({ nodes, links });
+ *  const style = makeNetworkStyle({ nodes, links });
  *  const circle = svg.append('circle')
  *      .attr('r', style.node.radius)
  *      .style('fill', style.node.fillColor)
@@ -25,7 +25,7 @@ import { extent } from 'd3-array';
  * @param {Node[]} opts.nodes
  * @param {Object[]} opts.links
  */
-export default function makeGraphStyle({ nodes, links }) {
+export default function makeNetworkStyle({ nodes, links }) {
     const nodeRadius = scaleLog().domain(extent(nodes, n => n.flow)).range([20, 60]);
     const nodeFillColor = scaleLinear().domain(extent(nodes, n => n.flow)).range(['#DFF1C1', '#C5D7A8']);
     const nodeBorderColor = scaleLinear().domain(extent(nodes, n => n.exitFlow)).range(['#ABD65B', '#95C056']);

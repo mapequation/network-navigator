@@ -9,7 +9,7 @@
 
 import * as d3 from 'd3';
 import { halfLink, undirectedLink } from 'network-rendering';
-import makeGraphStyle from 'graph-style';
+import makeNetworkStyle from 'network-style';
 
 
 function makeDragHandler(simulation) {
@@ -139,7 +139,7 @@ export default function makeRenderFunction(notifier) {
      * @param {string} params.linkType directed or undirected links, affects link appearance
      */
     const render = ({ nodes, links, charge, linkDistance, linkType }) => {
-        const style = makeGraphStyle({ nodes, links });
+        const style = makeNetworkStyle({ nodes, links });
 
         g.selectAll('*').remove();
 
