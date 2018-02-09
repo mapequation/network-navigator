@@ -10,9 +10,7 @@
 import * as d3 from 'd3';
 import { halfLink, undirectedLink } from 'network-rendering';
 import makeGraphStyle from 'graph-style';
-import Observable from 'observable';
 
-export class RenderNotifier extends Observable {}
 
 function makeDragHandler(simulation) {
     const dragStarted = (node) => {
@@ -44,10 +42,10 @@ const ellipsis = (text, len = 13) => (text.length > len ? `${text.substr(0, len 
  * Factory function to set up svg canvas and return
  * a render function to render a network to this canvas.
  *
- * @param {RenderNotifier} notifier network layer changes are broadcasted here
+ * @param {Observable} notifier network layer changes are broadcasted here
  * @return {makeRenderFunction~render} the render function
  */
-export function makeRenderFunction(notifier) {
+export default function makeRenderFunction(notifier) {
     const width = window.innerWidth;
     const height = window.innerHeight;
 

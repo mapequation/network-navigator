@@ -3,7 +3,8 @@ import dat from 'dat.gui';
 import parseFile from 'parse';
 import parseFTree, { treePathToArray } from 'file-formats/ftree';
 import networkFromFTree from 'network-from-ftree';
-import { makeRenderFunction, RenderNotifier } from 'render';
+import makeRenderFunction from 'render';
+import Observable from 'observable';
 import {
     sumFlow,
     takeLargest,
@@ -25,7 +26,7 @@ function runApplication(ftree) {
         linkType: ftree.meta.linkType,
     };
 
-    const renderNotifier = new RenderNotifier();
+    const renderNotifier = new Observable();
     const render = makeRenderFunction(renderNotifier);
 
     const actions = {
