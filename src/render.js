@@ -49,18 +49,24 @@ export default function makeRenderFunction(notifier) {
     const width = window.innerWidth;
     const height = window.innerHeight;
 
-    let active = d3.select(null);
-
     const svg = d3.select('body').append('svg')
         .attr('width', width)
         .attr('height', height);
 
-    const g = svg.append('g')
-        .attr('class', 'graph');
+    svg.append('rect')
+        .attr('class', 'background')
+        .attr('width', width)
+        .attr('height', height);
+
+    const network = svg.append('g')
+        .attr('class', 'network');
 
     const zoom = d3.zoom()
         .scaleExtent([0.1, 50])
-        .on('zoom', () => g.attr('transform', d3.event.transform));
+        .on('zoom', () => network.attr('transform', d3.event.transform));
+
+    svg.call(zoom)
+        .on('dblclick.zoom', null);
 
     const simulation = d3.forceSimulation()
         .alphaDecay(0.06)
@@ -68,10 +74,11 @@ export default function makeRenderFunction(notifier) {
 
     const dragHandler = makeDragHandler(simulation);
 
+    let active = d3.select(null);
+
     function reset(duration = 750) {
-        active.call(dragHandler);
-        active = d3.select(null);
         simulation.restart();
+        active = d3.select(null);
 
         return svg
             .transition()
@@ -79,41 +86,27 @@ export default function makeRenderFunction(notifier) {
             .call(zoom.transform, d3.zoomIdentity);
     }
 
-    function makeNodeClicked(radiusFunction) {
-        // Use function keyword to get correct 'this'
-        return function nodeClicked(node) {
-            if (active.node() === this) return reset();
+    function nodeClicked(node) {
+        if (active.node() === this) return reset();
 
-            // Do nothing if node has no child nodes
-            if (!node.nodes.length) return;
+        // Do nothing if node has no child nodes
+        if (!node.nodes.length) return;
 
-            active = d3.select(this);
-            active.on('.drag', null);
-            simulation.stop();
+        active = d3.select(this);
+        simulation.stop();
 
-            const { x, y } = node;
-            const r = radiusFunction(node);
-            const dx = 2 * r;
-            const scale = Math.max(1, Math.min(50, 2 / (dx / width)));
-            const translate = [width / 2 - scale * x, height / 2 - scale * y];
+        const { x, y } = node;
+        const scale = 50;
+        const translate = [width / 2 - scale * x, height / 2 - scale * y];
 
-            setTimeout(() => notifier.notify(node), 750);
+        setTimeout(() => notifier.notify(node), 750);
 
-            const zoomIn = svg.transition()
-                .duration(750)
-                .on('end', () => reset(0))
-                .call(zoom.transform, d3.zoomIdentity.translate(...translate).scale(scale))
-        }
+        return svg
+            .transition()
+            .duration(750)
+            .on('end', () => reset(0))
+            .call(zoom.transform, d3.zoomIdentity.translate(...translate).scale(scale))
     }
-
-    svg.insert('rect', ':first-child')
-        .attr('class', 'background')
-        .attr('width', width)
-        .attr('height', height)
-        .on('click', reset);
-
-    svg.call(zoom)
-        .on('dblclick.zoom', null);
 
     d3.select('body').on('keydown', () => {
         const key = d3.event.key || d3.event.keyCode;
@@ -141,9 +134,9 @@ export default function makeRenderFunction(notifier) {
     const render = ({ nodes, links, charge, linkDistance, linkType }) => {
         const style = makeNetworkStyle({ nodes, links });
 
-        g.selectAll('*').remove();
+        network.selectAll('*').remove();
 
-        const link = g.append('g')
+        const link = network.append('g')
             .attr('class', 'links')
             .selectAll('.link')
             .data(links)
@@ -153,7 +146,7 @@ export default function makeRenderFunction(notifier) {
             .style('fill', style.link.fillColor)
             .style('opacity', style.link.opacity);
 
-        const node = g.append('g')
+        const node = network.append('g')
             .attr('class', 'nodes')
             .selectAll('.node')
             .data(nodes)
@@ -161,7 +154,7 @@ export default function makeRenderFunction(notifier) {
             .append('g')
             .attr('id', n => `id-${n.path}`)
             .attr('class', 'node')
-            .on('dblclick', makeNodeClicked(style.node.radius))
+            .on('dblclick', nodeClicked)
             .call(dragHandler);
 
         const circle = node.append('circle')
