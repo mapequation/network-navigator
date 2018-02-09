@@ -92,5 +92,5 @@ export function accumulateLargest(objects, flowFactor) {
 
     return objects
         .sort(byFlow)
-        .filter(node => accumulated < targetFlow && (accumulated += node.flow));
+        .filter(node => (accumulated += node.flow) <= targetFlow);
 }
