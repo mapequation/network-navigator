@@ -13,7 +13,9 @@
  *
  * @param {Object} obj1
  * @param {Object} obj2
- * @return {boolean}
+ * @return {number} negative when obj1 > obj2,
+ *                  positive when obj1 < obj2,
+ *                  zero otherwise
  */
 export function byFlow(obj1, obj2) {
     return obj2.flow - obj1.flow;
@@ -26,7 +28,9 @@ export function byFlow(obj1, obj2) {
  * @return {number} the total flow.
  */
 export function sumFlow(objects) {
-    return objects.reduce((total, obj) => total + obj.flow, 0);
+    return objects
+        .map(obj => obj.flow)
+        .reduce((total, flow) => total + flow, 0);
 }
 
 /**
@@ -68,10 +72,6 @@ export function connectedLinks({ nodes, links }) {
  * @return {Object[]} the num largest by flow
  */
 export function takeLargest(objects, amount) {
-    if (objects.length < amount) {
-        return objects;
-    }
-
     return objects
         .sort(byFlow)
         .slice(0, amount);
@@ -87,20 +87,10 @@ export function takeLargest(objects, amount) {
  * @return {Object[]} the accumulated objects
  */
 export function accumulateLargest(objects, flowFactor) {
-    const sorted = objects.sort(byFlow);
-    const flowTotal = sumFlow(objects);
-    const targetFlow = flowFactor * flowTotal;
-
-    const largest = [];
+    const targetFlow = flowFactor * sumFlow(objects);
     let accumulated = 0;
-    let i = 0;
 
-    while (accumulated < targetFlow && i < sorted.length) {
-        const node = sorted[i];
-        largest.push(node);
-        accumulated += node.flow;
-        i++;
-    }
-
-    return largest;
+    return objects
+        .sort(byFlow)
+        .filter(node => accumulated < targetFlow && (accumulated += node.flow));
 }
