@@ -2,7 +2,7 @@ import * as d3 from 'd3';
 import dat from 'dat.gui';
 import parseFile from 'parse';
 import parseFTree, { treePathToArray } from 'file-formats/ftree';
-import networkFromFTree from 'network-from-ftree';
+import networkFromFTree from 'file-formats/network-from-ftree';
 import makeRenderFunction from 'render';
 import Observable from 'observable';
 import {
