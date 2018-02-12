@@ -9,7 +9,6 @@
 
 import * as d3 from 'd3';
 import { halfLink, undirectedLink } from 'network-rendering';
-import makeNetworkStyle from 'network-style';
 
 
 function makeDragHandler(simulation) {
@@ -131,9 +130,7 @@ export default function makeRenderFunction(notifier) {
      * @param {number} params.linkDistance the rest length between nodes
      * @param {string} params.linkType directed or undirected links, affects link appearance
      */
-    const render = ({ nodes, links, charge, linkDistance, linkType }) => {
-        const style = makeNetworkStyle({ nodes, links });
-
+    const render = ({ nodes, links, style, charge, linkDistance, linkType }) => {
         network.selectAll('*').remove();
 
         const link = network.append('g')
@@ -143,8 +140,8 @@ export default function makeRenderFunction(notifier) {
             .enter()
             .append('path')
             .attr('class', 'link')
-            .style('fill', style.link.fillColor)
-            .style('opacity', style.link.opacity);
+            .style('fill', style.linkFillColor)
+            .style('opacity', style.linkOpacity);
 
         const node = network.append('g')
             .attr('class', 'nodes')
@@ -158,26 +155,26 @@ export default function makeRenderFunction(notifier) {
             .call(dragHandler);
 
         const circle = node.append('circle')
-            .attr('r', style.node.radius)
-            .style('fill', style.node.fillColor)
-            .style('stroke', style.node.borderColor)
-            .style('stroke-width', style.node.borderWidth);
+            .attr('r', style.nodeRadius)
+            .style('fill', style.nodeFillColor)
+            .style('stroke', style.nodeBorderColor)
+            .style('stroke-width', style.nodeBorderWidth);
 
         const text = node.append('text')
             .text(n => (n.name ? ellipsis(n.name) : n.id))
             .attr('text-anchor', 'middle')
             .attr('dy', '0.35em')
-            .style('font-size', style.text.fontSize);
+            .style('font-size', style.fontSize);
 
         const linkSvgPath = (linkType === 'directed' ? halfLink : undirectedLink)()
-            .nodeRadius(style.node.radius)
-            .width(style.link.width);
+            .nodeRadius(style.nodeRadius)
+            .width(style.linkWidth);
 
         // The simulation object is reused between render calls.
         // Set the new forces and restart with alpha = 1 (which is the default)
         simulation
             .force('collide', d3.forceCollide(20)
-                .radius(style.node.radius))
+                .radius(style.nodeRadius))
             .force('link', d3.forceLink()
                 .distance(linkDistance)
                 .id(d => d.id))

@@ -4,6 +4,7 @@ import parseFile from 'parse';
 import parseFTree, { treePathToArray } from 'file-formats/ftree';
 import networkFromFTree from 'file-formats/network-from-ftree';
 import makeRenderFunction from 'render';
+import makeNetworkStyle from 'network-style';
 import Observable from 'observable';
 import {
     sumFlow,
@@ -31,9 +32,11 @@ function runApplication(ftree) {
 
     const actions = {
         branch: network.getNodeByPath(state.path).clone(),
+        style: null,
 
         clone() {
             this.branch = network.getNodeByPath(state.path).clone();
+            this.style = makeNetworkStyle(this.branch);
             return this;
         },
 
@@ -60,6 +63,7 @@ function runApplication(ftree) {
             render({
                 nodes: this.branch.nodes,
                 links: this.branch.links,
+                style: this.style || makeNetworkStyle(this.branch),
                 charge: state.charge,
                 linkDistance: state.linkDistance,
                 linkType: state.linkType,
