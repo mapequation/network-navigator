@@ -56,6 +56,13 @@ function runApplication(ftree) {
             this.branch.links = accumulateLargest(this.branch.links, state.linkFlow);
             this.branch.links = connectedLinks(this.branch);
             this.branch.nodes = connectedNodes(this.branch);
+
+            // Increase linkFlow if we filtered out all nodes.
+            if (this.branch.nodes.length < 2 && state.linkFlow < 1) {
+                state.linkFlow += 0.1 * (1 - state.linkFlow);
+                this.clone().filterNewPath();
+            }
+
             return this;
         },
 
