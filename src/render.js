@@ -9,6 +9,7 @@
 
 import * as d3 from 'd3';
 import { halfLink, undirectedLink } from 'network-rendering';
+import { isTreePath } from 'file-formats/ftree';
 
 
 function makeDragHandler(simulation) {
@@ -37,6 +38,8 @@ function makeDragHandler(simulation) {
 
 const ellipsis = (text, len = 13) => (text.length > len ? `${text.substr(0, len - 3)}...` : text);
 
+const pathToId = path => isTreePath(path) ? `id-${path.replace(':', '-')}` : `id-${path}`;
+
 /**
  * Factory function to set up svg canvas and return
  * a render function to render a network to this canvas.
@@ -52,12 +55,34 @@ export default function makeRenderFunction(notifier) {
         .attr('width', width)
         .attr('height', height);
 
-    svg.append('rect')
-        .attr('class', 'background')
-        .attr('width', width)
-        .attr('height', height);
+    svg.append('defs')
+        .append('clipPath')
+        .attr('id', 'parentNode')
+        .append('ellipse')
+        .attr('rx', Math.min(width / 2, 1.5 * height / 2) + 20)
+        .attr('ry', Math.min(1.2 * width / 2, height / 2) + 20)
+        .attr('cx', width / 2)
+        .attr('cy', height / 2)
 
-    const network = svg.append('g')
+    const background = svg.append('rect')
+        .attr('class', 'background')
+        .style('fill', 'none')
+        .attr('width', width)
+        .attr('height', height)
+        .on('dblclick', backgroundClicked);
+
+    const parentNode = svg.append('ellipse')
+        .attr('class', 'parent')
+        .attr('rx', Math.min(width / 2, 1.5 * height / 2) + 20)
+        .attr('ry', Math.min(1.2 * width / 2, height / 2) + 20)
+        .attr('cx', width / 2)
+        .attr('cy', height / 2)
+        .style('fill', 'white')
+
+    const wrapper = svg.append('g')
+        .attr('class', 'wrapper')
+
+    const network = wrapper.append('g')
         .attr('class', 'network');
 
     const zoom = d3.zoom()
@@ -73,38 +98,69 @@ export default function makeRenderFunction(notifier) {
 
     const dragHandler = makeDragHandler(simulation);
 
-    let active = d3.select(null);
+    let active = [];
 
-    function reset(duration = 750) {
-        simulation.restart();
-        active = d3.select(null);
+    function backgroundClicked() {
+        const parent = active.pop();
+
+        if (!parent) return;
+
+        notifier.notify('parent');
+
+        for (let i = 0; i < 50; i++) {
+            simulation.tick();
+        }
+
+        const { x, y } = d3.select(`#${parent.id}`).select('circle').datum();
+        const scale = 50;
+        const translate = [width / 2 - scale * x, height / 2 - scale * y];
+
+        svg.transition()
+            .duration(0)
+            .call(zoom.transform, d3.zoomIdentity.translate(...translate).scale(scale));
+
+        if (!active.length) {
+            background.style('fill', 'white');
+            wrapper.attr('clip-path', null);
+        } else {
+            background.style('fill', parent.bgColor);
+        }
 
         return svg
             .transition()
-            .duration(duration)
+            .duration(750)
             .call(zoom.transform, d3.zoomIdentity);
     }
 
-    function nodeClicked(node) {
-        if (active.node() === this) return reset();
-
+    function nodeClicked(node, bgColor) {
         // Do nothing if node has no child nodes
         if (!node.nodes.length) return;
 
-        active = d3.select(this);
+        active.push({
+            id: pathToId(node.path),
+            bgColor
+        });
+
         simulation.stop();
 
         const { x, y } = node;
         const scale = 50;
         const translate = [width / 2 - scale * x, height / 2 - scale * y];
 
-        setTimeout(() => notifier.notify(node), 750);
-
-        return svg
-            .transition()
+        svg.transition()
             .duration(750)
-            .on('end', () => reset(0))
+            .on('end', () => {
+                notifier.notify(node);
+                background.style('fill', bgColor)
+
+                for (let i = 0; i < 50; i++) {
+                    simulation.tick();
+                }
+            })
             .call(zoom.transform, d3.zoomIdentity.translate(...translate).scale(scale))
+            .transition()
+            .duration(0)
+            .call(zoom.transform, d3.zoomIdentity);
     }
 
     d3.select('body').on('keydown', () => {
@@ -113,7 +169,13 @@ export default function makeRenderFunction(notifier) {
         case 'Esc':
         case 'Escape':
         case 27:
-            notifier.notify('parent');
+            backgroundClicked();
+            break;
+        case 'Space':
+        case ' ':
+            svg.transition()
+                .duration(200)
+                .call(zoom.transform, d3.zoomIdentity);
             break;
         default:
             break;
@@ -149,9 +211,9 @@ export default function makeRenderFunction(notifier) {
             .data(nodes)
             .enter()
             .append('g')
-            .attr('id', n => `id-${n.path}`)
+            .attr('id', n => pathToId(n.path))
             .attr('class', 'node')
-            .on('dblclick', nodeClicked)
+            .on('dblclick', (n) => nodeClicked(n, style.nodeFillColor(n)))
             .call(dragHandler);
 
         const circle = node.append('circle')
