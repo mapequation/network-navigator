@@ -38,7 +38,7 @@ function makeDragHandler(simulation) {
 
 const ellipsis = (text, len = 13) => (text.length > len ? `${text.substr(0, len - 3)}...` : text);
 
-const pathToId = path => isTreePath(path) ? `id-${path.replace(':', '-')}` : `id-${path}`;
+const pathToId = path => isTreePath(path) ? `id-${path.replace(/:/g, '-')}` : `id-${path}`;
 
 /**
  * Factory function to set up svg canvas and return
@@ -55,15 +55,6 @@ export default function makeRenderFunction(notifier) {
         .attr('width', width)
         .attr('height', height);
 
-    svg.append('defs')
-        .append('clipPath')
-        .attr('id', 'parentNode')
-        .append('ellipse')
-        .attr('rx', Math.min(width / 2, 1.5 * height / 2) + 20)
-        .attr('ry', Math.min(1.2 * width / 2, height / 2) + 20)
-        .attr('cx', width / 2)
-        .attr('cy', height / 2)
-
     const background = svg.append('rect')
         .attr('class', 'background')
         .style('fill', 'none')
@@ -71,18 +62,7 @@ export default function makeRenderFunction(notifier) {
         .attr('height', height)
         .on('dblclick', backgroundClicked);
 
-    const parentNode = svg.append('ellipse')
-        .attr('class', 'parent')
-        .attr('rx', Math.min(width / 2, 1.5 * height / 2) + 20)
-        .attr('ry', Math.min(1.2 * width / 2, height / 2) + 20)
-        .attr('cx', width / 2)
-        .attr('cy', height / 2)
-        .style('fill', 'white')
-
-    const wrapper = svg.append('g')
-        .attr('class', 'wrapper')
-
-    const network = wrapper.append('g')
+    const network = svg.append('g')
         .attr('class', 'network');
 
     const zoom = d3.zoom()
@@ -98,33 +78,24 @@ export default function makeRenderFunction(notifier) {
 
     const dragHandler = makeDragHandler(simulation);
 
-    let active = [];
+    const treePath = [];
 
     function backgroundClicked() {
-        const parent = active.pop();
+        const parent = treePath.pop();
 
         if (!parent) return;
 
         notifier.notify('parent');
 
-        for (let i = 0; i < 50; i++) {
+        for (let i = 0; i < 30; i++) {
             simulation.tick();
         }
 
-        const { x, y } = d3.select(`#${parent.id}`).select('circle').datum();
+        const { x, y } = d3.select(`#${parent}`).select('circle').datum();
         const scale = 50;
         const translate = [width / 2 - scale * x, height / 2 - scale * y];
 
-        svg.transition()
-            .duration(0)
-            .call(zoom.transform, d3.zoomIdentity.translate(...translate).scale(scale));
-
-        if (!active.length) {
-            background.style('fill', 'white');
-            wrapper.attr('clip-path', null);
-        } else {
-            background.style('fill', parent.bgColor);
-        }
+        svg.call(zoom.transform, d3.zoomIdentity.translate(...translate).scale(scale));
 
         return svg
             .transition()
@@ -132,14 +103,11 @@ export default function makeRenderFunction(notifier) {
             .call(zoom.transform, d3.zoomIdentity);
     }
 
-    function nodeClicked(node, bgColor) {
+    function nodeClicked(node) {
         // Do nothing if node has no child nodes
         if (!node.nodes.length) return;
 
-        active.push({
-            id: pathToId(node.path),
-            bgColor
-        });
+        treePath.push(pathToId(node.path));
 
         simulation.stop();
 
@@ -151,9 +119,8 @@ export default function makeRenderFunction(notifier) {
             .duration(750)
             .on('end', () => {
                 notifier.notify(node);
-                background.style('fill', bgColor)
 
-                for (let i = 0; i < 50; i++) {
+                for (let i = 0; i < 20; i++) {
                     simulation.tick();
                 }
             })
@@ -213,7 +180,7 @@ export default function makeRenderFunction(notifier) {
             .append('g')
             .attr('id', n => pathToId(n.path))
             .attr('class', 'node')
-            .on('dblclick', (n) => nodeClicked(n, style.nodeFillColor(n)))
+            .on('dblclick', nodeClicked)
             .call(dragHandler);
 
         const circle = node.append('circle')
@@ -267,4 +234,3 @@ export default function makeRenderFunction(notifier) {
 
     return render;
 }
-
