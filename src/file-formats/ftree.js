@@ -43,7 +43,7 @@ export function isTreePath(path) {
 }
 
 /**
- * Parse ftree data to object, consuming data array.
+ * Parse ftree data to object.
  *
  * @example
  *  // Input example
@@ -109,10 +109,12 @@ export default function parseFTree(rows) {
 
     const { tree, links } = result.data;
 
+    let i = 0;
+
     // 1. Parse tree section
     // ftree-files has sections of *Links following the tree data
-    while (rows.length && !rows[0][0].toString().startsWith('*')) {
-        const row = rows.shift();
+    for (; i < rows.length && !rows[i][0].toString().startsWith('*'); i++) {
+        const row = rows[i];
 
         if (row.length !== 4) {
             result.errors.push(`Malformed ftree data: expected 4 fields, found ${row.length}.`);
@@ -121,9 +123,9 @@ export default function parseFTree(rows) {
 
         tree.push({
             path: isTreePath(row[0]) ? treePathToArray(row[0]) : row[0],
-            flow: +row[1],
+            flow: row[1],
             name: row[2],
-            node: +row[3],
+            node: row[3],
         });
     }
 
@@ -132,20 +134,21 @@ export default function parseFTree(rows) {
     }
 
     // 2. Get link type
-    if (rows[0] && rows[0][1].toString().match(/(un)?directed/i)) {
-        const row = rows.shift();
-        result.meta.linkType = row[1].trim().toLowerCase();
+    if (rows[i] && rows[i][1].toString().match(/(un)?directed/i)) {
+        result.meta.linkType = rows[i][1].trim().toLowerCase();
+        i++;
     } else {
         result.errors.push('Expected link type!');
     }
+
 
     let link = {
         links: [],
     };
 
     // 3. Parse links section
-    while (rows.length) {
-        const row = rows.shift();
+    for (; i < rows.length; i++) {
+        const row = rows[i];
 
         // 3a. Parse link header
         if (row[0].toString().match(/^\*Links/i)) {
@@ -156,9 +159,9 @@ export default function parseFTree(rows) {
 
             link = {
                 path: isTreePath(row[1]) ? treePathToArray(row[1]) : row[1],
-                exitFlow: +row[2],
-                numEdges: +row[3],
-                numChildren: +row[4],
+                exitFlow: row[2],
+                numEdges: row[3],
+                numChildren: row[4],
                 links: [],
             };
 
@@ -172,9 +175,9 @@ export default function parseFTree(rows) {
             }
 
             link.links.push({
-                source: +row[0],
-                target: +row[1],
-                flow: +row[2] || DEFAULT_FLOW,
+                source: row[0],
+                target: row[1],
+                flow: row[2] || DEFAULT_FLOW,
             });
         }
     }
