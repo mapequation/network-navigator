@@ -15,7 +15,8 @@ import {
 } from 'filter';
 
 
-function runApplication(ftree) {
+function runApplication(file) {
+    const ftree = parseFTree(file.data);
     const network = networkFromFTree(ftree.data);
 
     const state = {
@@ -137,6 +138,5 @@ fetch('data/stockholm.ftree')
 //fetch('data/science2001.ftree')
     .then(res => res.text())
     .then(parseFile)
-    .then(d => parseFTree(d.data))
     .then(runApplication)
     .catch(err => console.error(err));
