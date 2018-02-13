@@ -22,7 +22,7 @@ function runApplication(ftree) {
         nodeFlow: 0.2,
         linkFlow: 0.8,
         path: 'root',
-        linkDistance: 200,
+        linkDistance: 300,
         charge: 500,
         linkType: ftree.meta.linkType,
     };

@@ -169,8 +169,7 @@ export default function makeRenderFunction(notifier) {
             .enter()
             .append('path')
             .attr('class', 'link')
-            .style('fill', style.linkFillColor)
-            .style('opacity', style.linkOpacity);
+            .style('fill', style.linkFillColor);
 
         const node = network.append('g')
             .attr('class', 'nodes')
@@ -193,6 +192,7 @@ export default function makeRenderFunction(notifier) {
             .text(n => (n.name ? ellipsis(n.name) : n.id))
             .attr('text-anchor', 'middle')
             .attr('dy', '0.35em')
+            .style('fill', 'white')
             .style('font-size', style.fontSize);
 
         const linkSvgPath = (linkType === 'directed' ? halfLink : undirectedLink)()
