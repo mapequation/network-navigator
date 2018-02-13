@@ -1,5 +1,5 @@
 import PriorityQueue from 'priority-queue';
-import { byFlow } from 'filter';
+import { byFlow } from 'filter';
 
 /**
  * Class to represent a network of nodes and links.

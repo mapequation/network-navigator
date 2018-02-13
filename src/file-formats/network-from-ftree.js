@@ -31,9 +31,11 @@ export default function networkFromFTree({ tree, links }) {
         // For all other nodes
         } else {
             const childNode = node.path
+                .split(':')
+                .map(Number)
                 .reduce((pathNode, childId) => pathNode.getNode(childId) || pathNode.createNode(childId), root);
 
-            childNode.path = node.path.join(':');
+            childNode.path = node.path;
             childNode.exitFlow = node.exitFlow;
             childNode.links = node.links;
         }
@@ -42,13 +44,15 @@ export default function networkFromFTree({ tree, links }) {
     // Add the actual nodes
     tree.forEach((node) => {
         const childNode = node.path
+            .split(':')
+            .map(Number)
             .reduce((pathNode, childId) => {
                 pathNode.flow += node.flow;
                 pathNode.largest.push(node);
                 return pathNode.getNode(childId) || pathNode.createNode(childId);
             }, root);
 
-        childNode.path = node.path.join(':');
+        childNode.path = node.path;
         childNode.flow = node.flow;
         childNode.name = node.name;
     });

@@ -122,7 +122,7 @@ export default function parseFTree(rows) {
         }
 
         tree.push({
-            path: isTreePath(row[0]) ? treePathToArray(row[0]) : row[0],
+            path: row[0].toString(),
             flow: row[1],
             name: row[2],
             node: row[3],
@@ -134,7 +134,7 @@ export default function parseFTree(rows) {
     }
 
     // 2. Get link type
-    if (rows[i] && rows[i][1].toString().match(/(un)?directed/i)) {
+    if (rows[i] && /(un)?directed/i.test(rows[i][1].toString())) {
         result.meta.linkType = rows[i][1].trim().toLowerCase();
         i++;
     } else {
@@ -151,14 +151,14 @@ export default function parseFTree(rows) {
         const row = rows[i];
 
         // 3a. Parse link header
-        if (row[0].toString().match(/^\*Links/i)) {
+        if (/^\*Links/i.test(row[0].toString())) {
             if (row.length !== 5) {
                 result.errors.push(`Malformed ftree link header: expected 5 fields, found ${row.length}.`);
                 continue;
             }
 
             link = {
-                path: isTreePath(row[1]) ? treePathToArray(row[1]) : row[1],
+                path: row[1].toString(),
                 exitFlow: row[2],
                 numEdges: row[3],
                 numChildren: row[4],
