@@ -33,6 +33,7 @@ function runApplication(ftree) {
     const actions = {
         branch: network.getNodeByPath(state.path).clone(),
         style: null,
+        temperature: 10,
 
         clone() {
             this.branch = network.getNodeByPath(state.path).clone();
@@ -61,6 +62,20 @@ function runApplication(ftree) {
             if (this.branch.nodes.length < 2 && state.linkFlow < 1) {
                 state.linkFlow += 0.1 * (1 - state.linkFlow);
                 this.clone().filterNewPath();
+            }
+
+            // Decrease linkFlow until we start to lose to many nodes
+            if (this.branch.links.length > 12 && this.temperature-- > 0) {
+                state.linkFlow *= 0.9;
+                this.branch.links = accumulateLargest(this.branch.links, state.linkFlow);
+                this.branch.links = connectedLinks(this.branch);
+                this.branch.nodes = connectedNodes(this.branch);
+                if (this.branch.nodes.length > 15) {
+                    this.clone().filterNewPath();
+                    return this;
+                }
+                state.linkFlow /= 0.9;
+                this.temperature = 10;
             }
 
             return this;
