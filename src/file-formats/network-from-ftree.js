@@ -44,6 +44,7 @@ export default function networkFromFTree({ tree, links }) {
         const childNode = node.path
             .reduce((pathNode, childId) => {
                 pathNode.flow += node.flow;
+                pathNode.largest.push(node);
                 return pathNode.getNode(childId) || pathNode.createNode(childId);
             }, root);
 

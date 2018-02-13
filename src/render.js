@@ -38,6 +38,20 @@ function makeDragHandler(simulation) {
 
 const ellipsis = (text, len = 13) => (text.length > len ? `${text.substr(0, len - 3)}...` : text);
 
+const nodeLabel = (node) => {
+    if (node.name) {
+        return ellipsis(node.name);
+    } else if (node.largest.length) {
+        return ellipsis(
+            node.largest
+                .map(item => item.name)
+                .join(', '),
+            25);
+    } else {
+        return node.id;
+    }
+};
+
 const pathToId = path => isTreePath(path) ? `id-${path.replace(/:/g, '-')}` : `id-${path}`;
 
 /**
@@ -189,7 +203,7 @@ export default function makeRenderFunction(notifier) {
             .style('stroke-width', style.nodeBorderWidth);
 
         const text = node.append('text')
-            .text(n => (n.name ? ellipsis(n.name) : n.id))
+            .text(nodeLabel)
             .attr('text-anchor', 'middle')
             .attr('dy', '0.35em')
             .style('fill', 'white')

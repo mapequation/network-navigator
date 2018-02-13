@@ -1,3 +1,6 @@
+import PriorityQueue from 'priority-queue';
+import { byFlow } from 'filter';
+
 /**
  * Class to represent a network of nodes and links.
  * The nodes in the network are Networks themselves,
@@ -16,6 +19,7 @@ export default class Network {
         this.path = null;
         this.parent = null;
         this.name = null;
+        this.largest = new PriorityQueue(byFlow, 4);
         this.flow = 0;
         this.exitFlow = 0;
         this.children = new Map();
@@ -111,6 +115,7 @@ export default class Network {
         clone.path = this.path;
         clone.parent = this.parent;
         clone.name = this.name;
+        clone.largest = this.largest;
         clone.flow = this.flow;
         clone.exitFlow = this.exitFlow;
 
