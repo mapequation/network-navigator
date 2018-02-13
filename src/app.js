@@ -69,8 +69,8 @@ function runApplication(ftree) {
         renderBranch() {
             render({
                 nodes: this.branch.nodes,
-                links: this.branch.links,
-                style: this.style || makeNetworkStyle(this.branch),
+                links: this.branch.links.reverse(),
+                style: this.style,
                 charge: state.charge,
                 linkDistance: state.linkDistance,
                 linkType: state.linkType,
@@ -114,7 +114,7 @@ function runApplication(ftree) {
 
     gui.add(state, 'path').onFinishChange(() => actions.clone().filterNewPath().renderBranch()).listen();
 
-    actions.filterNewPath().renderBranch();
+    actions.clone().filterNewPath().renderBranch();
 }
 
 fetch('data/stockholm.ftree')
