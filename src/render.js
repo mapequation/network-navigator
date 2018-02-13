@@ -207,7 +207,12 @@ export default function makeRenderFunction(notifier) {
             .attr('text-anchor', 'middle')
             .attr('dy', '0.35em')
             .style('fill', 'white')
-            .style('font-size', style.fontSize);
+            .style('font-size', style.fontSize)
+            .style('paint-order', 'stroke')
+            .style('stroke', 'black')
+            .style('stroke-width', '3px')
+            .style('stroke-linecap', 'square')
+            .style('stroke-linejoin', 'round');
 
         const linkSvgPath = (linkType === 'directed' ? halfLink : undirectedLink)()
             .nodeRadius(style.nodeRadius)
