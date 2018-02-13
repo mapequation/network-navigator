@@ -5,8 +5,6 @@
  * @author Anton Eriksson
  */
 
-import Papa from 'papaparse';
-
 
 /**
  * Promise wrapper for Papa.parse
@@ -33,6 +31,7 @@ export default function parseFile(file) {
         quoteChar: '"',
         dynamicTyping: true,
         skipEmptyLines: true,
+        worker: true,
     };
 
     return Papa.parsePromise(file, defaultOpts);
