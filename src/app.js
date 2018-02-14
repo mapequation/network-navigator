@@ -1,12 +1,13 @@
 import * as d3 from 'd3';
 import dat from 'dat.gui';
 import parseFile from 'parse';
-import parseFTree, { treePathToArray } from 'file-formats/ftree';
+import parseFTree from 'file-formats/ftree';
 import networkFromFTree from 'file-formats/network-from-ftree';
 import makeRenderFunction from 'render';
 import makeNetworkStyle from 'network-style';
 import Observable from 'observable';
 import {
+    byFlow,
     sumFlow,
     takeLargest,
     accumulateLargest,
@@ -102,7 +103,7 @@ function runApplication(file) {
         renderBranch() {
             render({
                 nodes: this.branch.nodes,
-                links: this.branch.links.reverse(),
+                links: this.branch.links.sort(byFlow).reverse(),
                 style: this.style,
                 charge: state.charge,
                 linkDistance: state.linkDistance,
