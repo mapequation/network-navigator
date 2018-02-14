@@ -7,7 +7,7 @@
  */
 
 import { scaleLinear, scaleSqrt } from 'd3-scale';
-import { extent } from 'd3-array';
+import { extent, deviation } from 'd3-array';
 
 
 /**
@@ -30,9 +30,18 @@ export default function makeNetworkStyle({ nodes, links }) {
     const nodeFillColor = scaleLinear().domain(extent(nodes, n => n.flow)).range(['#DFF1C1', '#C5D7A8']);
     const nodeBorderColor = scaleLinear().domain(extent(nodes, n => n.exitFlow)).range(['#ABD65B', '#95C056']);
     const nodeBorderWidth = scaleLinear().domain(extent(nodes, n => n.exitFlow)).range([3, 7]);
-    const linkFillColor = scaleLinear().domain(extent(links, l => l.flow)).range(['#ECF5F9', '#064575']);
-    const linkWidth = scaleLinear().domain(extent(links, l => l.flow)).range([4, 10]);
-    const fontSize = scaleSqrt().domain(extent(nodes, n => n.flow)).range([8, 18]);
+
+    const linkStdDev = deviation(links, l => l.flow);
+
+    const linkFillColor = (linkStdDev)
+        ? scaleLinear().domain(extent(links, l => l.flow)).range(['#ECF5F9', '#064575'])
+        : (() => '#064575');
+
+    const linkWidth = (linkStdDev)
+        ? scaleLinear().domain(extent(links, l => l.flow)).range([4, 10])
+        : () => 10;
+
+    const fontSize = scaleSqrt().domain(extent(nodes, n => n.flow)).range([10, 18]);
 
     return {
         nodeRadius: node => nodeRadius(node.flow),

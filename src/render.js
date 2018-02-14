@@ -80,6 +80,7 @@ export default function makeRenderFunction(notifier) {
 
     const overlay = svg.append('rect')
         .attr('class', 'overlay')
+        .style('opacity', 0)
         .style('fill', 'none')
         .style('pointer-events', 'none')
         .attr('width', width)
