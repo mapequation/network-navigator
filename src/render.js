@@ -42,14 +42,14 @@ const nodeLabel = (node) => {
     if (node.name) {
         return ellipsis(node.name);
     } else if (node.largest.length) {
-        return ellipsis(
-            node.largest
-                .map(item => item.name)
-                .join(', '),
-            25);
-    } else {
-        return node.id;
+        const largest = node.largest
+            .map(item => item.name)
+            .join(', ');
+
+        return ellipsis(largest, 25);
     }
+
+    return node.id;
 };
 
 const pathToId = path => isTreePath(path) ? `id-${path.replace(/:/g, '-')}` : `id-${path}`;
@@ -73,8 +73,7 @@ export default function makeRenderFunction(notifier) {
         .attr('class', 'background')
         .style('fill', 'none')
         .attr('width', width)
-        .attr('height', height)
-        .on('dblclick', backgroundClicked);
+        .attr('height', height);
 
     const network = svg.append('g')
         .attr('class', 'network');
@@ -94,18 +93,19 @@ export default function makeRenderFunction(notifier) {
 
     const treePath = [];
 
-    function backgroundClicked() {
+    function returnToParent() {
         const parent = treePath.pop();
 
+        // Do nothing if we're at the top
         if (!parent) return;
 
-        notifier.notify('parent');
+        notifier.notify(parent.node.parent);
 
         for (let i = 0; i < 30; i++) {
             simulation.tick();
         }
 
-        const { x, y } = d3.select(`#${parent}`).select('circle').datum();
+        const { x, y } = d3.select(`#${pathToId(parent.node.path)}`).select('circle').datum();
         const scale = 50;
         const translate = [width / 2 - scale * x, height / 2 - scale * y];
 
@@ -116,11 +116,14 @@ export default function makeRenderFunction(notifier) {
             .call(zoom.transform, d3.zoomIdentity);
     }
 
-    function nodeClicked(node) {
+    function enterChild(node, nodeFillColor) {
         // Do nothing if node has no child nodes
         if (!node.nodes.length) return;
 
-        treePath.push(pathToId(node.path));
+        treePath.push({
+            node,
+            nodeFillColor,
+        });
 
         simulation.stop();
 
@@ -149,7 +152,7 @@ export default function makeRenderFunction(notifier) {
         case 'Esc':
         case 'Escape':
         case 27:
-            backgroundClicked();
+            returnToParent();
             break;
         case 'Space':
         case ' ':
@@ -192,7 +195,7 @@ export default function makeRenderFunction(notifier) {
             .append('g')
             .attr('id', n => pathToId(n.path))
             .attr('class', 'node')
-            .on('dblclick', nodeClicked)
+            .on('dblclick', n => enterChild(n, style.nodeFillColor(n)))
             .call(dragHandler);
 
         const circle = node.append('circle')
@@ -204,7 +207,7 @@ export default function makeRenderFunction(notifier) {
         const text = node.append('text')
             .text(nodeLabel)
             .attr('text-anchor', 'middle')
-            .attr('dy', '0.35em')
+            .attr('dy', n => -0.7 * style.nodeRadius(n))
             .style('fill', 'white')
             .style('font-size', style.fontSize)
             .style('paint-order', 'stroke')

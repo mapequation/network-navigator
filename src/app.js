@@ -112,21 +112,7 @@ function runApplication(file) {
         },
 
         update(node) {
-            if (node === 'parent' && state.path === 'root')
-                return;
-
-            if (node === 'parent') {
-                const p = treePathToArray(state.path);
-                if (p.length === 1) {
-                    state.path = 'root';
-                } else {
-                    p.pop()
-                    state.path = p.join(':');
-                }
-            } else {
-                state.path = node.path;
-            }
-
+            state.path = node.path;
             this.clone().filterNewPath().renderBranch();
         },
     };
