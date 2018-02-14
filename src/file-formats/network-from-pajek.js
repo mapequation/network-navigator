@@ -17,6 +17,8 @@ export default function networkFromPajek({ nodes, links })
   {
     var theNode  = root.createNode(node.id);
     theNode.name = node.label;
+    theNode.flow = node.flow;
+    theNode.path = node.id.toString();
   })
 
   root.links = links;

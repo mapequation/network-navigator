@@ -18,25 +18,39 @@
  */
 function isDeclaration(row, declarationString)
 {
-  return row.length       == 2
-      && row[0]           == declarationString
-      && parseInt(row[1]) != NaN
+  return row.length                      === 2
+      && row[0].toString().toLowerCase() === declarationString.toLowerCase()
+      && parseInt(row[1])                !== NaN
       ;
 }
 
 function isNodeDefinition(row)
 {
-  return row.length == 2
-      && parseInt(row[0]) != NaN
-      ;
+  if (row.length === 2)
+    return parseInt(row[0]) !== NaN;
+
+  if (row.length === 3)
+    return parseInt(row[0])   !== NaN
+        && parseFloat(row[2]) !== NaN
+        ;
+
+  return false;
 }
 
 function isLinkDefinition(row)
 {
-  return row.length         == 3
-      && parseInt(row[0])   != NaN
-      && parseInt(row[1])   != NaN
-      && parseFloat(row[2]) != NaN
+  if (row.length === 2)
+    return parseInt(row[0]) !== NaN
+        && parseInt(row[1]) !== NaN
+        ;
+
+  if (row.length === 3)
+    return parseInt(row[0])   !== NaN
+        && parseInt(row[1])   !== NaN
+        && parseFloat(row[2]) !== NaN
+        ;
+
+  return false;
 }
 
 export default function parsePajek(rows)
@@ -45,6 +59,8 @@ export default function parsePajek(rows)
                             , links : []
                             }
                  , errors : []
+                 , meta   : { linkType : "undirected"
+                            }
                  };
 
   var i = 0
@@ -66,10 +82,11 @@ export default function parsePajek(rows)
   for (; !(error = !isNodeDefinition(rows[i])) && i < numNodes + 1; ++i)
     result.data.nodes.push({ id    : +rows[i][0]
                            , label : rows[i][1].toString()
+                           , flow  : +rows[i][2] | 1
                            });
 
   // we expect a line that tells us how many links there are
-  if (isDeclaration(rows[i], "*Edges"))
+  if (isDeclaration(rows[i], "*Edges") || isDeclaration(rows[i], "*Arcs"))
     numLinks = +rows[i++][1];
   else
   {
@@ -80,10 +97,9 @@ export default function parsePajek(rows)
   // now we can read all the links
   for (; i < numNodes + numLinks + 2 && !(error = !isLinkDefinition(rows[i])); ++i)
   {
-    console.log(rows[i])
     result.data.links.push({ source : +rows[i][0]
                            , target : +rows[i][1]
-                           , flow   : +rows[i][2]
+                           , flow   : +rows[i][2] | 1
                            });
   }
 
