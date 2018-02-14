@@ -7,7 +7,8 @@
 export default class PriorityQueue {
     /**
      * Construct a PriorityQueue
-     * @param {number} maxItems max number of items to keep
+     * @param {number} maxItems max number of items to keep,
+     *                          -1 to keep all items
      * @return {PriorityQueue}
      */
     constructor(comparator, maxItems = -1) {
@@ -35,7 +36,7 @@ export default class PriorityQueue {
     }
 
     /**
-     * Push an item on the stack
+     * Push an item on the queue
      *
      * @param {*} item
      */
@@ -48,7 +49,7 @@ export default class PriorityQueue {
     }
 
     /**
-     * Pop an item of the stack
+     * Pop an item of the queue
      *
      * @return {*} the item
      */

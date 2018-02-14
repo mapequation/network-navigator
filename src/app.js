@@ -14,10 +14,27 @@ import {
     connectedLinks,
 } from 'filter';
 
+const gui = new dat.GUI();
+const renderFolder = gui.addFolder('Rendering / simulation');
+const filteringFolder = gui.addFolder('Filtering');
+
+const svg = d3.select('svg')
+    .attr('width', window.innerWidth)
+    .attr('height', window.innerHeight);
+
+svg.append('g')
+    .attr('transform', `translate(${window.innerWidth / 2}, ${window.innerHeight / 2}) rotate(-45)`)
+    .append('path')
+    .attr('class', 'move')
+    .attr('d', 'M0,-25A25,25 0 0,1 25,0L20,0A20,20 0 0,0 0,-20Z')
+    .style('fill', '#555555');
+
 
 function runApplication(file) {
     const ftree = parseFTree(file.data);
     const network = networkFromFTree(ftree.data);
+
+    svg.selectAll('*').remove();
 
     const state = {
         nodeFlow: 0.2,
@@ -116,14 +133,10 @@ function runApplication(file) {
 
     renderNotifier.attach(actions);
 
-    const gui = new dat.GUI();
-
-    const renderFolder = gui.addFolder('Rendering / simulation');
     renderFolder.add(state, 'linkDistance', 50, 500).step(25).onFinishChange(() => actions.renderBranch());
     renderFolder.add(state, 'charge', 0, 2000).step(100).onFinishChange(() => actions.renderBranch());
     renderFolder.open();
 
-    const filteringFolder = gui.addFolder('Filtering');
     filteringFolder.add(state, 'nodeFlow', 0, 1).step(0.01).onFinishChange(() => actions.clone().filterGUI().renderBranch()).listen();
     filteringFolder.add(state, 'linkFlow', 0, 1).step(0.01).onFinishChange(() => actions.clone().filterGUI().renderBranch()).listen();
     filteringFolder.open();

@@ -10,3 +10,12 @@ body {
 svg text {
     pointer-events: none;
 }
+
+.move {
+    animation: spinning 1.5s ease-in-out infinite;
+}
+
+@keyframes spinning {
+    from { transform: rotate(0deg) }
+    to   { transform: rotate(360deg) }
+}

@@ -65,7 +65,7 @@ export default function makeRenderFunction(notifier) {
     const width = window.innerWidth;
     const height = window.innerHeight;
 
-    const svg = d3.select('body').append('svg')
+    const svg = d3.select('svg')
         .attr('width', width)
         .attr('height', height);
 
@@ -111,8 +111,7 @@ export default function makeRenderFunction(notifier) {
 
         svg.call(zoom.transform, d3.zoomIdentity.translate(...translate).scale(scale));
 
-        return svg
-            .transition()
+        svg.transition()
             .duration(750)
             .call(zoom.transform, d3.zoomIdentity);
     }
