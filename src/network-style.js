@@ -29,7 +29,7 @@ export default function makeNetworkStyle({ nodes, links }) {
     const nodeRadius = scaleSqrt().domain(extent(nodes, n => n.flow)).range([20, 70]);
     const nodeFillColor = scaleLinear().domain(extent(nodes, n => n.flow)).range(['#DFF1C1', '#C5D7A8']);
     const nodeBorderColor = scaleLinear().domain(extent(nodes, n => n.exitFlow)).range(['#ABD65B', '#95C056']);
-    const nodeBorderWidth = scaleSqrt().domain(extent(nodes, n => n.exitFlow)).range([3, 7]);
+    const nodeBorderWidth = scaleLinear().domain(extent(nodes, n => n.exitFlow)).range([3, 7]);
     const linkFillColor = scaleLinear().domain(extent(links, l => l.flow)).range(['#ECF5F9', '#064575']);
     const linkWidth = scaleLinear().domain(extent(links, l => l.flow)).range([4, 10]);
     const fontSize = scaleSqrt().domain(extent(nodes, n => n.flow)).range([8, 18]);
