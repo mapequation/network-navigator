@@ -40,13 +40,13 @@ const ellipsis = (text, len = 13) => (text.length > len ? `${text.substr(0, len 
 
 const nodeLabel = (node) => {
     if (node.name) {
-        return ellipsis(node.name);
+        return ellipsis(node.name, 20);
     } else if (node.largest.length) {
         const largest = node.largest
             .map(item => item.name)
             .join(', ');
 
-        return ellipsis(largest, 25);
+        return ellipsis(largest, 30);
     }
 
     return node.id;
@@ -78,6 +78,13 @@ export default function makeRenderFunction(notifier) {
     const network = svg.append('g')
         .attr('class', 'network');
 
+    const overlay = svg.append('rect')
+        .attr('class', 'overlay')
+        .style('fill', 'none')
+        .style('pointer-events', 'none')
+        .attr('width', width)
+        .attr('height', height);
+
     const zoom = d3.zoom()
         .scaleExtent([0.1, 50])
         .on('zoom', () => network.attr('transform', d3.event.transform));
@@ -99,21 +106,30 @@ export default function makeRenderFunction(notifier) {
         // Do nothing if we're at the top
         if (!parent) return;
 
-        notifier.notify(parent.node.parent);
+        simulation.stop();
 
-        for (let i = 0; i < 30; i++) {
-            simulation.tick();
-        }
+        overlay.style('fill', parent.nodeFillColor);
+        overlay.transition()
+            .duration(250)
+            .styleTween('opacity', () => d3.interpolateNumber(0, 1))
+            .on('end', () => {
+                notifier.notify(parent.node.parent);
 
-        const { x, y } = d3.select(`#${pathToId(parent.node.path)}`).select('circle').datum();
-        const scale = 50;
-        const translate = [width / 2 - scale * x, height / 2 - scale * y];
+                for (let i = 0; i < 30; i++) {
+                    simulation.tick();
+                }
 
-        svg.call(zoom.transform, d3.zoomIdentity.translate(...translate).scale(scale));
+                const { x, y } = d3.select(`#${pathToId(parent.node.path)}`).select('circle').datum();
+                const scale = 50;
+                const translate = [width / 2 - scale * x, height / 2 - scale * y];
 
-        svg.transition()
-            .duration(750)
-            .call(zoom.transform, d3.zoomIdentity);
+                svg.call(zoom.transform, d3.zoomIdentity.translate(...translate).scale(scale));
+
+                overlay.style('opacity', 0);
+                svg.transition()
+                    .duration(750)
+                    .call(zoom.transform, d3.zoomIdentity);
+            });
     }
 
     function enterChild(node, nodeFillColor) {
@@ -139,6 +155,11 @@ export default function makeRenderFunction(notifier) {
                 for (let i = 0; i < 20; i++) {
                     simulation.tick();
                 }
+
+                overlay.style('fill', nodeFillColor);
+                overlay.transition()
+                    .duration(400)
+                    .styleTween('opacity', () => d3.interpolateNumber(1, 0));
             })
             .call(zoom.transform, d3.zoomIdentity.translate(...translate).scale(scale))
             .transition()
