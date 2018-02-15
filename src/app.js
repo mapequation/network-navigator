@@ -89,7 +89,7 @@ function runApplication(parsed, file) {
 
             // Increase linkFlow if we filtered out all nodes.
             if (this.branch.nodes.length < 2 && state.linkFlow < 1) {
-                state.linkFlow += 0.1 * (1 - state.linkFlow);
+                state.linkFlow = 1;
                 this.clone().filterNewPath();
             }
 
