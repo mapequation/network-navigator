@@ -14,13 +14,6 @@ describe('Network', function () {
         expect(network.getNode(node.id)).to.equal(node);
     });
 
-    it('should be able to delete nodes', function () {
-        const node = { id: 1 };
-        network.addNode(node);
-        network.deleteNode(node);
-        expect(network.getNode(node.id)).to.equal(undefined);
-    });
-
     it('should be able to get a node by path', function () {
         const node1 = new Network(1);
         const node2 = new Network(2);

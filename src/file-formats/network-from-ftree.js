@@ -35,7 +35,6 @@ export default function networkFromFTree({ tree, links }) {
                 .map(Number)
                 .reduce((pathNode, childId) => pathNode.getNode(childId) || pathNode.createNode(childId), root);
 
-            childNode.path = node.path;
             childNode.exitFlow = node.exitFlow;
             childNode.links = node.links;
         }
@@ -52,7 +51,6 @@ export default function networkFromFTree({ tree, links }) {
                 return pathNode.getNode(childId) || pathNode.createNode(childId);
             }, root);
 
-        childNode.path = node.path;
         childNode.flow = node.flow;
         childNode.name = node.name;
     });

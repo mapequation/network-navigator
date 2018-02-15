@@ -3,8 +3,6 @@ import { byFlow } from 'filter';
 
 /**
  * Class to represent a network of nodes and links.
- * The nodes in the network are Networks themselves,
- * allowing the class to represent multi-layer networks.
  *
  * @author Anton Eriksson
  */
@@ -22,7 +20,7 @@ export default class Network {
         this.largest = new PriorityQueue(byFlow, 4);
         this.flow = 0;
         this.exitFlow = 0;
-        this.children = new Map();
+        this._nodes = new Map();
         this.links = [];
     }
 
@@ -41,11 +39,12 @@ export default class Network {
     /**
      * Add a node to this network
      *
-     * @param {Network} node the node to add
+     * @param {Object} node the node to add
      */
     addNode(node) {
         node.parent = this;
-        this.children.set(node.id, node);
+        node.path = this.path === 'root' ? node.id.toString() : [this.path, node.id].join(':');
+        this._nodes.set(node.id, node);
     }
 
     /**
@@ -55,7 +54,7 @@ export default class Network {
      * @return {?Network} the node
      */
     getNode(id) {
-        return this.children.get(id);
+        return this._nodes.get(id);
     }
 
     /**
@@ -76,31 +75,21 @@ export default class Network {
     }
 
     /**
-     * Delete a node from the network.
-     *
-     * @param {number|string} node the node id or node reference to delete
-     */
-    deleteNode(node) {
-        const id = node.id || node;
-        this.children.delete(id);
-    }
-
-    /**
      * Get an array of all nodes.
      *
-     * @return {Network[]} the nodes
+     * @return {Object[]} the nodes
      */
     get nodes() {
-        return Array.from(this.children.values());
+        return Array.from(this._nodes.values());
     }
 
     /**
      * Replace all nodes in this network.
      *
-     * @param {Network[]} nodes the nodes
+     * @param {Object[]} nodes the nodes
      */
     set nodes(nodes) {
-        this.children.clear();
+        this._nodes.clear();
         nodes.forEach(child => this.addNode(child));
     }
 
@@ -132,7 +121,7 @@ export default class Network {
     /**
      * Deep clone this Network
      *
-     * @return {Network} a clone of this Network
+     * @return {Network} the clone
      */
     clone() {
         const clone = new Network(this.id);
