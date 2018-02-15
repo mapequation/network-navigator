@@ -8,6 +8,8 @@
  */
 
 import Network from 'network';
+import Module from 'module';
+import Node from 'node';
 
 
 /**
@@ -19,8 +21,7 @@ import Network from 'network';
  * @return {Network}
  */
 export default function networkFromFTree({ tree, links }) {
-    const root = new Network('root');
-    root.path = 'root';
+    const root = new Network();
 
     // Create the tree structure
     links.forEach((node) => {
@@ -33,7 +34,14 @@ export default function networkFromFTree({ tree, links }) {
             const childNode = node.path
                 .split(':')
                 .map(Number)
-                .reduce((pathNode, childId) => pathNode.getNode(childId) || pathNode.createNode(childId), root);
+                .reduce((pathNode, childId) => {
+                    let child = pathNode.getNode(childId);
+                    if (!child) {
+                        child = new Module(childId);
+                        pathNode.addNode(child);
+                    }
+                    return child;
+                }, root);
 
             childNode.exitFlow = node.exitFlow;
             childNode.links = node.links;
@@ -42,17 +50,22 @@ export default function networkFromFTree({ tree, links }) {
 
     // Add the actual nodes
     tree.forEach((node) => {
-        const childNode = node.path
+        const path = node.path
             .split(':')
-            .map(Number)
+            .map(Number);
+
+        const parent = path
+            .slice(0, -1)
             .reduce((pathNode, childId) => {
                 pathNode.flow += node.flow;
                 pathNode.largest.push(node);
-                return pathNode.getNode(childId) || pathNode.createNode(childId);
+                return pathNode.getNode(childId);
             }, root);
 
-        childNode.flow = node.flow;
-        childNode.name = node.name;
+        parent.flow += node.flow;
+        parent.largest.push(node);
+
+        parent.addNode(new Node(path.pop(), node.name, node.flow));
     });
 
     return root;

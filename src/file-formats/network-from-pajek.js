@@ -7,21 +7,14 @@
  */
 
 import Network from 'network';
+import Node from 'node';
 
-export default function networkFromPajek({ nodes, links })
-{
-  const root = new Network("root");
-  root.path  = "root";
+export default function networkFromPajek({ nodes, links }) {
+    const root = new Network();
 
-  nodes.forEach((node) =>
-  {
-    var theNode  = root.createNode(node.id);
-    theNode.name = node.label;
-    theNode.flow = node.flow;
-    theNode.path = node.id.toString();
-  })
+    nodes.forEach(node => root.addNode(new Node(node.id, node.label, node.flow)));
 
-  root.links = links;
+    root.links = links;
 
-  return root;
+    return root;
 }

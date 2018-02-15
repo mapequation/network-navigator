@@ -127,7 +127,7 @@ export default function makeRenderFunction(notifier) {
 
     function enterChild(node, nodeFillColor) {
         // Do nothing if node has no child nodes
-        if (!node.nodes.length) return;
+        if (!(node.nodes && node.nodes.length)) return;
 
         treePath.push({
             node,
