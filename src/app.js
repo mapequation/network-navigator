@@ -43,6 +43,7 @@ function runApplication(parsed, file) {
         filename: file.name,
         nodeFlow: 0.2,
         linkFlow: 0.8,
+        hideDisconnected: true,
         path: 'root',
         linkDistance: 300,
         charge: 500,
@@ -66,7 +67,11 @@ function runApplication(parsed, file) {
             this.branch.nodes = accumulateLargest(this.branch.nodes, state.nodeFlow);
             this.branch.links = accumulateLargest(this.branch.links, state.linkFlow);
             this.branch.links = connectedLinks(this.branch);
-            this.branch.nodes = connectedNodes(this.branch);
+
+            if (state.hideDisconnected) {
+                this.branch.nodes = connectedNodes(this.branch);
+            }
+
             return this;
         },
 
@@ -77,7 +82,10 @@ function runApplication(parsed, file) {
 
             this.branch.links = accumulateLargest(this.branch.links, state.linkFlow);
             this.branch.links = connectedLinks(this.branch);
-            this.branch.nodes = connectedNodes(this.branch);
+
+            if (state.hideDisconnected) {
+                this.branch.nodes = connectedNodes(this.branch);
+            }
 
             // Increase linkFlow if we filtered out all nodes.
             if (this.branch.nodes.length < 2 && state.linkFlow < 1) {
@@ -119,6 +127,7 @@ function runApplication(parsed, file) {
     const filteringFolder = gui.addFolder('Filtering');
     filteringFolder.add(state, 'nodeFlow', 0, 1).step(0.01).onFinishChange(() => actions.clone().filterGUI().renderBranch()).listen();
     filteringFolder.add(state, 'linkFlow', 0, 1).step(0.01).onFinishChange(() => actions.clone().filterGUI().renderBranch()).listen();
+    filteringFolder.add(state, 'hideDisconnected', true).onChange(() => actions.clone().filterGUI().renderBranch());
     filteringFolder.open();
 
     gui.add(state, 'path').onFinishChange(() => actions.clone().filterNewPath().renderBranch()).listen();
