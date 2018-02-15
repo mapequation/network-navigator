@@ -82,7 +82,7 @@ export default function parsePajek(rows)
   for (; !(error = !isNodeDefinition(rows[i])) && i < numNodes + 1; ++i)
     result.data.nodes.push({ id    : +rows[i][0]
                            , label : rows[i][1].toString()
-                           , flow  : +rows[i][2] | 1
+                           , flow  : +rows[i][2] || 1
                            });
 
   // we expect a line that tells us how many links there are
@@ -90,7 +90,7 @@ export default function parsePajek(rows)
     numLinks = +rows[i++][1];
   else
   {
-    result.errors.push("Expected *Edges declaration but got " + rows[i].toString());
+    result.errors.push("Expected *Edges or *Arcs declaration but got " + rows[i].toString());
     error = true;
   }
 
@@ -99,7 +99,7 @@ export default function parsePajek(rows)
   {
     result.data.links.push({ source : +rows[i][0]
                            , target : +rows[i][1]
-                           , flow   : +rows[i][2] | 1
+                           , flow   : +rows[i][2] || 1
                            });
   }
 

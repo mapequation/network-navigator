@@ -24,11 +24,6 @@ const svg = d3.select('svg')
 
 function runApplication(parsed, file) {
     const filetype = file.name.match(/\.(ftree|net)$/i);
-
-    if (!filetype[1]) {
-        throw new Error('Filetype not supported!');
-    }
-
     const extension = filetype[1];
 
     let tree = null;
@@ -40,10 +35,6 @@ function runApplication(parsed, file) {
     } else if (extension === 'net') {
         tree = parsePajek(parsed.data);
         network = networkFromPajek(tree.data);
-    }
-
-    if (!(tree && network)) {
-        throw new Error('Could not parse file!');
     }
 
     svg.selectAll('*').remove();
@@ -64,7 +55,6 @@ function runApplication(parsed, file) {
     const actions = {
         branch: network.getNodeByPath(state.path).clone(),
         style: null,
-        temperature: 10,
 
         clone() {
             this.branch = network.getNodeByPath(state.path).clone();
@@ -88,27 +78,13 @@ function runApplication(parsed, file) {
             this.branch.links = accumulateLargest(this.branch.links, state.linkFlow);
             this.branch.links = connectedLinks(this.branch);
             this.branch.nodes = connectedNodes(this.branch);
-/*
+
             // Increase linkFlow if we filtered out all nodes.
             if (this.branch.nodes.length < 2 && state.linkFlow < 1) {
                 state.linkFlow += 0.1 * (1 - state.linkFlow);
                 this.clone().filterNewPath();
             }
- */
-/*             // Decrease linkFlow until we start to lose to many nodes
-            if (this.branch.links.length > 12 && this.temperature-- > 0) {
-                state.linkFlow *= 0.9;
-                this.branch.links = accumulateLargest(this.branch.links, state.linkFlow);
-                this.branch.links = connectedLinks(this.branch);
-                this.branch.nodes = connectedNodes(this.branch);
-                if (this.branch.nodes.length > 15) {
-                    this.clone().filterNewPath();
-                    return this;
-                }
-                state.linkFlow /= 0.9;
-                this.temperature = 10;
-            }
- */
+
             return this;
         },
 
@@ -124,8 +100,8 @@ function runApplication(parsed, file) {
             return this;
         },
 
-        update(node) {
-            state.path = node.path;
+        update(path) {
+            state.path = path;
             this.clone().filterNewPath().renderBranch();
         },
     };

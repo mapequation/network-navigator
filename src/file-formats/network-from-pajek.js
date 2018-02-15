@@ -22,7 +22,6 @@ export default function networkFromPajek({ nodes, links })
   })
 
   root.links = links;
-  console.log(links)
 
   return root;
 }

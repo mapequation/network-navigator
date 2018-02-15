@@ -39,9 +39,11 @@ export default function makeNetworkStyle({ nodes, links }) {
 
     const linkWidth = (linkStdDev)
         ? scaleLinear().domain(extent(links, l => l.flow)).range([4, 10])
-        : () => 10;
+        : () => 5;
 
-    const fontSize = scaleSqrt().domain(extent(nodes, n => n.flow)).range([10, 18]);
+    const fontSize = (linkStdDev)
+        ? scaleSqrt().domain(extent(nodes, n => n.flow)).range([10, 18])
+        : () => 16;
 
     return {
         nodeRadius: node => nodeRadius(node.flow),

@@ -111,16 +111,22 @@ export default function makeRenderFunction(notifier) {
 
         overlay.style('fill', parent.nodeFillColor);
         overlay.transition()
-            .duration(250)
+            .duration(150)
             .styleTween('opacity', () => d3.interpolateNumber(0, 1))
             .on('end', () => {
-                notifier.notify(parent.node.parent);
+                notifier.notify(parent.node.parent.path);
 
                 for (let i = 0; i < 30; i++) {
                     simulation.tick();
                 }
 
-                const { x, y } = d3.select(`#${pathToId(parent.node.path)}`).select('circle').datum();
+                const parentElem = d3.select(`#${pathToId(parent.node.path)}`);
+                const { x, y } = (() => {
+                    if (parentElem) {
+                        return parentElem.select('circle').datum();
+                    }
+                    return { x: width / 2, y: height / 2 };
+                })();
                 const scale = 50;
                 const translate = [width / 2 - scale * x, height / 2 - scale * y];
 
@@ -128,7 +134,7 @@ export default function makeRenderFunction(notifier) {
 
                 overlay.style('opacity', 0);
                 svg.transition()
-                    .duration(750)
+                    .duration(200)
                     .call(zoom.transform, d3.zoomIdentity);
             });
     }
@@ -149,9 +155,9 @@ export default function makeRenderFunction(notifier) {
         const translate = [width / 2 - scale * x, height / 2 - scale * y];
 
         svg.transition()
-            .duration(750)
+            .duration(500)
             .on('end', () => {
-                notifier.notify(node);
+                notifier.notify(node.path);
 
                 for (let i = 0; i < 20; i++) {
                     simulation.tick();
@@ -159,7 +165,7 @@ export default function makeRenderFunction(notifier) {
 
                 overlay.style('fill', nodeFillColor);
                 overlay.transition()
-                    .duration(400)
+                    .duration(300)
                     .styleTween('opacity', () => d3.interpolateNumber(1, 0));
             })
             .call(zoom.transform, d3.zoomIdentity.translate(...translate).scale(scale))
@@ -230,10 +236,10 @@ export default function makeRenderFunction(notifier) {
             .text(nodeLabel)
             .attr('text-anchor', 'middle')
             .attr('dy', n => -0.7 * style.nodeRadius(n))
-            .style('fill', 'white')
+            .style('fill', 'black')
             .style('font-size', style.fontSize)
             .style('paint-order', 'stroke')
-            .style('stroke', 'black')
+            .style('stroke', 'white')
             .style('stroke-width', '3px')
             .style('stroke-linecap', 'square')
             .style('stroke-linejoin', 'round');
