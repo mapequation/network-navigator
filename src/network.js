@@ -18,7 +18,7 @@ export default class Network {
         this.id = id;
         this.path = null;
         this.parent = null;
-        this.name = null;
+        this._name = null;
         this.largest = new PriorityQueue(byFlow, 4);
         this.flow = 0;
         this.exitFlow = 0;
@@ -102,6 +102,31 @@ export default class Network {
     set nodes(nodes) {
         this.children.clear();
         nodes.forEach(child => this.addNode(child));
+    }
+
+    /**
+     * Get the name
+     *
+     * @return {string}
+     */
+    get name() {
+        if (this._name) {
+            return this._name;
+        } else if (this.largest.length) {
+            return this.largest
+                .map(item => item.name)
+                .join(', ');
+        }
+        return this.id;
+    }
+
+    /**
+     * Set the name
+     *
+     * @param {string} name the name
+     */
+    set name(name) {
+        this._name = name;
     }
 
     /**
