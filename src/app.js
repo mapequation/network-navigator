@@ -71,9 +71,9 @@ function runApplication(parsed, file) {
         },
 
         filterNewPath() {
-            const flowBefore = sumFlow(this.branch.nodes);
+            const totalNodeFlow = sumFlow(this.branch.nodes);
             this.branch.nodes = takeLargest(this.branch.nodes, 20);
-            state.nodeFlow = sumFlow(this.branch.nodes) / flowBefore;
+            state.nodeFlow = totalNodeFlow ? sumFlow(this.branch.nodes) / totalNodeFlow : 1;
 
             this.branch.links = accumulateLargest(this.branch.links, state.linkFlow);
             this.branch.links = connectedLinks(this.branch);
