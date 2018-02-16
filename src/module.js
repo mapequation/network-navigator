@@ -105,17 +105,13 @@ export default class Module {
         clone.flow = this.flow;
         clone.exitFlow = this.exitFlow;
 
-        this.nodes.forEach((childNode) => {
-            clone.addNode(childNode.clone());
-        });
+        this.nodes.forEach(node => clone.addNode(node.clone()));
 
-        this.links.forEach((link) => {
-            clone.links.push({
-                source: link.source,
-                target: link.target,
-                flow: link.flow,
-            });
-        });
+        this.links.forEach(link => clone.links.push({
+            source: link.source,
+            target: link.target,
+            flow: link.flow,
+        }));
 
         return clone;
     }
