@@ -9,40 +9,6 @@
 
 
 /**
- * Split a tree path string to array and parse to integer.
- *
- * @example
- * > treePathToArray('1:1')
- * [1, 1]
- * > treePathToArray('1')
- * [1]
- * > treePathToArray(1)
- * [1]
- * > treePathToArray('root')
- * [ NaN ]
- *
- * @param {string} pathStr A string in format "1:1:2:1"
- * @return {number[]}
- */
-export function treePathToArray(pathStr) {
-    return pathStr
-        .toString()
-        .split(':')
-        .map(Number);
-}
-
-/**
- * Check if path matches the format 1:1:1
- * (repeating digit and colon ending with digit)
- *
- * @param {*} path
- * @return {boolean}
- */
-export function isTreePath(path) {
-    return /^(\d+:)*\d+$/.test(path.toString());
-}
-
-/**
  * Parse ftree data to object.
  *
  * @example
@@ -122,7 +88,7 @@ export default function parseFTree(rows) {
         }
 
         tree.push({
-            path: row[0].toString(),
+            path: row[0],
             flow: row[1],
             name: row[2],
             node: row[3],
@@ -158,7 +124,7 @@ export default function parseFTree(rows) {
             }
 
             link = {
-                path: row[1].toString(),
+                path: row[1],
                 exitFlow: row[2],
                 numEdges: row[3],
                 numChildren: row[4],

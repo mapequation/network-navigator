@@ -1,8 +1,9 @@
 /**
- * @file This file deals with creating a tree of Networks from FTree data.
+ * @file This file deals with creating a Network from FTree data.
  * The FTree data is typically generated from the function parseFTree.
  *
  * @see parseFTree
+ * @see Network
  *
  * @author Anton Eriksson
  */
@@ -10,6 +11,7 @@
 import Network from 'network';
 import Module from 'module';
 import Node from 'node';
+import TreePath from 'treepath';
 
 
 /**
@@ -26,14 +28,12 @@ export default function networkFromFTree({ tree, links }) {
     // Create the tree structure
     links.forEach((node) => {
         // Get root node links
-        if (node.path === 'root') {
+        if (node.path === root.path.toString()) {
             root.links = node.links;
 
         // For all other nodes
         } else {
-            const childNode = node.path
-                .split(':')
-                .map(Number)
+            const childNode = TreePath.toArray(node.path)
                 .reduce((pathNode, childId) => {
                     let child = pathNode.getNode(childId);
                     if (!child) {
@@ -50,9 +50,7 @@ export default function networkFromFTree({ tree, links }) {
 
     // Add the actual nodes
     tree.forEach((node) => {
-        const path = node.path
-            .split(':')
-            .map(Number);
+        const path = TreePath.toArray(node.path);
 
         const parent = path
             .slice(0, -1)

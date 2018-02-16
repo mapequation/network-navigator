@@ -1,4 +1,5 @@
 import PriorityQueue from 'priority-queue';
+import TreePath from 'treepath';
 import { byFlow } from 'filter';
 
 /**
@@ -14,7 +15,7 @@ export default class Module {
      */
     constructor(id) {
         this.id = id;
-        this.path = null;
+        this.path = new TreePath(id);
         this.parent = null;
         this._name = null;
         this.largest = new PriorityQueue(byFlow, 4);
@@ -31,7 +32,7 @@ export default class Module {
      */
     addNode(node) {
         node.parent = this;
-        node.path = [this.path, node.id].join(':');
+        node.path = TreePath.join(this.path, node.id);
         this._nodes.set(node.id, node);
     }
 

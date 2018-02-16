@@ -5,7 +5,7 @@ describe('Module', function () {
     let mod;
 
     beforeEach(function () {
-        mod = new Module();
+        mod = new Module(1);
     });
 
     it('should be able to get a node by id', function () {

@@ -1,3 +1,5 @@
+import TreePath from 'treepath';
+
 /**
  * Class to represent a node in a network
  *
@@ -6,7 +8,7 @@
 export default class Node {
     constructor(id, name, flow) {
         this.id = id;
-        this.path = null;
+        this.path = new TreePath(id);
         this.parent = null;
         this.name = name;
         this.flow = flow;
@@ -14,6 +16,6 @@ export default class Node {
     }
 
     clone() {
-        return this;
+        return new Node(this.id, this.name, this.flow);
     }
 }

@@ -1,42 +1,6 @@
 /* eslint-env mocha */
 import { expect } from 'chai';
-import parseFTree, { treePathToArray, isTreePath } from '../src/file-formats/ftree';
-
-describe('treePathToArray', function () {
-    it('should parse integers', function () {
-        expect(treePathToArray(1)).to.deep.equal([1]);
-    });
-
-    it('should parse integer strings', function () {
-        expect(treePathToArray('1')).to.deep.equal([1]);
-    });
-
-    it('should parse integer strings separated by colon', function () {
-        expect(treePathToArray('1:2:3')).to.deep.equal([1, 2, 3]);
-    });
-});
-
-describe('isTreePath', function () {
-    it('should return true for integers', function () {
-        expect(isTreePath(1)).to.equal(true);
-    });
-
-    it('should return true for integer strings', function () {
-        expect(isTreePath('1')).to.equal(true);
-    });
-
-    it('should return true for integer strings separated by colon', function () {
-        expect(isTreePath('1:2:3')).to.equal(true);
-    });
-
-    it('should return false if an otherwise correct path ends with colon', function () {
-        expect(isTreePath('1:1:')).to.equal(false);
-    });
-
-    it('should return false for a non-integer string', function () {
-        expect(isTreePath('root')).to.equal(false);
-    })
-});
+import parseFTree from '../src/file-formats/ftree';
 
 describe('parseFTree', function () {
     it('should parse simple data', function () {

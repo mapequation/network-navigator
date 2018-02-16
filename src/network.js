@@ -1,4 +1,5 @@
 import Module from 'module';
+import TreePath from 'treepath';
 
 /**
  * Class to represent a network of links and nodes
@@ -11,7 +12,6 @@ export default class Network extends Module {
      */
     constructor() {
         super('root');
-        this.path = 'root';
     }
 
     /**
@@ -21,7 +21,6 @@ export default class Network extends Module {
      */
     addNode(node) {
         node.parent = this;
-        node.path = node.id.toString();
         this._nodes.set(node.id, node);
     }
 
@@ -32,13 +31,11 @@ export default class Network extends Module {
      * @return {?(Module|Node)} the node
      */
     getNodeByPath(path) {
-        if (path === this.path) {
+        if (path.toString() === this.path.toString()) {
             return this;
         }
 
-        return path
-            .split(':')
-            .map(Number)
+        return TreePath.toArray(path)
             .reduce((pathNode, childId) => (pathNode ? pathNode.getNode(childId) : null), this);
     }
 

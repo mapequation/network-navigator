@@ -9,7 +9,6 @@
 
 import * as d3 from 'd3';
 import { halfLink, undirectedLink } from 'network-rendering';
-import { isTreePath } from 'file-formats/ftree';
 
 
 function makeDragHandler(simulation) {
@@ -37,8 +36,6 @@ function makeDragHandler(simulation) {
 }
 
 const ellipsis = (text, len = 13) => (text.length > len ? `${text.substr(0, len - 3)}...` : text);
-
-const pathToId = path => isTreePath(path) ? `id-${path.replace(/:/g, '-')}` : `id-${path}`;
 
 /**
  * Factory function to set up svg canvas and return
@@ -106,7 +103,7 @@ export default function makeRenderFunction(notifier) {
                     simulation.tick();
                 }
 
-                const parentElem = d3.select(`#${pathToId(parent.node.path)}`);
+                const parentElem = d3.select(`#${parent.node.path.toId()}`);
                 const { x, y } = (() => {
                     if (parentElem) {
                         return parentElem.select('circle').datum();
@@ -207,7 +204,7 @@ export default function makeRenderFunction(notifier) {
             .data(nodes)
             .enter()
             .append('g')
-            .attr('id', n => pathToId(n.path))
+            .attr('id', n => n.path.toId())
             .attr('class', 'node')
             .on('dblclick', n => enterChild(n, style.nodeFillColor(n)))
             .call(dragHandler);
