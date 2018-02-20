@@ -6,8 +6,7 @@
  * @author Christopher Blöcker
  */
 
-import Network from 'network';
-import Node from 'node';
+import { Network, Node } from 'network';
 
 export default function networkFromPajek({ nodes, links }) {
     const root = new Network();

@@ -8,9 +8,7 @@
  * @author Anton Eriksson
  */
 
-import Network from 'network';
-import Module from 'module';
-import Node from 'node';
+import { Network, Module, Node } from 'network';
 import TreePath from 'treepath';
 
 

@@ -1,12 +1,19 @@
 import Module from 'module';
+import Node from 'node';
 import TreePath from 'treepath';
 
+export { Module, Node };
+
 /**
- * Class to represent a network of links and nodes
+ * Class to represent a network of links and nodes.
+ * This is used as the top level in a multi-level network.
+ *
+ * @see Module
+ * @see Node
  *
  * @author Anton Eriksson
  */
-export default class Network extends Module {
+export class Network extends Module {
     /**
      * Construct a new Network
      */
