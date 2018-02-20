@@ -7,7 +7,7 @@ import parsePajek from 'file-formats/pajek';
 import networkFromFTree from 'file-formats/network-from-ftree';
 import networkFromPajek from 'file-formats/network-from-pajek';
 import makeRenderFunction from 'render';
-import makeNetworkStyle from 'network-style';
+import makeRenderStyle from 'render-style';
 import Observable from 'observable';
 import {
     byFlow,
@@ -59,7 +59,7 @@ function runApplication(parsed, file) {
 
         clone() {
             this.branch = network.getNodeByPath(state.path).clone();
-            this.style = makeNetworkStyle(this.branch);
+            this.style = makeRenderStyle(this.branch);
             return this;
         },
 

@@ -14,7 +14,7 @@ import { extent, deviation } from 'd3-array';
  * Factory function to create style functions.
  *
  * @example
- *  const style = makeNetworkStyle({ nodes, links });
+ *  const style = makeRenderStyle({ nodes, links });
  *  const circle = svg.append('circle')
  *      .attr('r', style.nodeRadius)
  *      .style('fill', style.nodeFillColor)
@@ -25,7 +25,7 @@ import { extent, deviation } from 'd3-array';
  * @param {Node[]} opts.nodes
  * @param {Object[]} opts.links
  */
-export default function makeNetworkStyle({ nodes, links }) {
+export default function makeRenderStyle({ nodes, links }) {
     const nodeRadius = scaleSqrt().domain(extent(nodes, n => n.flow)).range([20, 70]);
     const nodeFillColor = scaleLinear().domain(extent(nodes, n => n.flow)).range(['#DFF1C1', '#C5D7A8']);
     const nodeBorderColor = scaleLinear().domain(extent(nodes, n => n.exitFlow)).range(['#ABD65B', '#95C056']);
