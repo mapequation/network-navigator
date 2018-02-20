@@ -58,7 +58,7 @@ export default class TreePath {
     /**
      * Get path as array
      *
-     * @see Treepath.toArray
+     * @see TreePath.toArray
      *
      * @return {number[]}
      */
@@ -79,7 +79,7 @@ export default class TreePath {
      * > treePathToArray('root')
      * [ NaN ]
      *
-     * @param {string} path A string in format "1:1:2:1"
+     * @param {string|number} path A string in format "1:1:2:1"
      * @return {number[]}
      */
     static toArray(path) {
