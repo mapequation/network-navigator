@@ -13,9 +13,10 @@ export default class Node {
         this.name = name;
         this.flow = flow;
         this.exitFlow = 0;
+        this.shouldRender = true;
     }
 
-    clone() {
-        return new Node(this.id, this.name, this.flow);
+    accept(visitor) {
+        visitor.visit(this);
     }
 }

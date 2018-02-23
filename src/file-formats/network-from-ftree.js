@@ -64,5 +64,14 @@ export default function networkFromFTree({ tree, links }) {
         parent.addNode(new Node(path.pop(), node.name, node.flow));
     });
 
+    root.traverse((node) => {
+        if (node.links) {
+            node.links.forEach((link) => {
+                link.source = node.getNode(link.source);
+                link.target = node.getNode(link.target);
+            });
+        }
+    });
+
     return root;
 }

@@ -15,5 +15,10 @@ export default function networkFromPajek({ nodes, links }) {
 
     root.links = links;
 
+    links.forEach((link) => {
+        link.source = root.getNode(link.source);
+        link.target = root.getNode(link.target);
+    });
+
     return root;
 }

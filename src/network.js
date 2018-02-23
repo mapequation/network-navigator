@@ -47,26 +47,16 @@ export class Network extends Module {
     }
 
     /**
-     * Deep clone
+     * Traverse network depth first, invoking callback with each node.
      *
-     * @return {Network} the clone
+     * @param {*} callback the callback gets invoked with each node
      */
-    clone() {
-        const clone = new Network();
-
-        clone.name = this.name;
-        clone.largest = this.largest;
-        clone.flow = this.flow;
-        clone.exitFlow = this.exitFlow;
-
-        this.nodes.forEach(node => clone.addNode(node.clone()));
-
-        this.links.forEach(link => clone.links.push({
-            source: link.source,
-            target: link.target,
-            flow: link.flow,
-        }));
-
-        return clone;
+    traverse(callback) {
+        const queue = [this];
+        while (queue.length) {
+            const node = queue.pop();
+            callback(node);
+            if (node.nodes) queue.push(...node.nodes);
+        }
     }
 }

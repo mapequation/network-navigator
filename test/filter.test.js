@@ -44,7 +44,7 @@ describe('connectedNodes', function () {
             { id: 2 },
         ];
         const links = [
-            { source: 1, target: 2 },
+            { source: nodes[0], target: nodes[1] },
         ];
         expect(filter.connectedNodes({ nodes, links })).to.deep.equal(nodes);
     });
@@ -56,7 +56,7 @@ describe('connectedNodes', function () {
             { id: 3 },
         ];
         const links = [
-            { source: 1, target: 2 },
+            { source: nodes[0], target: nodes[1] },
         ];
         expect(filter.connectedNodes({ nodes, links })).to.deep.equal([
             { id: 1 },
@@ -72,7 +72,7 @@ describe('connectedLinks', function () {
             { id: 2 },
         ];
         const links = [
-            { source: 1, target: 2 },
+            { source: nodes[0], target: nodes[1] },
         ];
         expect(filter.connectedLinks({ nodes, links })).to.deep.equal(links);
     });
@@ -83,11 +83,11 @@ describe('connectedLinks', function () {
             { id: 2 },
         ];
         const links = [
-            { source: 1, target: 2 },
-            { source: 1, target: 3 },
+            { source: nodes[0], target: nodes[1] },
+            { source: nodes[0], target: { id: 3 } },
         ];
         expect(filter.connectedLinks({ nodes, links })).to.deep.equal([
-            { source: 1, target: 2 },
+            { source: nodes[0], target: nodes[1] },
         ]);
     });
 });

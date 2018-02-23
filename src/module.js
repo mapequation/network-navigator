@@ -1,6 +1,8 @@
 import PriorityQueue from 'priority-queue';
 import TreePath from 'treepath';
 import { byFlow } from 'filter';
+import State from 'state';
+
 
 /**
  * Class to represent a Module of nodes and links.
@@ -23,6 +25,12 @@ export default class Module {
         this.exitFlow = 0;
         this._nodes = new Map();
         this.links = [];
+        this.state = new State();
+        this.shouldRender = true;
+    }
+
+    accept(visitor) {
+        visitor.visit(this);
     }
 
     /**
@@ -88,31 +96,5 @@ export default class Module {
      */
     set name(name) {
         this._name = name;
-    }
-
-    /**
-     * Deep clone
-     *
-     * @return {Module} the clone
-     */
-    clone() {
-        const clone = new Module(this.id);
-
-        clone.path = this.path;
-        clone.parent = this.parent;
-        clone.name = this.name;
-        clone.largest = this.largest;
-        clone.flow = this.flow;
-        clone.exitFlow = this.exitFlow;
-
-        this.nodes.forEach(node => clone.addNode(node.clone()));
-
-        this.links.forEach(link => clone.links.push({
-            source: link.source,
-            target: link.target,
-            flow: link.flow,
-        }));
-
-        return clone;
     }
 }

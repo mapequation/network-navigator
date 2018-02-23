@@ -36,6 +36,15 @@ export default class PriorityQueue {
     }
 
     /**
+     * Invoke callback for each item in queue
+     *
+     * @param {Function} callback
+     */
+    forEach(callback) {
+        return this.items.forEach(callback);
+    }
+
+    /**
      * Push an item on the queue
      *
      * @param {*} item

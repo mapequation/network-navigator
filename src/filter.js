@@ -43,8 +43,8 @@ export function sumFlow(objects) {
  * @return {Node[]} the connected nodes
  */
 export function connectedNodes({ nodes, links }) {
-    const pointsTo = id => link => link.source === id || link.target === id;
-    return nodes.filter(node => links.some(pointsTo(node.id)));
+    return nodes.filter(node =>
+        links.some(link => link.source === node || link.target === node));
 }
 
 /**
@@ -57,8 +57,8 @@ export function connectedNodes({ nodes, links }) {
  * @return {Object[]} the connected links
  */
 export function connectedLinks({ nodes, links }) {
-    const ids = nodes.map(node => node.id);
-    return links.filter(link => ids.includes(link.source) && ids.includes(link.target));
+    return links.filter(link =>
+        nodes.includes(link.source) && nodes.includes(link.target));
 }
 
 /**
@@ -88,12 +88,7 @@ export function accumulateLargest(objects, flowFactor) {
 
     let accumulated = 0;
 
-    const accumulate = (flow) => {
-        accumulated += flow;
-        return accumulated;
-    };
-
     return [...objects]
         .sort(byFlow)
-        .filter(node => accumulate(node.flow) <= targetFlow);
+        .filter(node => (accumulated += node.flow) <= targetFlow);
 }

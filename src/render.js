@@ -9,42 +9,22 @@
 
 import * as d3 from 'd3';
 import { halfLink, undirectedLink } from 'network-rendering';
+import { byFlow } from 'filter';
+import PriorityQueue from 'priority-queue';
 
 
-function makeDragHandler(simulation) {
-    const dragStarted = (node) => {
-        if (!d3.event.active) simulation.alphaTarget(0.3).restart();
-        node.fx = node.x;
-        node.fy = node.y;
-    };
-
-    const drag = (node) => {
-        node.fx = d3.event.x;
-        node.fy = d3.event.y;
-    };
-
-    const dragEnded = (node) => {
-        if (!d3.event.active) simulation.alphaTarget(0);
-        node.fx = null;
-        node.fy = null;
-    };
-
-    return d3.drag()
-        .on('start', dragStarted)
-        .on('drag', drag)
-        .on('end', dragEnded);
-}
-
-const ellipsis = (text, len = 13) => (text.length > len ? `${text.substr(0, len - 3)}...` : text);
+const ellipsis = (text, len = 25) => (text.length > len ? `${text.substr(0, len - 3)}...` : text);
 
 /**
- * Factory function to set up svg canvas and return
- * a render function to render a network to this canvas.
+ * Factory function to set up svg and return
+ * a render function to render a network.
  *
  * @param {Observable} notifier network layer changes are broadcasted here
+ * @param {Object} style renderStyle object
+ * @param {string} linkType directed or undirected links, affects link appearance
  * @return {makeRenderFunction~render} the render function
  */
-export default function makeRenderFunction(notifier) {
+export default function makeRenderFunction(notifier, style, linkType) {
     const width = window.innerWidth;
     const height = window.innerHeight;
 
@@ -52,104 +32,127 @@ export default function makeRenderFunction(notifier) {
         .attr('width', width)
         .attr('height', height);
 
-    const background = svg.append('rect')
+    svg.append('rect')
         .attr('class', 'background')
-        .style('fill', 'none')
         .attr('width', width)
         .attr('height', height);
 
-    const network = svg.append('g')
+    const g = svg.append('g')
         .attr('class', 'network');
-
-    const overlay = svg.append('rect')
-        .attr('class', 'overlay')
-        .style('opacity', 0)
-        .style('fill', 'none')
-        .style('pointer-events', 'none')
-        .attr('width', width)
-        .attr('height', height);
 
     const zoom = d3.zoom()
         .scaleExtent([0.1, 50])
-        .on('zoom', () => network.attr('transform', d3.event.transform));
+        .on('zoom', () => {
+            notifier.notify({
+                type: 'ZOOM',
+                payload: d3.event.transform,
+            });
+
+            g.attr('transform', d3.event.transform);
+        });
 
     svg.call(zoom)
         .on('dblclick.zoom', null);
 
-    const simulation = d3.forceSimulation()
-        .alphaDecay(0.06)
-        .stop();
+    const linkSvgPath = (linkType === 'directed' ? halfLink : undirectedLink)()
+        .nodeRadius(style.nodeRadius)
+        .width(style.linkWidth);
 
-    const dragHandler = makeDragHandler(simulation);
+    function showInfoBox(node) {
+        if (!node.nodes) return;
 
-    const treePath = [];
+        const text = d3.select(this).select('text');
+
+        const width = 240;
+        const height = 200;
+
+        const info = svg.append('g')
+            .attr('class', 'infobox')
+            .attr('id', `info-${node.path.toId()}`);
+
+        const infoBox = info.append('rect')
+            .attr('width', width)
+            .attr('height', height)
+            .attr('x', svg.attr('width') - width - 30)
+            .attr('y', svg.attr('height') - height - 30)
+            .style('fill', 'white')
+            .style('stroke', 'black')
+            .style('stroke-width', '2px');
+
+        const queue = new PriorityQueue(byFlow, 12);
+        node.nodes.forEach(n => queue.push(n));
+
+        let dy = 0;
+        queue.forEach((item) => {
+            info.append('text')
+                .text(ellipsis(item.name, 30))
+                .attr('x', +infoBox.attr('x') + 10)
+                .attr('y', +infoBox.attr('y') + 20)
+                .attr('dy', dy)
+                .style('fill', 'black')
+                .style('font-size', 12);
+            dy += 15;
+        });
+    }
+
+    function hideInfoBox() {
+        d3.selectAll('.infobox').remove();
+    }
+
+    const parentNodes = [];
 
     function returnToParent() {
-        const parent = treePath.pop();
+        const parent = parentNodes.pop();
 
         // Do nothing if we're at the top
         if (!parent) return;
 
-        simulation.stop();
+        hideInfoBox();
 
-        overlay.style('fill', parent.nodeFillColor);
-        overlay.transition()
-            .duration(150)
-            .styleTween('opacity', () => d3.interpolateNumber(0, 1))
-            .on('end', () => {
-                notifier.notify(parent.node.parent.path);
+        notifier.notify({
+            type: 'PATH',
+            payload: {
+                node: parent.parent,
+            },
+        });
 
-                for (let i = 0; i < 30; i++) {
-                    simulation.tick();
-                }
+        const { x, y } = (() => {
+            const parentElem = d3.select(`#${parent.path.toId()}`);
+            if (parentElem) {
+                return parentElem.datum();
+            }
+            return { x: width / 2, y: height / 2 };
+        })();
+        const scale = 50;
+        const translate = [width / 2 - scale * x, height / 2 - scale * y];
 
-                const parentElem = d3.select(`#${parent.node.path.toId()}`);
-                const { x, y } = (() => {
-                    if (parentElem) {
-                        return parentElem.select('circle').datum();
-                    }
-                    return { x: width / 2, y: height / 2 };
-                })();
-                const scale = 50;
-                const translate = [width / 2 - scale * x, height / 2 - scale * y];
-
-                svg.call(zoom.transform, d3.zoomIdentity.translate(...translate).scale(scale));
-
-                overlay.style('opacity', 0);
-                svg.transition()
-                    .duration(200)
-                    .call(zoom.transform, d3.zoomIdentity);
-            });
+        svg.call(zoom.transform, d3.zoomIdentity.translate(...translate).scale(scale));
+        svg.transition()
+            .duration(200)
+            .call(zoom.transform, d3.zoomIdentity);
     }
 
-    function enterChild(node, nodeFillColor) {
+    function enterChild(node) {
         // Do nothing if node has no child nodes
         if (!(node.nodes && node.nodes.length)) return;
 
-        treePath.push({
-            node,
-            nodeFillColor,
-        });
+        hideInfoBox();
 
-        simulation.stop();
+        parentNodes.push(node);
 
         const { x, y } = node;
         const scale = 50;
         const translate = [width / 2 - scale * x, height / 2 - scale * y];
 
         svg.transition()
-            .duration(500)
+            .duration(400)
             .on('end', () => {
-                notifier.notify(node.path);
-
-                for (let i = 0; i < 20; i++) {
-                    simulation.tick();
-                }
-
-                overlay.style('fill', nodeFillColor);
-                overlay.transition()
-                    .duration(300)
-                    .styleTween('opacity', () => d3.interpolateNumber(1, 0));
+                notifier.notify({
+                    type: 'PATH',
+                    payload: {
+                        node,
+                    },
+                });
             })
             .call(zoom.transform, d3.zoomIdentity.translate(...translate).scale(scale))
             .transition()
@@ -179,72 +182,84 @@ export default function makeRenderFunction(notifier) {
     /**
      * Render a network of nodes and links to svg.
      *
-     * @param {Object} params
-     * @param {Node[]} params.nodes the nodes
-     * @param {Object[]} params.links the links
-     * @param {number} params.charge the charge strength between nodes
-     * @param {number} params.linkDistance the rest length between nodes
-     * @param {string} params.linkType directed or undirected links, affects link appearance
+     * @param {Network} network the network
+     * @param {number} charge charge strength
+     * @param {number} linkDistance link rest length
      */
-    const render = ({ nodes, links, style, charge, linkDistance, linkType }) => {
-        network.selectAll('*').remove();
+    const render = (network, charge, linkDistance) => {
+        const nodes = network.nodes.filter(node => node.shouldRender);
+        const links = network.links.filter(link => link.shouldRender).reverse();
+        const { simulation } = network.state;
 
-        const link = network.append('g')
+        g.selectAll('*').remove();
+
+        const dragStarted = (node) => {
+            if (!d3.event.active) simulation.alphaTarget(0.3).restart();
+            node.fx = node.x;
+            node.fy = node.y;
+        };
+
+        const drag = (node) => {
+            node.fx = d3.event.x;
+            node.fy = d3.event.y;
+        };
+
+        const dragEnded = (node) => {
+            if (!d3.event.active) simulation.alphaTarget(0);
+            node.fx = null;
+            node.fy = null;
+        };
+
+        const link = g.append('g')
             .attr('class', 'links')
             .selectAll('.link')
             .data(links)
             .enter()
             .append('path')
-            .attr('class', 'link')
             .style('fill', style.linkFillColor);
 
-        const node = network.append('g')
+        const node = g.append('g')
             .attr('class', 'nodes')
             .selectAll('.node')
             .data(nodes)
             .enter()
             .append('g')
             .attr('id', n => n.path.toId())
-            .attr('class', 'node')
-            .on('dblclick', n => enterChild(n, style.nodeFillColor(n)))
-            .call(dragHandler);
+            .on('dblclick', enterChild)
+            .on('mouseover', showInfoBox)
+            .on('mouseout', hideInfoBox)
+            .call(d3.drag()
+                .on('start', dragStarted)
+                .on('drag', drag)
+                .on('end', dragEnded));
 
         const circle = node.append('circle')
             .attr('r', style.nodeRadius)
             .style('fill', style.nodeFillColor)
             .style('stroke', style.nodeBorderColor)
-            .style('stroke-width', style.nodeBorderWidth);
+            .style('stroke-width', style.nodeBorderWidth)
 
         const text = node.append('text')
-            .text(n => ellipsis(n.name, 30))
+            .text(n => ellipsis(n.name))
             .attr('text-anchor', 'middle')
-            .attr('dy', n => -0.7 * style.nodeRadius(n))
+            .attr('dy', n => -0.3 * style.nodeRadius(n))
             .style('fill', 'black')
-            .style('font-size', style.fontSize)
+            .style('font-size', 12)
             .style('paint-order', 'stroke')
             .style('stroke', 'white')
-            .style('stroke-width', '3px')
+            .style('stroke-width', '1.5px')
             .style('stroke-linecap', 'square')
             .style('stroke-linejoin', 'round');
 
-        const linkSvgPath = (linkType === 'directed' ? halfLink : undirectedLink)()
-            .nodeRadius(style.nodeRadius)
-            .width(style.linkWidth);
-
-        // The simulation object is reused between render calls.
-        // Set the new forces and restart with alpha = 1 (which is the default)
         simulation
             .force('collide', d3.forceCollide(20)
                 .radius(style.nodeRadius))
             .force('link', d3.forceLink()
-                .distance(linkDistance)
-                .id(d => d.id))
+                .distance(linkDistance))
             .force('charge', d3.forceManyBody()
                 .strength(-charge)
                 .distanceMax(400))
-            .force('center', d3.forceCenter(width / 2, height / 2))
-            .alpha(1)
-            .restart();
+            .force('center', d3.forceCenter(width / 2, height / 2));
 
         simulation
             .nodes(nodes)
@@ -262,6 +277,16 @@ export default function makeRenderFunction(notifier) {
         simulation
             .force('link')
             .links(links);
+
+        if (network.state.dirty) {
+            simulation.alpha(0.5);
+        }
+
+        if (simulation.alpha() === 1) {
+            for (let i = 0; i < 30; i++) simulation.tick();
+        }
+
+        simulation.restart();
     };
 
     return render;
