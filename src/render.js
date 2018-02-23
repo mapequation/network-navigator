@@ -15,6 +15,47 @@ import PriorityQueue from 'priority-queue';
 
 const ellipsis = (text, len = 25) => (text.length > len ? `${text.substr(0, len - 3)}...` : text);
 
+function showInfoBox(node) {
+    if (!node.nodes) return;
+
+    const svg = d3.select('svg');
+
+    const width = 240;
+    const height = 200;
+
+    const info = svg.append('g')
+        .attr('class', 'infobox')
+        .attr('id', `info-${node.path.toId()}`);
+
+    const infoBox = info.append('rect')
+        .attr('width', width)
+        .attr('height', height)
+        .attr('x', svg.attr('width') - width - 30)
+        .attr('y', svg.attr('height') - height - 30)
+        .style('fill', 'white')
+        .style('stroke', 'black')
+        .style('stroke-width', '2px');
+
+    const queue = new PriorityQueue(byFlow, 12);
+    node.nodes.forEach(n => queue.push(n));
+
+    let dy = 0;
+    queue.forEach((item) => {
+        info.append('text')
+            .text(ellipsis(item.name, 30))
+            .attr('x', +infoBox.attr('x') + 10)
+            .attr('y', +infoBox.attr('y') + 20)
+            .attr('dy', dy)
+            .style('fill', 'black')
+            .style('font-size', 12);
+        dy += 15;
+    });
+}
+
+function hideInfoBox() {
+    d3.selectAll('.infobox').remove();
+}
+
 /**
  * Factory function to set up svg and return
  * a render function to render a network.
@@ -57,47 +98,6 @@ export default function makeRenderFunction(notifier, style, linkType) {
     const linkSvgPath = (linkType === 'directed' ? halfLink : undirectedLink)()
         .nodeRadius(style.nodeRadius)
         .width(style.linkWidth);
-
-    function showInfoBox(node) {
-        if (!node.nodes) return;
-
-        const text = d3.select(this).select('text');
-
-        const width = 240;
-        const height = 200;
-
-        const info = svg.append('g')
-            .attr('class', 'infobox')
-            .attr('id', `info-${node.path.toId()}`);
-
-        const infoBox = info.append('rect')
-            .attr('width', width)
-            .attr('height', height)
-            .attr('x', svg.attr('width') - width - 30)
-            .attr('y', svg.attr('height') - height - 30)
-            .style('fill', 'white')
-            .style('stroke', 'black')
-            .style('stroke-width', '2px');
-
-        const queue = new PriorityQueue(byFlow, 12);
-        node.nodes.forEach(n => queue.push(n));
-
-        let dy = 0;
-        queue.forEach((item) => {
-            info.append('text')
-                .text(ellipsis(item.name, 30))
-                .attr('x', +infoBox.attr('x') + 10)
-                .attr('y', +infoBox.attr('y') + 20)
-                .attr('dy', dy)
-                .style('fill', 'black')
-                .style('font-size', 12);
-            dy += 15;
-        });
-    }
-
-    function hideInfoBox() {
-        d3.selectAll('.infobox').remove();
-    }
 
     const parentNodes = [];
 
