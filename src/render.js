@@ -218,6 +218,9 @@ export default function makeRenderFunction(notifier, style, linkType) {
             .append('path')
             .style('fill', style.linkFillColor);
 
+        // Used to distinguish between single and double clicks
+        let clickTimeout = null;
+
         const node = g.append('g')
             .attr('class', 'nodes')
             .selectAll('.node')
@@ -225,7 +228,14 @@ export default function makeRenderFunction(notifier, style, linkType) {
             .enter()
             .append('g')
             .attr('id', n => n.path.toId())
-            .on('dblclick', enterChild)
+            .on('dblclick', (n) => {
+                clearTimeout(clickTimeout);
+                enterChild(n);
+            })
+            .on('click', (n) => {
+                clearTimeout(clickTimeout);
+                clickTimeout = setTimeout(() => console.log(n), 200);
+            })
             .on('mouseover', showInfoBox)
             .on('mouseout', hideInfoBox)
             .call(d3.drag()
