@@ -43,7 +43,6 @@ function runApplication(network, linkType, file) {
 
     const renderBranch = () => {
         const branch = network.getNodeByPath(state.path);
-        console.log('got here');
 
         render(branch, state.charge, state.linkDistance);
 
