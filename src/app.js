@@ -20,6 +20,7 @@ function runApplication(network, linkType, file) {
         path: 'root',
         linkDistance: 300,
         charge: 500,
+        search: '',
     };
 
     const renderNotifier = new Observable();
@@ -49,6 +50,18 @@ function runApplication(network, linkType, file) {
         branch.state.dirty = false;
     };
 
+    const search = (name) => {
+        const re = new RegExp(name, 'i')
+
+        const markMatches = name.length
+            ? node => node.marked = re.test(node.name)
+            : node => node.marked = false;
+
+        network
+            .flatten()
+            .map(markMatches)
+    }
+
     const observer = {
         update(message) {
             switch (message.type) {
@@ -72,6 +85,7 @@ function runApplication(network, linkType, file) {
     gui.add(state, 'nodeFlow', 0, 1).step(0.01).onFinishChange(() => { filterFlow(); setDirty(); renderBranch(); }).listen();
     gui.add(state, 'linkFlow', 0, 1).step(0.01).onFinishChange(() => { filterFlow(); setDirty(); renderBranch(); }).listen();
     gui.add(state, 'path').listen();
+    gui.add(state, 'search').onChange(name => { search(name); renderBranch(); });
 
     cullLargest();
     renderBranch();

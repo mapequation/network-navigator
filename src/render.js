@@ -239,6 +239,17 @@ export default function makeRenderFunction(notifier, style, linkType) {
             .style('stroke', style.nodeBorderColor)
             .style('stroke-width', style.nodeBorderWidth)
 
+        const mark = node.append('circle')
+            .attr('r', (n) => {
+                let hits = n.marked ? 1 : 0;
+                if (hits === 0 && n.hasChildren) {
+                    n.filter(child => child.marked)
+                        .map(child => hits++);
+                }
+                return style.searchMarkRadius(hits);
+            })
+            .style('fill', '#F48074');
+
         const text = node.append('text')
             .text(n => ellipsis(n.name))
             .attr('text-anchor', 'middle')
@@ -265,6 +276,9 @@ export default function makeRenderFunction(notifier, style, linkType) {
             .nodes(nodes)
             .on('tick', () => {
                 circle
+                    .attr('cx', n => n.x)
+                    .attr('cy', n => n.y);
+                mark
                     .attr('cx', n => n.x)
                     .attr('cy', n => n.y);
                 text

@@ -46,6 +46,8 @@ export default function makeRenderStyle(network) {
     const linkFillColor = scaleLinear().domain([0, maxLinkFlow]).range(['#C0D3DF', '#064575']);
     const linkWidth = scaleLinear().domain([0, maxLinkFlow]).range([1, 10]);
 
+    const searchMarkRadius = scaleSqrt().domain([0, 10]).range([0, 10]).clamp(true);
+
     return {
         nodeRadius: node => nodeRadius(node.flow),
         nodeFillColor: node => nodeFillColor(node.flow),
@@ -53,5 +55,6 @@ export default function makeRenderStyle(network) {
         nodeBorderWidth: node => nodeBorderWidth(node.exitFlow),
         linkFillColor: link => linkFillColor(link.flow),
         linkWidth: link => linkWidth(link.flow),
+        searchMarkRadius,
     };
 }

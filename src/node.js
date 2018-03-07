@@ -13,10 +13,15 @@ export default class Node {
         this.name = name;
         this.flow = flow;
         this.exitFlow = 0;
+        this.marked = false;
         this.shouldRender = true;
     }
 
     accept(visitor) {
         visitor.visit(this);
+    }
+
+    get hasChildren() {
+        return false;
     }
 }

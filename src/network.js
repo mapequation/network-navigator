@@ -45,18 +45,4 @@ export class Network extends Module {
         return TreePath.toArray(path)
             .reduce((pathNode, childId) => (pathNode ? pathNode.getNode(childId) : null), this);
     }
-
-    /**
-     * Traverse network depth first, invoking callback with each node.
-     *
-     * @param {*} callback the callback gets invoked with each node
-     */
-    traverse(callback) {
-        const queue = [this];
-        while (queue.length) {
-            const node = queue.pop();
-            callback(node);
-            if (node.nodes) queue.push(...node.nodes);
-        }
-    }
 }

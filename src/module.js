@@ -74,6 +74,15 @@ export default class Module {
     }
 
     /**
+     * Does this module have children?
+     *
+     * @return {boolean} true if there are children
+     */
+    get hasChildren() {
+        return this.nodes.length;
+    }
+
+    /**
      * Get the name
      *
      * @return {string}
@@ -96,6 +105,64 @@ export default class Module {
      */
     set name(name) {
         this._name = name;
+    }
+
+    /**
+     * Traverse network depth first, invoking callback with each node.
+     *
+     * @param {*} callback the callback gets invoked with each node
+     */
+    traverse(callback) {
+        const queue = [this];
+        while (queue.length) {
+            const node = queue.pop();
+            callback(node);
+            if (node.nodes) queue.push(...node.nodes);
+        }
+    }
+
+    /**
+     * Search network depth first, invoking callback for each node
+     * that satisfies predicate.
+     *
+     * @see Module#traverse
+     *
+     * @param {Function} predicate
+     * @param {Function} callback
+     */
+    search(predicate, callback) {
+        this.traverse((node) => {
+            if (predicate(node)) {
+                callback(node);
+            }
+        });
+    }
+
+    /**
+     * Return all nodes depth first which matches predicate.
+     *
+     * @param {Function} predicate
+     * @return {Array} the matches
+     */
+    filter(predicate) {
+        const matches = [];
+
+        this.traverse((node) => {
+            if (predicate(node)) {
+                matches.push(node);
+            }
+        });
+
+        return matches;
+    }
+
+    /**
+     * Get all leaf nodes.
+     *
+     * @return {Node[]} the leaf nodes
+     */
+    flatten() {
+        return this.filter(node => !node.hasChildren);
     }
 
     /**
