@@ -11,9 +11,15 @@
 /**
  * Parse ftree data to object.
  *
+ * The input can optionally have the Modules extension to the ftree format.
+ *
  * @example
  *  // Input example
  *  [
+ *      ["*Modules", 4], // optional section
+ *      ["1", "ModuleName 1", 0.5, 0.4],
+ *      // ...
+ *      ["*Nodes", 10] // optional header
  *      ["1:1:1", 0.0564732, "Name 1", 29],
  *      ["1:1:2", 0.0066206, "Name 2", 286],
  *      ["1:1:3", 0.0025120, "Name 3", 146],
@@ -32,6 +38,9 @@
  *  // Return value structure
  *  {
  *      data: {
+ *          modules: [
+ *              { path, name, flow, exitFlow },
+ *          ],
  *          tree: [
  *              { path, flow, name, node },
  *              // ...
@@ -62,6 +71,7 @@
 export default function parseFTree(rows) {
     const result = {
         data: {
+            modules: [],
             tree: [],
             links: [],
         },
@@ -73,13 +83,42 @@ export default function parseFTree(rows) {
 
     const DEFAULT_FLOW = 1;
 
-    const { tree, links } = result.data;
+    const { modules, tree, links } = result.data;
 
     let i = 0;
 
+    // 0. Parse modules section
+    if (/\*Modules/i.test(rows[i][0].toString())) {
+        // Consume modules header
+        i++;
+
+        const nodesHeader = /\*(Nodes|Tree)/i;
+
+        for (; i < rows.length && !nodesHeader.test(rows[i][0].toString()); i++) {
+            const row = rows[i];
+
+            if (row.length !== 4) {
+                result.errors.push(`Malformed ftree data: expected 4 fields, found ${row.length}.`);
+                continue;
+            }
+
+            modules.push({
+                path: row[0],
+                name: row[1],
+                flow: row[2] || 1,
+                exitFlow: row[3] || 0,
+            });
+        }
+
+        // Consume a line if current line is a header
+        if (nodesHeader.test(rows[i][0].toString())) {
+            i++;
+        }
+    }
+
     // 1. Parse tree section
     // ftree-files has sections of *Links following the tree data
-    for (; i < rows.length && !rows[i][0].toString().startsWith('*'); i++) {
+    for (; i < rows.length && !/\*Links/i.test(rows[i][0].toString()); i++) {
         const row = rows[i];
 
         if (row.length !== 4) {
@@ -106,7 +145,6 @@ export default function parseFTree(rows) {
     } else {
         result.errors.push('Expected link type!');
     }
-
 
     let link = {
         links: [],

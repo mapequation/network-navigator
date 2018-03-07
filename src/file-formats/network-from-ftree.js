@@ -16,11 +16,12 @@ import TreePath from 'treepath';
  * Create tree of networks from FTree data.
  *
  * @param {Object} params
+ * @param {Object[]} params.modules
  * @param {Object[]} params.tree
  * @param {Object[]} params.link
  * @return {Network}
  */
-export default function networkFromFTree({ tree, links }) {
+export default function networkFromFTree({ modules, tree, links }) {
     const root = new Network();
 
     // Create the tree structure
@@ -64,6 +65,13 @@ export default function networkFromFTree({ tree, links }) {
         parent.addNode(new Node(path.pop(), node.name, node.flow));
     });
 
+    // Add module names
+    modules.forEach((mod) => {
+        const node = root.getNodeByPath(mod.path);
+        node.name = mod.name;
+    });
+
+    // Connect network
     root.traverse((node) => {
         if (node.links) {
             node.links.forEach((link) => {
