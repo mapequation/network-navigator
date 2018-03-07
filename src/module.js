@@ -97,4 +97,26 @@ export default class Module {
     set name(name) {
         this._name = name;
     }
+
+    /**
+     * Get adjacency matrix
+     *
+     * @return {number[][]} adjacency matrix
+     */
+    asMatrix() {
+        const N = this.nodes.length;
+        const matrix = [];
+        for (let i = 0; i < N; i++)
+            matrix.push(Array(N).fill(0));
+
+        const index = node => this.nodes.indexOf(node);
+
+        this.links.forEach((link) => {
+            const row = index(link.source);
+            const col = index(link.target);
+            matrix[row][col] += link.flow;
+        });
+
+        return matrix;
+    }
 }
