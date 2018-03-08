@@ -98,7 +98,7 @@ function runApplication(network, linkType, file) {
     gui.add(state, 'path').listen();
     gui.add(state, 'search').onChange(name => { search(name); renderBranch(); });
     gui.add(state, 'selected').onFinishChange((name) => {
-        state.selectedNode.name = name;
+        if (state.selectedNode) state.selectedNode.name = name;
         renderBranch();
     }).listen();
 

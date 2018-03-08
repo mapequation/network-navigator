@@ -17,7 +17,7 @@
  *  // Input example
  *  [
  *      ["*Modules", 4], // optional section
- *      ["1", "ModuleName 1", 0.5, 0.4],
+ *      ["1", 0.5, "ModuleName 1", 0.4],
  *      // ...
  *      ["*Nodes", 10] // optional header
  *      ["1:1:1", 0.0564732, "Name 1", 29],
@@ -39,7 +39,7 @@
  *  {
  *      data: {
  *          modules: [
- *              { path, name, flow, exitFlow },
+ *              { path, flow, name, exitFlow },
  *          ],
  *          tree: [
  *              { path, flow, name, node },
@@ -104,9 +104,9 @@ export default function parseFTree(rows) {
 
             modules.push({
                 path: row[0],
-                name: row[1],
-                flow: row[2] || 1,
-                exitFlow: row[3] || 0,
+                flow: row[1],
+                name: row[2],
+                exitFlow: row[3],
             });
         }
 
