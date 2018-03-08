@@ -62,10 +62,10 @@ function hideInfoBox() {
  *
  * @param {Observable} notifier network layer changes are broadcasted here
  * @param {Object} style renderStyle object
- * @param {string} linkType directed or undirected links, affects link appearance
+ * @param {boolean} directed directed or undirected links, affects link appearance
  * @return {makeRenderFunction~render} the render function
  */
-export default function makeRenderFunction(notifier, style, linkType) {
+export default function makeRenderFunction(notifier, style, directed = true) {
     const width = window.innerWidth;
     const height = window.innerHeight;
 
@@ -95,7 +95,7 @@ export default function makeRenderFunction(notifier, style, linkType) {
     svg.call(zoom)
         .on('dblclick.zoom', null);
 
-    const linkSvgPath = (linkType === 'directed' ? halfLink : undirectedLink)()
+    const linkSvgPath = (directed ? halfLink : undirectedLink)()
         .nodeRadius(style.nodeRadius)
         .width(style.linkWidth);
 

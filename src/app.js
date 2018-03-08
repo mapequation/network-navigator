@@ -27,7 +27,7 @@ function runApplication(network, linkType, file) {
 
     const renderNotifier = new Observable();
     const renderStyle = makeRenderStyle(network);
-    const render = makeRenderFunction(renderNotifier, renderStyle, linkType);
+    const render = makeRenderFunction(renderNotifier, renderStyle, linkType === 'directed');
 
     const setDirty = () => {
         const branch = network.getNodeByPath(state.path);
