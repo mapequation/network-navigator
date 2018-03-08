@@ -72,15 +72,7 @@ export default function networkFromFTree({ modules, tree, links }) {
         node.name = mod.name;
     });
 
-    // Connect network
-    root.traverse((node) => {
-        if (node.links) {
-            node.links.forEach((link) => {
-                link.source = node.getNode(link.source);
-                link.target = node.getNode(link.target);
-            });
-        }
-    });
+    root.connect();
 
     return root;
 }

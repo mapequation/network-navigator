@@ -19,6 +19,8 @@ export class Network extends Module {
      */
     constructor() {
         super('root');
+
+        this.connected = false;
     }
 
     /**
@@ -44,5 +46,31 @@ export class Network extends Module {
 
         return TreePath.toArray(path)
             .reduce((pathNode, childId) => (pathNode ? pathNode.getNode(childId) : null), this);
+    }
+
+    /**
+     * Connect the network.
+     *
+     * This means that link sources and targets gets replaced
+     * from node ids to node refs.
+     *
+     * This only makes sense as a single run operation that should
+     * be performed after the network is populated with links and nodes.
+     */
+    connect() {
+        if (this.connected) {
+            return;
+        }
+
+        this.connected = true;
+
+        this.traverse((node) => {
+            if (node.links) {
+                node.links.forEach((link) => {
+                    link.source = node.getNode(link.source);
+                    link.target = node.getNode(link.target);
+                });
+            }
+        });
     }
 }
