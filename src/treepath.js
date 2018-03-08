@@ -7,18 +7,19 @@ export default class TreePath {
     /**
      * Construct a new TreePath
      *
-     * @param {number|string|number[]} path
+     * @param {number|string} path
      */
     constructor(path) {
-        if (Array.isArray(path)) {
-            this.path = path.join(':');
-        } else if (typeof path === 'number') {
-            this.path = path.toString();
-        } else if (typeof path === 'string') {
-            this.path = path;
-        } else {
-            throw new TypeError('Arguments has wrong type!');
-        }
+        this.path = path.toString();
+    }
+
+    /**
+     * Construct a new TreePath
+     *
+     * @param {number[]} path
+     */
+    static fromArray(path) {
+        return new TreePath(path.join(':'));
     }
 
     /**
@@ -28,7 +29,7 @@ export default class TreePath {
      * @param {string|number} path
      */
     static join(parentPath, path) {
-        return new TreePath([parentPath.toString(), path.toString()].join(':'));
+        return TreePath.fromArray([parentPath.toString(), path.toString()]);
     }
 
     /**
