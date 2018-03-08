@@ -24,4 +24,8 @@ export default class Node {
     get hasChildren() {
         return false;
     }
+
+    toString() {
+        return this.name;
+    }
 }

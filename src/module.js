@@ -108,6 +108,13 @@ export default class Module {
     }
 
     /**
+     * @return {string}
+     */
+    toString() {
+        return this.name;
+    }
+
+    /**
      * Traverse network depth first, invoking callback with each node.
      *
      * @param {*} callback the callback gets invoked with each node

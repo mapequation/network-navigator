@@ -21,6 +21,8 @@ function runApplication(network, linkType, file) {
         linkDistance: 300,
         charge: 500,
         search: '',
+        selectedNode: null,
+        selected: '',
     };
 
     const renderNotifier = new Observable();
@@ -62,13 +64,22 @@ function runApplication(network, linkType, file) {
             .map(markMatches)
     }
 
+    const selectNode = (node) => {
+        state.selectedNode = node;
+        state.selected = node ? node.name : '';
+    };
+
     const observer = {
         update(message) {
             switch (message.type) {
             case 'PATH':
                 state.path = message.payload.node.path;
+                selectNode(null);
                 cullLargest();
                 renderBranch();
+                break;
+            case 'SELECT':
+                selectNode(message.payload.node);
                 break;
             default:
                 break;
@@ -86,6 +97,10 @@ function runApplication(network, linkType, file) {
     gui.add(state, 'linkFlow', 0, 1).step(0.01).onFinishChange(() => { filterFlow(); setDirty(); renderBranch(); }).listen();
     gui.add(state, 'path').listen();
     gui.add(state, 'search').onChange(name => { search(name); renderBranch(); });
+    gui.add(state, 'selected').onFinishChange((name) => {
+        state.selectedNode.name = name;
+        renderBranch();
+    }).listen();
 
     cullLargest();
     renderBranch();

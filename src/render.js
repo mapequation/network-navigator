@@ -234,7 +234,14 @@ export default function makeRenderFunction(notifier, style, linkType) {
             })
             .on('click', (n) => {
                 clearTimeout(clickTimeout);
-                clickTimeout = setTimeout(() => console.log(n), 200);
+                clickTimeout = setTimeout(() => {
+                    notifier.notify({
+                        type: 'SELECT',
+                        payload: {
+                            node: n,
+                        },
+                    });
+                }, 200);
             })
             .on('mouseover', showInfoBox)
             .on('mouseout', hideInfoBox)
