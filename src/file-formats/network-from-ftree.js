@@ -9,6 +9,7 @@
  */
 
 import { Network, Module, Node } from 'network';
+import Link from 'link';
 import TreePath from 'treepath';
 
 
@@ -28,7 +29,7 @@ export default function networkFromFTree({ modules, tree, links }) {
     links.forEach((node) => {
         // Get root node links
         if (node.path === root.path.toString()) {
-            root.links = node.links;
+            root.links = node.links.map(Link.fromObject);
 
         // For all other nodes
         } else {
@@ -43,7 +44,7 @@ export default function networkFromFTree({ modules, tree, links }) {
                 }, root);
 
             childNode.exitFlow = node.exitFlow;
-            childNode.links = node.links;
+            childNode.links = node.links.map(Link.fromObject);
         }
     });
 
