@@ -1,5 +1,6 @@
 import Module from 'module';
 import Node from 'node';
+import Link from 'link';
 import TreePath from 'treepath';
 
 export { Module, Node };
@@ -34,7 +35,7 @@ export class Network extends Module {
     }
 
     /**
-     * Recursively search for the child node that matches the path.
+     * Get the child node that matches the path.
      *
      * @param {string} path the path formatted like "1:2:3"
      * @return {?(Module|Node)} the node
@@ -65,11 +66,9 @@ export class Network extends Module {
         this.connected = true;
 
         this.traverse((node) => {
-            if (node.links) {
-                node.links.forEach((link) => {
-                    link.source = node.getNode(link.source);
-                    link.target = node.getNode(link.target);
-                });
+            if (node.hasChildren) {
+                node.links = node.links.map(link =>
+                    new Link(node.getNode(link.source), node.getNode(link.target), link.flow));
             }
         });
     }
