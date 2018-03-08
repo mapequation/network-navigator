@@ -42,7 +42,7 @@
  *              { path, flow, name, exitFlow },
  *          ],
  *          tree: [
- *              { path, flow, name, node },
+ *              { path, flow, name, stateNode?, node },
  *              // ...
  *          ],
  *          links: [
@@ -121,17 +121,23 @@ export default function parseFTree(rows) {
     for (; i < rows.length && !/\*Links/i.test(rows[i][0].toString()); i++) {
         const row = rows[i];
 
-        if (row.length !== 4) {
-            result.errors.push(`Malformed ftree data: expected 4 fields, found ${row.length}.`);
+        if (row.length !== 4 && row.length !== 5) {
+            result.errors.push(`Malformed ftree data: expected 4 or 5 fields, found ${row.length}.`);
             continue;
         }
 
-        tree.push({
+        const node = {
             path: row[0],
             flow: row[1],
             name: row[2],
-            node: row[3],
-        });
+            node: row[row.length-1],
+        };
+
+        if (row.length === 5) {
+            node.stateNode = row[3];
+        }
+
+        tree.push(node);
     }
 
     if (!tree.length) {
