@@ -53,7 +53,7 @@ function runApplication(network, linkType, file) {
     };
 
     const search = (name) => {
-        const re = new RegExp(name, 'i')
+        const re = new RegExp(name, 'i');
 
         const markMatches = name.length
             ? node => node.marked = re.test(node.name)
@@ -61,8 +61,8 @@ function runApplication(network, linkType, file) {
 
         network
             .flatten()
-            .map(markMatches)
-    }
+            .map(markMatches);
+    };
 
     const selectNode = (node) => {
         state.selectedNode = node;

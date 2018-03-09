@@ -32,7 +32,7 @@ export default class Link {
     }
 
     toString() {
-        const id = linkEnd => linkEnd.id ? linkEnd.id : linkEnd;
+        const id = linkEnd => (linkEnd.id ? linkEnd.id : linkEnd);
         return `${id(this.source)} ${id(this.target)} ${this.flow}`;
     }
 }

@@ -79,7 +79,7 @@ export default class Module {
      * @return {boolean} true if there are children
      */
     get hasChildren() {
-        return this.nodes.length;
+        return this.nodes.length > 0;
     }
 
     /**
