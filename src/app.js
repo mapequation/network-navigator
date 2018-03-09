@@ -1,10 +1,12 @@
 import * as d3 from 'd3';
 import dat from 'dat.gui';
 import Dropzone from 'dropzone';
+import FileSaver from 'file-saver';
 import parseFile from 'parse';
 import parseFTree from 'file-formats/ftree';
 import parsePajek from 'file-formats/pajek';
 import networkFromFTree from 'file-formats/network-from-ftree';
+import ftreeFromNetwork from 'file-formats/ftree-from-network';
 import networkFromPajek from 'file-formats/network-from-pajek';
 import makeRenderFunction from 'render';
 import makeRenderStyle from 'render-style';
@@ -23,6 +25,7 @@ function runApplication(network, linkType, file) {
         search: '',
         selectedNode: null,
         selected: '',
+        download: false,
     };
 
     const renderNotifier = new Observable();
@@ -100,6 +103,12 @@ function runApplication(network, linkType, file) {
     gui.add(state, 'selected').onFinishChange((name) => {
         if (state.selectedNode) state.selectedNode.name = name;
         renderBranch();
+    }).listen();
+    gui.add(state, 'download').onChange(() => {
+        const ftree = ftreeFromNetwork(network);
+        const blob = new Blob([ftree], { type: 'text/plain;charset=utf-8;' });
+        FileSaver.saveAs(blob, file.name);
+        setTimeout(() => state.download = false, 100);
     }).listen();
 
     cullLargest();
