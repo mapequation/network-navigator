@@ -12,6 +12,7 @@
  * @author Anton Eriksson
  */
 
+import SerializeVisitor from 'serializevisitor';
 import { byFlow } from '../filter';
 
 /**
@@ -21,68 +22,38 @@ import { byFlow } from '../filter';
  * @param {boolean} directed
  */
 export default function ftreeFromNetwork(network, directed = true) {
-    const modules = [
-        ['*Modules', 0],
-        '# path flow name exitFlow',
-        '',
-    ];
-    const nodes = [
-        ['*Nodes', 0],
-        '# path flow name node',
-        '',
-    ];
-    const links = [
-        `*Links ${directed ? 'directed' : 'undirected'}`,
-        '#*Links path exitFlow numEdges numChildren',
-        '',
-    ];
+    const moduleSerializer = new SerializeVisitor(node =>
+        (node.hasChildren && node.path.toString() !== 'root'
+            ? `${node.path} ${node.flow} "${node.name}" ${node.exitFlow}\n`
+            : ''));
 
-    const serializeModule = node =>
-        `${node.path} ${node.flow} "${node.name}" ${node.exitFlow}\n`;
+    const nodeSerializer = new SerializeVisitor(node =>
+        (!node.hasChildren
+            ? `${node.path} ${node.flow} "${node.name}" ${node.id}\n`
+            : ''));
 
-    const serializeLinks = (node) => {
-        const { path, exitFlow } = node;
-        let result = `*Links ${path} ${exitFlow} ${node.links.length} ${node.nodes.length}\n`;
+    const linkSerializer = new SerializeVisitor((node) => {
+        if (!node.hasChildren) return '';
+        let result = `*Links ${node.path} ${node.exitFlow} ${node.links.length} ${node.nodes.length}\n`;
         result += node.links
             .sort(byFlow)
-            .reduce((str, link) => `${str}${link.toString()}\n`, '');
+            .reduce((str, link) => `${str}${link}\n`, '');
         return result;
-    };
-
-    const unorderedModules = [];
-
-    // Get all modules
-    network.traverse((node) => {
-        if (node.hasChildren) {
-            modules[0][1]++;
-            unorderedModules.push(node);
-        }
     });
 
-    unorderedModules
-        .sort(byFlow)
-        .forEach((node) => {
-            if (node.path.toString() !== 'root') {
-                modules[2] += serializeModule(node);
-            }
-            links[2] += serializeLinks(node);
-        });
-
-    // Get all nodes
-    nodes[2] = network
-        .flatten()
-        .sort(byFlow)
-        .reduce((str, node) => {
-            nodes[0][1]++;
-            return `${str}${node.path} ${node.flow} "${node.name}" ${node.id}\n`;
-        }, '');
-
-    modules[0] = modules[0].join(' ');
-    nodes[0] = nodes[0].join(' ');
+    network.accept(moduleSerializer);
+    network.accept(nodeSerializer);
+    network.accept(linkSerializer);
 
     return [
-        modules.join('\n'),
-        nodes.join('\n'),
-        links.join('\n'),
+        '*Modules\n',
+        '# path flow name exitFlow\n',
+        moduleSerializer,
+        '*Nodes\n',
+        '# path flow name node\n',
+        nodeSerializer,
+        `*Links ${directed ? 'directed' : 'undirected'}\n`,
+        '#*Links path exitFlow numEdges numChildren\n',
+        linkSerializer,
     ].join('');
 }
