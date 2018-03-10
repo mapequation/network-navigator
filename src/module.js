@@ -66,11 +66,13 @@ export default class Module {
     /**
      * Replace all nodes
      *
-     * @param {Module[]|Node[]} nodes the nodes
+     * @param {Iterable.<Module|Node>} nodes the nodes
      */
     set nodes(nodes) {
         this._nodes.clear();
-        nodes.forEach(child => this.addNode(child));
+        for (let node of nodes) {
+            this.addNode(node);
+        }
     }
 
     /**
@@ -91,7 +93,7 @@ export default class Module {
         if (this._name) {
             return this._name;
         } else if (this.largest.length) {
-            return this.largest
+            return this.largest.items
                 .map(item => item.name)
                 .join(', ');
         }
@@ -115,61 +117,50 @@ export default class Module {
     }
 
     /**
-     * Traverse network depth first, invoking callback with each node.
+     * This defines a callback type `predicate`.
      *
-     * @param {*} callback the callback gets invoked with each node
+     * @callback predicate
+     * @param {Module|Node} node the node
+     * @return {boolean} the result
      */
-    traverse(callback) {
+
+    /**
+     * Pre-order traverse all nodes below.
+     *
+     * @param {predicate} [predicate] optional predicate
+     * @return {Iterable.<Module|Node>} the nodes
+     */
+    traverse(predicate) {
+        if (predicate) {
+            return this._search(predicate);
+        }
+        return this._traverse();
+    }
+
+    * _traverse() {
         const queue = [this];
         while (queue.length) {
             const node = queue.pop();
-            callback(node);
+            yield node;
             if (node.nodes) queue.push(...node.nodes);
         }
     }
 
-    /**
-     * Search network depth first, invoking callback for each node
-     * that satisfies predicate.
-     *
-     * @see Module#traverse
-     *
-     * @param {Function} predicate
-     * @param {Function} callback
-     */
-    search(predicate, callback) {
-        this.traverse((node) => {
+    * _search(predicate) {
+        for (let node of this._traverse()) {
             if (predicate(node)) {
-                callback(node);
+                yield node;
             }
-        });
-    }
-
-    /**
-     * Return all nodes depth first which matches predicate.
-     *
-     * @param {Function} predicate
-     * @return {Array} the matches
-     */
-    filter(predicate) {
-        const matches = [];
-
-        this.traverse((node) => {
-            if (predicate(node)) {
-                matches.push(node);
-            }
-        });
-
-        return matches;
+        }
     }
 
     /**
      * Get all leaf nodes.
      *
-     * @return {Node[]} the leaf nodes
+     * @return {Iterable.<Node>} the leaf nodes
      */
-    flatten() {
-        return this.filter(node => !node.hasChildren);
+    get leafNodes() {
+        return this.traverse(node => !node.hasChildren);
     }
 
     /**
@@ -180,16 +171,15 @@ export default class Module {
     asMatrix() {
         const N = this.nodes.length;
         const matrix = [];
-        for (let i = 0; i < N; i++)
+        for (let i = 0; i < N; i++) {
             matrix.push(Array(N).fill(0));
+        }
 
-        const index = node => this.nodes.indexOf(node);
-
-        this.links.forEach((link) => {
-            const row = index(link.source);
-            const col = index(link.target);
+        for (let link of this.links) {
+            const row = link.source.id;
+            const col = link.target.id;
             matrix[row][col] += link.flow;
-        });
+        }
 
         return matrix;
     }

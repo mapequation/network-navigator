@@ -65,11 +65,11 @@ export class Network extends Module {
 
         this.connected = true;
 
-        this.traverse((node) => {
+        for (let node of this.traverse()) {
             if (node.hasChildren) {
                 node.links = node.links.map(link =>
                     new Link(node.getNode(link.source), node.getNode(link.target), link.flow));
             }
-        });
+        }
     }
 }

@@ -7,14 +7,16 @@
 export default class PriorityQueue {
     /**
      * Construct a PriorityQueue
-     * @param {number} maxItems max number of items to keep,
-     *                          -1 to keep all items
-     * @return {PriorityQueue}
+     *
+     * @param {Function} comparator the comparator
+     * @param {number} [maxItems=-1] max number of items to keep, -1 to keep all items
+     * @param {Iterable} [initialValues] initial values
      */
-    constructor(comparator, maxItems = -1) {
+    constructor(comparator, maxItems = -1, initialValues = []) {
         this.comparator = comparator;
         this.maxItems = maxItems;
-        this.items = [];
+        this.items = Array.from(initialValues).sort(this.comparator);
+        this._shrinkToSize();
     }
 
     /**
@@ -27,24 +29,6 @@ export default class PriorityQueue {
     }
 
     /**
-     * Map over items in queue
-     *
-     * @param {Function} callback
-     */
-    map(callback) {
-        return this.items.map(callback);
-    }
-
-    /**
-     * Invoke callback for each item in queue
-     *
-     * @param {Function} callback
-     */
-    forEach(callback) {
-        return this.items.forEach(callback);
-    }
-
-    /**
      * Push an item on the queue
      *
      * @param {*} item
@@ -52,9 +36,7 @@ export default class PriorityQueue {
     push(item) {
         this.items.push(item);
         this.items.sort(this.comparator);
-        if (this.maxItems > 0 && this.length > this.maxItems) {
-            this.pop();
-        }
+        this._shrinkToSize();
     }
 
     /**
@@ -64,5 +46,13 @@ export default class PriorityQueue {
      */
     pop() {
         return this.items.pop();
+    }
+
+    _shrinkToSize() {
+        if (this.maxItems > 0) {
+            while (this.length > this.maxItems) {
+                this.pop();
+            }
+        }
     }
 }

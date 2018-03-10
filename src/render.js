@@ -36,11 +36,10 @@ function showInfoBox(node) {
         .style('stroke', 'black')
         .style('stroke-width', '2px');
 
-    const queue = new PriorityQueue(byFlow, 12);
-    node.nodes.forEach(n => queue.push(n));
+    const queue = new PriorityQueue(byFlow, 12, node.nodes);
 
     let dy = 0;
-    queue.forEach((item) => {
+    queue.items.forEach((item) => {
         info.append('text')
             .text(ellipsis(item.name, 30))
             .attr('x', +infoBox.attr('x') + 10)
@@ -260,8 +259,9 @@ export default function makeRenderFunction(notifier, style, directed = true) {
             .attr('r', (n) => {
                 let hits = n.marked ? 1 : 0;
                 if (hits === 0 && n.hasChildren) {
-                    n.filter(child => child.marked)
-                        .map(child => hits++);
+                    for (let marked of n.traverse(child => child.marked)) {
+                        hits++;
+                    }
                 }
                 return style.searchMarkRadius(hits);
             })

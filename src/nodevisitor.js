@@ -1,7 +1,9 @@
 export default class NodeVisitor {
     visit(node) {
         if (node.hasChildren) {
-            node.nodes.forEach(n => n.accept(this));
+            for (let child of node.nodes) {
+                child.accept(this);
+            }
         }
     }
 }

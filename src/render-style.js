@@ -30,13 +30,10 @@ export default function makeRenderStyle(network) {
 
     const maxNodeFlow = maxFlow(nodes);
 
-    let maxLinkFlow = maxFlow(links);
-
-    network.traverse((node) => {
-        if (node.links) {
-            maxLinkFlow = Math.max(maxLinkFlow, maxFlow(node.links));
-        }
-    });
+    let maxLinkFlow = 0;
+    for (let node of network.traverse(node => node.links)) {
+        maxLinkFlow = Math.max(maxLinkFlow, maxFlow(node.links));
+    }
 
     const nodeRadius = scaleSqrt().domain([0, maxNodeFlow]).range([10, 70]);
     const nodeFillColor = scaleLinear().domain([0, maxNodeFlow]).range(['#DFF1C1', '#C5D7A8']);

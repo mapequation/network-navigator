@@ -56,15 +56,17 @@ function runApplication(network, linkType, file) {
     };
 
     const search = (name) => {
-        const re = new RegExp(name, 'i');
+        try {
+            const re = new RegExp(name, 'i');
 
-        const markMatches = name.length
-            ? node => node.marked = re.test(node.name)
-            : node => node.marked = false;
-
-        network
-            .flatten()
-            .map(markMatches);
+            for (let node of network.leafNodes) {
+                node.marked = name.length
+                    ? re.test(node.name)
+                    : false;
+            }
+        } catch (e) {
+            // No-op
+        }
     };
 
     const selectNode = (node) => {
