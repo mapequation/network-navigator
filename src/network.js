@@ -41,12 +41,56 @@ export class Network extends Module {
      * @return {?(Module|Node)} the node
      */
     getNodeByPath(path) {
+        return [...this.nodesAlongPath(path)].pop();
+    }
+
+    /**
+     * Yield all nodes along path, starting with this.
+     * Yields null if no node could be found.
+     *
+     * @param {string} path the path
+     * @yields {?(Module|Node)} the nodes
+     */
+    * nodesAlongPath(path) {
+        let pathNode = this;
+        yield pathNode;
+
         if (path.toString() === this.path.toString()) {
-            return this;
+            return;
         }
 
-        return TreePath.toArray(path)
-            .reduce((pathNode, childId) => (pathNode ? pathNode.getNode(childId) : null), this);
+        for (let step of TreePath.toArray(path)) {
+            // Nodes might not have the getNode method or might be null.
+            yield pathNode = (pathNode && pathNode.getNode)
+                ? pathNode.getNode(step)
+                : null;
+        }
+    }
+
+    /**
+     * Get the max node flow of the network.
+     *
+     * @return {number} the flow
+     */
+    get maxNodeFlow() {
+        let max = 0;
+        for (let node of this.traverse()) {
+            max = Math.max(max, node.flow);
+        }
+        return max;
+    }
+
+    /**
+     * Get the max link flow of the network.
+     *
+     * @return {number} the flow
+     */
+    get maxLinkFlow() {
+        let max = 0;
+        for (let node of this.traverse(node => node.links)) {
+            max = Math.max(max, node.links.map(n => n.flow).reduce((a, b) => Math.max(a, b), 0));
+        }
+        return max;
     }
 
     /**

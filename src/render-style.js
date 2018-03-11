@@ -23,17 +23,7 @@ import { scaleLinear, scaleSqrt } from 'd3-scale';
  * @param {Network} network
  */
 export default function makeRenderStyle(network) {
-    const { nodes, links } = network;
-
-    const maxFlow = array =>
-        array.map(n => n.flow).reduce((a, b) => Math.max(a, b), 0);
-
-    const maxNodeFlow = maxFlow(nodes);
-
-    let maxLinkFlow = 0;
-    for (let node of network.traverse(node => node.links)) {
-        maxLinkFlow = Math.max(maxLinkFlow, maxFlow(node.links));
-    }
+    const { nodes, links, maxNodeFlow, maxLinkFlow } = network;
 
     const nodeRadius = scaleSqrt().domain([0, maxNodeFlow]).range([10, 70]);
     const nodeFillColor = scaleLinear().domain([0, maxNodeFlow]).range(['#DFF1C1', '#C5D7A8']);
