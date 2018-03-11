@@ -142,7 +142,9 @@ export default class Module {
         while (queue.length) {
             const node = queue.pop();
             yield node;
-            if (node.nodes) queue.push(...node.nodes);
+            if (node.hasChildren) {
+                queue.push(...[...node.nodes].reverse());
+            }
         }
     }
 
