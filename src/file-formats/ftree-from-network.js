@@ -12,7 +12,6 @@
  * @author Anton Eriksson
  */
 
-import SerializeVisitor from 'serializevisitor';
 import { byFlow } from '../filter';
 
 /**
@@ -22,38 +21,33 @@ import { byFlow } from '../filter';
  * @param {boolean} directed
  */
 export default function ftreeFromNetwork(network, directed = true) {
-    const moduleSerializer = new SerializeVisitor(node =>
-        (node.hasChildren && node.path.toString() !== 'root'
-            ? `${node.path} ${node.flow} "${node.name}" ${node.exitFlow}\n`
-            : ''));
+    let modules = '';
+    let nodes = '';
+    let links = '';
 
-    const nodeSerializer = new SerializeVisitor(node =>
-        (!node.hasChildren
-            ? `${node.path} ${node.flow} "${node.name}" ${node.id}\n`
-            : ''));
-
-    const linkSerializer = new SerializeVisitor((node) => {
-        if (!node.hasChildren) return '';
-        let result = `*Links ${node.path} ${node.exitFlow} ${node.links.length} ${node.nodes.length}\n`;
-        result += node.links
-            .sort(byFlow)
-            .reduce((str, link) => `${str}${link}\n`, '');
-        return result;
-    });
-
-    network.accept(moduleSerializer);
-    network.accept(nodeSerializer);
-    network.accept(linkSerializer);
+    for (let node of network.traverse()) {
+        if (node.hasChildren) {
+            if (node.path.toString() !== 'root') {
+                modules += `${node.path} ${node.flow} "${node.name}" ${node.exitFlow}\n`;
+            }
+            links += `*Links ${node.path} ${node.exitFlow} ${node.links.length} ${node.nodes.length}\n`;
+            links += node.links
+                .sort(byFlow)
+                .reduce((str, link) => `${str}${link}\n`, '');
+        } else {
+            nodes += `${node.path} ${node.flow} "${node.name}" ${node.id}\n`;
+        }
+    }
 
     return [
         '*Modules\n',
         '# path flow name exitFlow\n',
-        moduleSerializer,
+        modules,
         '*Nodes\n',
         '# path flow name node\n',
-        nodeSerializer,
+        nodes,
         `*Links ${directed ? 'directed' : 'undirected'}\n`,
         '#*Links path exitFlow numEdges numChildren\n',
-        linkSerializer,
+        links,
     ].join('');
 }
