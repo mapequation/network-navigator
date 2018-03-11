@@ -59,10 +59,12 @@ function runApplication(network, file) {
         try {
             const re = new RegExp(name, 'i');
 
-            for (let node of network.leafNodes) {
-                node.marked = name.length
-                    ? re.test(node.name)
-                    : false;
+            for (let node of network.traverseDepthFirst()) {
+                if (!node.hasChildren) {
+                    node.marked = name.length
+                        ? re.test(node.name)
+                        : false;
+                }
             }
         } catch (e) {
             // No-op

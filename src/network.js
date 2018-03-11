@@ -77,7 +77,7 @@ export class Network extends Module {
      */
     get maxNodeFlow() {
         let max = 0;
-        for (let node of this.traverse()) {
+        for (let node of this.traverseDepthFirst()) {
             max = Math.max(max, node.flow);
         }
         return max;
@@ -90,8 +90,10 @@ export class Network extends Module {
      */
     get maxLinkFlow() {
         let max = 0;
-        for (let node of this.traverse(node => node.links)) {
-            max = Math.max(max, node.links.map(n => n.flow).reduce((a, b) => Math.max(a, b), 0));
+        for (let node of this.traverseDepthFirst()) {
+            if (node.links) {
+                max = Math.max(max, node.links.map(n => n.flow).reduce((a, b) => Math.max(a, b), 0));
+            }
         }
         return max;
     }
@@ -112,8 +114,8 @@ export class Network extends Module {
 
         this.connected = true;
 
-        for (let node of this.traverse()) {
-            if (node.hasChildren) {
+        for (let node of this.traverseDepthFirst()) {
+            if (node.links) {
                 node.links = node.links.map(link =>
                     new Link(node.getNode(link.source), node.getNode(link.target), link.flow));
             }

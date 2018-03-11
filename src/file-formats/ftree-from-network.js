@@ -24,7 +24,7 @@ export default function ftreeFromNetwork(network) {
     let nodes = '';
     let links = '';
 
-    for (let node of network.traverse()) {
+    for (let node of network.traverseDepthFirst()) {
         if (node.hasChildren) {
             if (node.path.toString() !== 'root') {
                 modules += `${node.path} ${node.flow} "${node.name}" ${node.exitFlow}\n`;

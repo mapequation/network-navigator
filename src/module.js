@@ -117,27 +117,11 @@ export default class Module {
     }
 
     /**
-     * This defines a callback type `predicate`.
-     *
-     * @callback predicate
-     * @param {Module|Node} node the node
-     * @return {boolean} the result
-     */
-
-    /**
      * Pre-order traverse all nodes below.
      *
-     * @param {predicate} [predicate] optional predicate
-     * @return {Iterable.<Module|Node>} the nodes
+     * @yields {Module|Node} the nodes
      */
-    traverse(predicate) {
-        if (predicate) {
-            return this._search(predicate);
-        }
-        return this._traverse();
-    }
-
-    * _traverse() {
+    * traverseDepthFirst() {
         const queue = [this];
         while (queue.length) {
             const node = queue.pop();
@@ -148,21 +132,20 @@ export default class Module {
         }
     }
 
-    * _search(predicate) {
-        for (let node of this._traverse()) {
-            if (predicate(node)) {
-                yield node;
+    /**
+     * Breadth first traverse all nodes below.
+     *
+     * @yields {Module|Node} the nodes
+     */
+    * traverseBreadthFirst() {
+        const queue = [this];
+        while (queue.length) {
+            const node = queue.shift();
+            yield node;
+            if (node.hasChildren) {
+                queue.push(...node.nodes);
             }
         }
-    }
-
-    /**
-     * Get all leaf nodes.
-     *
-     * @return {Iterable.<Node>} the leaf nodes
-     */
-    get leafNodes() {
-        return this.traverse(node => !node.hasChildren);
     }
 
     /**

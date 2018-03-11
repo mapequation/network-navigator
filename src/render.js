@@ -259,8 +259,10 @@ export default function makeRenderFunction(notifier, style, directed = true) {
             .attr('r', (n) => {
                 let hits = n.marked ? 1 : 0;
                 if (hits === 0 && n.hasChildren) {
-                    for (let marked of n.traverse(child => child.marked)) {
-                        hits++;
+                    for (let child of n.traverseDepthFirst()) {
+                        if (child.marked) {
+                            hits++;
+                        }
                     }
                 }
                 return style.searchMarkRadius(hits);
