@@ -34,7 +34,7 @@ export default function ftreeFromNetwork(network) {
                 .sort(byFlow)
                 .reduce((str, link) => `${str}${link}\n`, '');
         } else {
-            nodes += `${node.path} ${node.flow} "${node.name}" ${node.id}\n`;
+            nodes += `${node.path} ${node.flow} "${node.name}" ${node.physicalId}\n`;
         }
     }
 

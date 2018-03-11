@@ -6,8 +6,9 @@ import TreePath from 'treepath';
  * @author Anton Eriksson
  */
 export default class Node {
-    constructor(id, name, flow) {
+    constructor(id, name, flow, physicalId) {
         this.id = id;
+        this.physicalId = physicalId;
         this.path = new TreePath(id);
         this.parent = null;
         this.name = name;

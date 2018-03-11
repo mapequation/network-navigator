@@ -63,7 +63,7 @@ export default function networkFromFTree(ftree) {
         parent.flow += node.flow;
         parent.largest.push(node);
 
-        parent.addNode(new Node(path.pop(), node.name, node.flow));
+        parent.addNode(new Node(path.pop(), node.name, node.flow, node.node));
     });
 
     // Add module names
