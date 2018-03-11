@@ -61,7 +61,7 @@ function hideInfoBox() {
  *
  * @param {Observable} notifier network layer changes are broadcasted here
  * @param {Object} style renderStyle object
- * @param {boolean} directed directed or undirected links, affects link appearance
+ * @param {boolean} [directed=true] directed or undirected links, affects link appearance
  * @return {makeRenderFunction~render} the render function
  */
 export default function makeRenderFunction(notifier, style, directed = true) {

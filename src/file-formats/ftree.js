@@ -61,7 +61,7 @@
  *      },
  *      errors: [],
  *      meta: {
- *          linkType,
+ *          directed,
  *      },
  *  }
  *
@@ -77,7 +77,7 @@ export default function parseFTree(rows) {
         },
         errors: [],
         meta: {
-            linkType: undefined,
+            directed: true,
         },
     };
 
@@ -146,7 +146,7 @@ export default function parseFTree(rows) {
 
     // 2. Get link type
     if (rows[i] && /(un)?directed/i.test(rows[i][1].toString())) {
-        result.meta.linkType = rows[i][1].trim().toLowerCase();
+        result.meta.directed = rows[i][1].trim().toLowerCase() === 'directed';
         i++;
     } else {
         result.errors.push('Expected link type!');

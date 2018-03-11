@@ -14,7 +14,7 @@ import Observable from 'observable';
 import CullVisitor from 'cullvisitor';
 import FilterVisitor from 'filtervisitor';
 
-function runApplication(network, linkType, file) {
+function runApplication(network, file) {
     const state = {
         filename: file.name,
         nodeFlow: 1,
@@ -30,7 +30,7 @@ function runApplication(network, linkType, file) {
 
     const renderNotifier = new Observable();
     const renderStyle = makeRenderStyle(network);
-    const render = makeRenderFunction(renderNotifier, renderStyle, linkType === 'directed');
+    const render = makeRenderFunction(renderNotifier, renderStyle, network.directed);
 
     const setDirty = () => {
         const branch = network.getNodeByPath(state.path);
@@ -132,11 +132,11 @@ function acceptFile(file) {
 
     parseFile(file)
         .then((parsed) => {
-            const tree = parseFTree(parsed.data);
-            const network = networkFromFTree(tree.data);
+            const ftree = parseFTree(parsed.data);
+            const network = networkFromFTree(ftree);
             d3.select('#my-dropzone').remove();
             d3.select('#loading').remove();
-            runApplication(network, tree.meta.linkType, file);
+            runApplication(network, file);
         })
         .catch(err => console.error(err));
 }

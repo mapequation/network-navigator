@@ -34,7 +34,7 @@ describe('parseFTree', function () {
             },
             errors: [],
             meta: {
-                linkType: 'directed',
+                directed: true,
             },
         });
     });

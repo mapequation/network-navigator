@@ -18,9 +18,8 @@ import { byFlow } from '../filter';
  * Serialize Network to FTree string.
  *
  * @param {Network} network
- * @param {boolean} directed
  */
-export default function ftreeFromNetwork(network, directed = true) {
+export default function ftreeFromNetwork(network) {
     let modules = '';
     let nodes = '';
     let links = '';
@@ -46,7 +45,7 @@ export default function ftreeFromNetwork(network, directed = true) {
         '*Nodes\n',
         '# path flow name node\n',
         nodes,
-        `*Links ${directed ? 'directed' : 'undirected'}\n`,
+        `*Links ${network.directed ? 'directed' : 'undirected'}\n`,
         '#*Links path exitFlow numEdges numChildren\n',
         links,
     ].join('');

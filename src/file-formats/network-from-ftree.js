@@ -15,14 +15,15 @@ import TreePath from 'treepath';
 /**
  * Create tree of networks from FTree data.
  *
- * @param {Object} params
- * @param {Object[]} params.modules
- * @param {Object[]} params.tree
- * @param {Object[]} params.link
+ * @param {Object} ftree
+ * @param {Object[]} ftree.modules
+ * @param {Object[]} ftree.tree
+ * @param {Object[]} ftree.links
  * @return {Network}
  */
-export default function networkFromFTree({ modules, tree, links }) {
-    const root = new Network();
+export default function networkFromFTree(ftree) {
+    const { modules, tree, links } = ftree.data;
+    const root = new Network(ftree.meta.directed);
 
     // Create the tree structure
     links.forEach((node) => {

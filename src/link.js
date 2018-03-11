@@ -9,7 +9,7 @@ export default class Link {
      *
      * @param {*} source the source
      * @param {*} target the target
-     * @param {number} flow the flow, default 1
+     * @param {number} [flow=1] the flow
      */
     constructor(source, target, flow = 1) {
         this.source = source;

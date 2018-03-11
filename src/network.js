@@ -17,10 +17,13 @@ export { Module, Node };
 export class Network extends Module {
     /**
      * Construct a new Network
+     *
+     * @param {boolean} [directed=true] directedness of network
      */
-    constructor() {
+    constructor(directed = true) {
         super('root');
 
+        this.directed = directed;
         this.connected = false;
     }
 
