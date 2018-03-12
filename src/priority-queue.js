@@ -16,7 +16,11 @@ export default class PriorityQueue {
         this.comparator = comparator;
         this.maxItems = maxItems;
         this.items = Array.from(initialValues).sort(this.comparator);
-        this._shrinkToSize();
+        if (this.maxItems > 0) {
+            while (this.length > this.maxItems) {
+                this.pop();
+            }
+        }
     }
 
     /**
@@ -36,7 +40,11 @@ export default class PriorityQueue {
     push(item) {
         this.items.push(item);
         this.items.sort(this.comparator);
-        this._shrinkToSize();
+        if (this.maxItems > 0) {
+            while (this.length > this.maxItems) {
+                this.pop();
+            }
+        }
     }
 
     /**
@@ -46,13 +54,5 @@ export default class PriorityQueue {
      */
     pop() {
         return this.items.pop();
-    }
-
-    _shrinkToSize() {
-        if (this.maxItems > 0) {
-            while (this.length > this.maxItems) {
-                this.pop();
-            }
-        }
     }
 }

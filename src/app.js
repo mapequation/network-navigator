@@ -73,7 +73,7 @@ function runApplication(network, file) {
 
     const selectNode = (node) => {
         state.selectedNode = node;
-        state.selected = node ? node.name : '';
+        state.selected = node ? node.name : '';
     };
 
     const observer = {
@@ -103,7 +103,7 @@ function runApplication(network, file) {
     gui.add(state, 'nodeFlow', 0, 1).step(0.01).onFinishChange(() => { filterFlow(); setDirty(); renderBranch(); }).listen();
     gui.add(state, 'linkFlow', 0, 1).step(0.01).onFinishChange(() => { filterFlow(); setDirty(); renderBranch(); }).listen();
     gui.add(state, 'path').listen();
-    gui.add(state, 'search').onChange(name => { search(name); renderBranch(); });
+    gui.add(state, 'search').onChange((name) => { search(name); renderBranch(); });
     gui.add(state, 'selected').onFinishChange((name) => {
         if (state.selectedNode) state.selectedNode.name = name;
         renderBranch();
@@ -112,7 +112,7 @@ function runApplication(network, file) {
         const ftree = ftreeFromNetwork(network);
         const blob = new Blob([ftree], { type: 'text/plain;charset=utf-8;' });
         FileSaver.saveAs(blob, file.name);
-        setTimeout(() => state.download = false, 100);
+        setTimeout(() => { state.download = false; }, 100);
     }).listen();
 
     cullLargest();

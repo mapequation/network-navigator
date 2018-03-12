@@ -44,7 +44,7 @@ export class Network extends Module {
      * @return {?(Module|Node)} the node
      */
     getNodeByPath(path) {
-        return [...this.nodesAlongPath(path)].pop();
+        return Array.from(this.nodesAlongPath(path)).pop();
     }
 
     /**
