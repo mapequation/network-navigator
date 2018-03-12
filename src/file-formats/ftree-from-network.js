@@ -47,17 +47,22 @@ export default function ftreeFromNetwork(network) {
     let nodes = '';
     let links = '';
 
-    for (let node of network.traverseDepthFirst()) {
+    for (let node of network.traverseBreadthFirst()) {
         if (node.hasChildren) {
             if (node.path.toString() !== 'root') {
-                modules += `${node.path} ${node.flow} "${node.name}" ${node.exitFlow}\n`;
+                modules += `${node.path} ${flowFormat(node.flow)} "${node.name}" ${flowFormat(node.exitFlow)}\n`;
             }
-            links += `*Links ${node.path} ${node.exitFlow} ${node.links.length} ${node.nodes.length}\n`;
-            links += node.links
-                .sort(byFlow)
-                .reduce((str, link) => `${str}${link}\n`, '');
+        }
+    }
+
+    for (let node of network.traverseDepthFirst()) {
+        if (!node.hasChildren) {
+            nodes += `${node.path} ${flowFormat(node.flow)} "${node.name}" ${node.physicalId}\n`;
         } else {
-            nodes += `${node.path} ${node.flow} "${node.name}" ${node.physicalId}\n`;
+            links += `*Links ${node.path} ${flowFormat(node.exitFlow)} ${node.links.length} ${node.nodes.length}\n`;
+            for (let link of node.links.sort(byFlow)) {
+                links += `${link.source.id} ${link.target.id} ${flowFormat(link.flow)}\n`;
+            }
         }
     }
 
