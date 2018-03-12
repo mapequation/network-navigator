@@ -215,6 +215,7 @@ export default function makeRenderFunction(notifier, style, directed = true) {
             .data(links)
             .enter()
             .append('path')
+            .attr('class', 'link')
             .style('fill', style.linkFillColor);
 
         // Used to distinguish between single and double clicks
@@ -242,8 +243,20 @@ export default function makeRenderFunction(notifier, style, directed = true) {
                     });
                 }, 200);
             })
-            .on('mouseover', showInfoBox)
-            .on('mouseout', hideInfoBox)
+            .on('mouseover', function (n) {
+                showInfoBox(n);
+                d3.select(this).select('circle')
+                    .style('stroke', '#F48074');
+                d3.selectAll('.link').filter(l => l.source === n)
+                    .style('fill', '#F48074')
+            })
+            .on('mouseout', function (n) {
+                hideInfoBox();
+                d3.select(this).select('circle')
+                    .style('stroke', style.nodeBorderColor);
+                d3.selectAll('.link').filter(l => l.source === n)
+                    .style('fill', style.linkFillColor)
+            })
             .call(d3.drag()
                 .on('start', dragStarted)
                 .on('drag', drag)
