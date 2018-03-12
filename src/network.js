@@ -118,6 +118,11 @@ export class Network extends Module {
             if (node.links) {
                 node.links = node.links.map(link =>
                     new Link(node.getNode(link.source), node.getNode(link.target), link.flow));
+
+                node.links.forEach((link) => {
+                    link.source.outLinks.push(link);
+                    link.target.inLinks.push(link);
+                });
             }
         }
     }

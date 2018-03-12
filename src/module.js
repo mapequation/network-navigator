@@ -25,6 +25,8 @@ export default class Module {
         this.exitFlow = 0;
         this._nodes = new Map();
         this.links = [];
+        this.inLinks = [];
+        this.outLinks = [];
         this.state = new State();
         this.shouldRender = true;
     }

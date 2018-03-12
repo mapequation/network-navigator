@@ -14,6 +14,8 @@ export default class Node {
         this.name = name;
         this.flow = flow;
         this.exitFlow = 0;
+        this.inLinks = [];
+        this.outLinks = [];
         this.marked = false;
         this.shouldRender = true;
     }
