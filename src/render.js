@@ -247,15 +247,17 @@ export default function makeRenderFunction(notifier, style, directed = true) {
                 showInfoBox(n);
                 d3.select(this).select('circle')
                     .style('stroke', '#F48074');
-                d3.selectAll('.link').filter(l => l.source === n)
-                    .style('fill', '#F48074')
+                d3.selectAll('.link').filter(d => d.source === n)
+                    .raise()
+                    .style('fill', '#F48074');
             })
             .on('mouseout', function (n) {
                 hideInfoBox();
                 d3.select(this).select('circle')
                     .style('stroke', style.nodeBorderColor);
-                d3.selectAll('.link').filter(l => l.source === n)
-                    .style('fill', style.linkFillColor)
+                d3.selectAll('.link')
+                    .sort((a, b) => a.flow - b.flow)
+                    .style('fill', style.linkFillColor);
             })
             .call(d3.drag()
                 .on('start', dragStarted)
