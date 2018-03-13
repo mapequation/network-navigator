@@ -330,6 +330,19 @@ export default function makeRenderFunction(notifier, style, directed = true) {
                 .attr('visibility', linkAttr.visibility);
         };
 
+        nodes.forEach((n) => {
+            const len = nodes.length;
+            const k = (len - 1)/(1 - 0.1); // dy/dx
+            const m = 1 - 0.1*k; // y(0.1) = 1
+            n.visible = x => n.id <= k*x + m;
+        });
+
+        links.forEach((l, i) => {
+            // Links are in increasing flow order so the highest flow link is rendered on top.
+            const relativeIndex = (links.length - i) / links.length;
+            l.visible = k => relativeIndex < k;
+        });
+
         const zoomObserver = {
             update(message) {
                 if (message.type === 'ZOOM') {
@@ -337,8 +350,8 @@ export default function makeRenderFunction(notifier, style, directed = true) {
                     labelAttr.x = n => x + k * n.x;
                     labelAttr.y = n => y + k * n.y;
                     labelAttr.dx = n => k * 1.1 * style.nodeRadius(n);
-                    labelAttr.visibility = n => n.id <= Math.max(1, nodes.length * k) ? 'visible' : 'hidden';
-                    linkAttr.visibility = l => links.length - links.indexOf(l) < links.length * k ? 'visible' : 'hidden';
+                    labelAttr.visibility = n => n.visible(k) ? 'visible' : 'hidden';
+                    linkAttr.visibility = l => l.visible(k) ? 'visible' : 'hidden';
 
                     tick();
                 }
