@@ -51,19 +51,18 @@ export default function networkFromFTree(ftree) {
     // Add the actual nodes
     tree.forEach((node) => {
         const path = TreePath.toArray(node.path);
+        const childNode = new Node(path.pop(), node.name, node.flow, node.node);
 
         const parent = path
-            .slice(0, -1)
             .reduce((pathNode, childId) => {
                 pathNode.flow += node.flow;
-                pathNode.largest.push(node);
+                pathNode.largest.push(childNode);
                 return pathNode.getNode(childId);
             }, root);
 
         parent.flow += node.flow;
-        parent.largest.push(node);
-
-        parent.addNode(new Node(path.pop(), node.name, node.flow, node.node));
+        parent.largest.push(childNode);
+        parent.addNode(childNode);
     });
 
     // Add module names
