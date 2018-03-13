@@ -191,6 +191,7 @@ export default function makeRenderFunction(notifier, style, directed = true) {
     const render = (network, charge, linkDistance) => {
         const nodes = network.nodes.filter(node => node.shouldRender);
         const links = network.links.filter(link => link.shouldRender).reverse();
+        const { state } = network;
         const { simulation } = network.state;
 
         svg.selectAll('.network').selectAll('*').remove();
@@ -378,8 +379,15 @@ export default function makeRenderFunction(notifier, style, directed = true) {
             .force('link')
             .links(links);
 
-        if (network.state.dirty) {
-            simulation.alpha(0.5);
+        if (state.charge !== charge || state.linkDistance !== linkDistance) {
+            state.charge = charge;
+            state.linkDistance = linkDistance
+            state.dirty = true;
+        }
+
+        if (network.state.dirty && simulation.alpha() < 1) {
+            simulation.alpha(0.8);
+            simulation.tick();
         }
 
         if (simulation.alpha() === 1) {
