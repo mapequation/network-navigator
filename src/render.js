@@ -251,6 +251,9 @@ export default function makeRenderFunction(notifier, style, directed = true) {
                 showInfoBox(n);
                 d3.select(this).select('circle')
                     .style('stroke', '#F48074');
+                d3.selectAll('.link').filter(d => d.target === n)
+                    .raise()
+                    .style('fill', '#ba6157');
                 d3.selectAll('.link').filter(d => d.source === n)
                     .raise()
                     .style('fill', '#F48074');
