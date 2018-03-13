@@ -80,6 +80,9 @@ export default function makeRenderFunction(notifier, style, directed = true) {
     const g = svg.append('g')
         .attr('class', 'network');
 
+    const labels = svg.append('g')
+        .attr('class', 'network labels')
+
     const zoom = d3.zoom()
         .scaleExtent([0.1, 50])
         .on('zoom', () => {
@@ -190,7 +193,7 @@ export default function makeRenderFunction(notifier, style, directed = true) {
         const links = network.links.filter(link => link.shouldRender).reverse();
         const { simulation } = network.state;
 
-        g.selectAll('*').remove();
+        svg.selectAll('.network').selectAll('*').remove();
 
         const dragStarted = (node) => {
             if (!d3.event.active) simulation.alphaTarget(0.3).restart();
@@ -284,10 +287,13 @@ export default function makeRenderFunction(notifier, style, directed = true) {
             })
             .style('fill', '#F48074');
 
-        const text = node.append('text')
+        const text = labels.selectAll('.label')
+            .data(nodes)
+            .enter()
+            .append('text')
+            .attr('class', 'label')
             .text(n => ellipsis(n.name))
-            .attr('text-anchor', 'middle')
-            .attr('dy', n => -0.3 * style.nodeRadius(n))
+            .attr('text-anchor', 'left')
             .style('fill', 'black')
             .style('font-size', 12)
             .style('paint-order', 'stroke')
@@ -295,6 +301,45 @@ export default function makeRenderFunction(notifier, style, directed = true) {
             .style('stroke-width', '1.5px')
             .style('stroke-linecap', 'square')
             .style('stroke-linejoin', 'round');
+
+        const labelAttr = {
+            x: n => n.x,
+            y: n => n.y,
+            dx: n => 1.1 * style.nodeRadius(n),
+            visibility: n => 'visible',
+        };
+
+        const tick = () => {
+            circle
+                .attr('cx', n => n.x)
+                .attr('cy', n => n.y);
+            mark
+                .attr('cx', n => n.x)
+                .attr('cy', n => n.y);
+            text
+                .attr('x', labelAttr.x)
+                .attr('y', labelAttr.y)
+                .attr('dx', labelAttr.dx)
+                .attr('visibility', labelAttr.visibility);
+            link
+                .attr('d', linkSvgPath);
+        };
+
+        const zoomObserver = {
+            update(message) {
+                if (message.type === 'ZOOM') {
+                    const { x, y, k } = message.payload;
+                    labelAttr.x = n => x + k * n.x;
+                    labelAttr.y = n => y + k * n.y;
+                    labelAttr.dx = n => k * 1.1 * style.nodeRadius(n);
+                    labelAttr.visibility = n => n.id <= Math.max(1, nodes.length * k) ? 'visible' : 'hidden';
+
+                    tick();
+                }
+            }
+        };
+
+        notifier.attach(zoomObserver);
 
         simulation
             .force('collide', d3.forceCollide(20)
@@ -308,19 +353,7 @@ export default function makeRenderFunction(notifier, style, directed = true) {
 
         simulation
             .nodes(nodes)
-            .on('tick', () => {
-                circle
-                    .attr('cx', n => n.x)
-                    .attr('cy', n => n.y);
-                mark
-                    .attr('cx', n => n.x)
-                    .attr('cy', n => n.y);
-                text
-                    .attr('x', n => n.x)
-                    .attr('y', n => n.y);
-                link
-                    .attr('d', linkSvgPath);
-            });
+            .on('tick', tick);
 
         simulation
             .force('link')
