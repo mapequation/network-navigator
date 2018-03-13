@@ -309,6 +309,10 @@ export default function makeRenderFunction(notifier, style, directed = true) {
             visibility: n => 'visible',
         };
 
+        const linkAttr = {
+            visibility: l => 'visible',
+        };
+
         const tick = () => {
             circle
                 .attr('cx', n => n.x)
@@ -322,7 +326,8 @@ export default function makeRenderFunction(notifier, style, directed = true) {
                 .attr('dx', labelAttr.dx)
                 .attr('visibility', labelAttr.visibility);
             link
-                .attr('d', linkSvgPath);
+                .attr('d', linkSvgPath)
+                .attr('visibility', linkAttr.visibility);
         };
 
         const zoomObserver = {
@@ -333,6 +338,7 @@ export default function makeRenderFunction(notifier, style, directed = true) {
                     labelAttr.y = n => y + k * n.y;
                     labelAttr.dx = n => k * 1.1 * style.nodeRadius(n);
                     labelAttr.visibility = n => n.id <= Math.max(1, nodes.length * k) ? 'visible' : 'hidden';
+                    linkAttr.visibility = l => links.length - links.indexOf(l) < links.length * k ? 'visible' : 'hidden';
 
                     tick();
                 }
