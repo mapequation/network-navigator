@@ -38,9 +38,6 @@
  *  // Return value structure
  *  {
  *      data: {
- *          modules: [
- *              { path, flow, name, exitFlow },
- *          ],
  *          tree: [
  *              { path, flow, name, stateNode?, node },
  *              // ...
@@ -48,6 +45,7 @@
  *          links: [
  *              {
  *                  path,
+ *                  name, // optional
  *                  exitFlow,
  *                  numEdges,
  *                  numChildren,
@@ -71,7 +69,6 @@
 export default function parseFTree(rows) {
     const result = {
         data: {
-            modules: [],
             tree: [],
             links: [],
         },
@@ -83,7 +80,8 @@ export default function parseFTree(rows) {
 
     const DEFAULT_FLOW = 1;
 
-    const { modules, tree, links } = result.data;
+    const modules = new Map();
+    const { tree, links } = result.data;
 
     let i = 0;
 
@@ -102,7 +100,7 @@ export default function parseFTree(rows) {
                 continue;
             }
 
-            modules.push({
+            modules.set(row[0], {
                 path: row[0],
                 flow: row[1],
                 name: row[2],
@@ -174,6 +172,12 @@ export default function parseFTree(rows) {
                 numChildren: row[4],
                 links: [],
             };
+
+            const mod = modules.get(link.path);
+
+            if (mod) {
+                link.name = mod.name;
+            }
 
             links.push(link);
 

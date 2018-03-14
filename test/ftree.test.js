@@ -14,7 +14,6 @@ describe('parseFTree', function () {
         ];
         expect(parseFTree(data)).to.deep.equal({
             data: {
-                modules: [],
                 tree: [
                     { path: '1:1', flow: 0.1, name: 'Name 1', node: 1},
                     { path: '1:2', flow: 0.1, name: 'Name 2', node: 2},

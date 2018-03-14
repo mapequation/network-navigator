@@ -4,10 +4,8 @@ import Dropzone from 'dropzone';
 import FileSaver from 'file-saver';
 import parseFile from 'parse';
 import parseFTree from 'file-formats/ftree';
-import parsePajek from 'file-formats/pajek';
-import networkFromFTree from 'file-formats/network-from-ftree';
+import NetworkBuilder from 'network';
 import ftreeFromNetwork from 'file-formats/ftree-from-network';
-import networkFromPajek from 'file-formats/network-from-pajek';
 import makeRenderFunction from 'render';
 import makeRenderStyle from 'render-style';
 import CullVisitor from 'cullvisitor';
@@ -123,7 +121,7 @@ function acceptFile(file) {
     parseFile(file)
         .then((parsed) => {
             const ftree = parseFTree(parsed.data);
-            const network = networkFromFTree(ftree);
+            const network = NetworkBuilder.fromFTree(ftree);
             d3.select('#my-dropzone').remove();
             d3.select('#loading').remove();
             runApplication(network, file);

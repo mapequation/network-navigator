@@ -38,7 +38,9 @@ export default class Module {
      */
     addNode(node) {
         node.parent = this;
-        node.path = TreePath.join(this.path, node.id);
+        if (this.path.toString() !== 'root') {
+            node.path = TreePath.join(this.path, node.id);
+        }
         this._nodes.set(node.id, node);
     }
 
