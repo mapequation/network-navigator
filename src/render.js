@@ -312,7 +312,7 @@ export default function makeRenderFunction(notifier, style, directed = true) {
         };
 
         const linkAttr = {
-            visibility: l => 'visible',
+            visibility: l => true,
         };
 
         const tick = () => {
@@ -328,39 +328,29 @@ export default function makeRenderFunction(notifier, style, directed = true) {
                 .attr('dx', labelAttr.dx)
                 .attr('visibility', labelAttr.visibility);
             link
-                .attr('d', linkSvgPath)
-                .attr('visibility', linkAttr.visibility);
+                .attr('d', l => linkAttr.visibility(l) ? linkSvgPath(l) : null);
         };
 
-        nodes.forEach((n) => {
-            const len = nodes.length;
-            const k = (len - 1)/(1 - 0.1); // dy/dx
-            const m = 1 - 0.1*k; // y(0.1) = 1
-            n.visible = x => n.id <= k*x + m;
+        const labelVisible = (() => {
+            const visible = d3.scaleLinear().domain([0.15, 0.8]).range([1, nodes.length]).clamp(true);
+            return k => n => n.id <= visible(k) ? 'visible' : 'hidden';
+        })();
+
+        const linkVisible = (() => {
+            const len = links.length;
+            return k => l => 1 - l.index / len < k;
+        })();
+
+        notifier.on('ZOOM', (message) => {
+            const { x, y, k } = message.payload;
+            labelAttr.x = n => x + k * n.x;
+            labelAttr.y = n => y + k * n.y;
+            labelAttr.dx = n => k * 1.1 * style.nodeRadius(n);
+            labelAttr.visibility = labelVisible(k);
+            linkAttr.visibility = linkVisible(k);
+
+            tick();
         });
-
-        links.forEach((l, i) => {
-            // Links are in increasing flow order so the highest flow link is rendered on top.
-            const relativeIndex = (links.length - i) / links.length;
-            l.visible = k => relativeIndex < k;
-        });
-
-        const zoomObserver = {
-            update(message) {
-                if (message.type === 'ZOOM') {
-                    const { x, y, k } = message.payload;
-                    labelAttr.x = n => x + k * n.x;
-                    labelAttr.y = n => y + k * n.y;
-                    labelAttr.dx = n => k * 1.1 * style.nodeRadius(n);
-                    labelAttr.visibility = n => n.visible(k) ? 'visible' : 'hidden';
-                    linkAttr.visibility = l => l.visible(k) ? 'visible' : 'hidden';
-
-                    tick();
-                }
-            }
-        };
-
-        notifier.attach(zoomObserver);
 
         simulation
             .force('collide', d3.forceCollide(20)
