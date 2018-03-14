@@ -71,30 +71,19 @@ function runApplication(network, file) {
         }
     };
 
-    const selectNode = (node) => {
+    renderNotifier.on('PATH', (message) => {
+        state.path = message.payload.node.path;
+        state.selectedNode = null;
+        state.selected = '';
+        cullLargest();
+        renderBranch();
+    });
+
+    renderNotifier.on('SELECT', (message) => {
+        const { node } = message.payload
         state.selectedNode = node;
         state.selected = node ? node.name : '';
-    };
-
-    const observer = {
-        update(message) {
-            switch (message.type) {
-            case 'PATH':
-                state.path = message.payload.node.path;
-                selectNode(null);
-                cullLargest();
-                renderBranch();
-                break;
-            case 'SELECT':
-                selectNode(message.payload.node);
-                break;
-            default:
-                break;
-            }
-        },
-    };
-
-    renderNotifier.attach(observer);
+    });
 
     const gui = new dat.GUI();
     gui.add(state, 'filename');

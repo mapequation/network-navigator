@@ -7,6 +7,7 @@
 export default class Observable {
     constructor() {
         this.observers = [];
+        this.eventHandlers = new Map();
     }
 
     attach(observer) {
@@ -20,5 +21,21 @@ export default class Observable {
 
     notify(message) {
         this.observers.forEach(observer => observer.update(message));
+
+        if (message.type && this.eventHandlers.get(message.type)) {
+            this.eventHandlers
+                .get(message.type)
+                .forEach(handler => handler(message));
+        }
+
+        return this;
+    }
+
+    on(messageType, event) {
+        const handlers = this.eventHandlers.get(messageType) || [];
+        this.eventHandlers.set(messageType, handlers);
+        handlers.push(event);
+
+        return this;
     }
 }
