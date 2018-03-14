@@ -4,7 +4,7 @@ import Dropzone from 'dropzone';
 import FileSaver from 'file-saver';
 import parseFile from 'parse';
 import parseFTree from 'file-formats/ftree';
-import NetworkBuilder from 'network';
+import NetworkBuilder, { traverseDepthFirst, makeGetNodeByPath } from 'network';
 import ftreeFromNetwork from 'file-formats/ftree-from-network';
 import makeRenderFunction from 'render';
 import makeRenderStyle from 'render-style';
@@ -25,28 +25,40 @@ function runApplication(network, file) {
         download: false,
     };
 
-    const renderStyle = makeRenderStyle(network);
+    const maxNodeFlow = Array.from(traverseDepthFirst(network))
+        .map(node => node.flow)
+        .reduce((max, curr) => Math.max(max, curr), -Infinity);
+
+    const maxLinkFlow = Array.from(traverseDepthFirst(network))
+        .filter(node => node.links)
+        .map(node => node.links)
+        .reduce((acc, curr) => acc.concat(curr), [])
+        .map(link => link.flow)
+        .reduce((max, curr) => Math.max(max, curr), -Infinity);
+
+    const renderStyle = makeRenderStyle(maxNodeFlow, maxLinkFlow);
     const render = makeRenderFunction(renderStyle, network.directed);
+    const getNodeByPath = makeGetNodeByPath(network);
 
     const setDirty = () => {
-        const branch = network.getNodeByPath(state.path);
+        const branch = getNodeByPath(state.path);
         branch.state.dirty = true;
     };
 
     const cullLargest = () => {
-        const branch = network.getNodeByPath(state.path);
+        const branch = getNodeByPath(state.path);
         const visitor = new CullVisitor(state);
         visitor.visit(branch);
     };
 
     const filterFlow = () => {
-        const branch = network.getNodeByPath(state.path);
+        const branch = getNodeByPath(state.path);
         const visitor = new FilterVisitor(state);
         visitor.visit(branch);
     };
 
     const renderBranch = () => {
-        const branch = network.getNodeByPath(state.path);
+        const branch = getNodeByPath(state.path);
 
         render(branch, state.charge, state.linkDistance);
 
@@ -57,8 +69,8 @@ function runApplication(network, file) {
         try {
             const re = new RegExp(name, 'i');
 
-            for (let node of network.traverseDepthFirst()) {
-                if (!node.hasChildren) {
+            for (let node of traverseDepthFirst(network)) {
+                if (!node.nodes) {
                     node.marked = name.length
                         ? re.test(node.name)
                         : false;

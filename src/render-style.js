@@ -1,7 +1,5 @@
 /**
  * @file This file dictates the appearance of the rendered network.
- * It defines a factory function that, given a set of nodes and links,
- * maps the defined ranges to the domain found in the data.
  *
  * @author Anton Eriksson
  */
@@ -13,18 +11,18 @@ import { scaleLinear, scaleSqrt } from 'd3-scale';
  * Factory function to create style functions.
  *
  * @example
- *  const style = makeRenderStyle(network);
+ *  const style = makeRenderStyle(maxNodeFlow, maxLinkFlow);
  *  const circle = svg.append('circle')
  *      .attr('r', style.nodeRadius)
  *      .style('fill', style.nodeFillColor)
  *      .style('stroke', style.nodeBorderColor)
  *      .style('stroke-width', style.nodeBorderWidth);
  *
- * @param {Network} network
+ * @param {number} maxNodeFlow the max flow for nodes
+ * @param {number} maxLinkFlow the max flow for links
+ * @return {Object} an object with render style accessors
  */
-export default function makeRenderStyle(network) {
-    const { nodes, links, maxNodeFlow, maxLinkFlow } = network;
-
+export default function makeRenderStyle(maxNodeFlow, maxLinkFlow) {
     const nodeRadius = scaleSqrt().domain([0, maxNodeFlow]).range([10, 70]);
     const nodeFillColor = scaleLinear().domain([0, maxNodeFlow]).range(['#DFF1C1', '#C5D7A8']);
     const nodeBorderColor = scaleLinear().domain([0, maxNodeFlow]).range(['#ABD65B', '#95C056']);

@@ -1,12 +1,13 @@
-import Module from 'module';
+import * as d3 from 'd3';
 import Node from 'node';
 import TreePath from 'treepath';
+import PriorityQueue from 'priority-queue';
+import { byFlow } from 'filter';
 
 /**
- * Class to represent a network of links and nodes.
+ * Class to represent a network of nodes and links.
  *
  * @see NetworkBuilder
- * @see Module
  * @see Node
  *
  * @author Anton Eriksson
@@ -15,75 +16,112 @@ export class Network {
     /**
      * Construct a new Network
      *
-     * @param {boolean} [directed=true] directedness of network
+     * @param {number|string} id the id
      */
-    constructor(directed = true) {
-        this.root = new Module('root');
-        this.directed = directed;
+    constructor(id) {
+        this.id = id;
+        this.path = new TreePath(id);
+        this.name = null;
+        this.flow = 0;
+        this.exitFlow = 0;
+        this.parent = null;
+        this.shouldRender = true;
+        this._nodes = new Map();
+        this.links = [];
+        this.largest = new PriorityQueue(byFlow, 4);
+        this.state = {
+            simulation: d3.forceSimulation()
+                .alphaDecay(0.06)
+                .stop(),
+
+            dirty: false,
+        };
     }
 
     /**
-     * Get the child node that matches the path.
+     * Add a node
      *
-     * @param {string} path the path formatted like "1:2:3"
-     * @return {?(Module|Node)} the node
+     * @param {Network|Node} node the node to add
      */
-    getNodeByPath(path) {
-        if (path.toString() === this.root.path.toString()) {
-            return this.root;
+    addNode(node) {
+        node.parent = this;
+        if (this.path.toString() !== 'root') {
+            node.path = TreePath.join(this.path, node.id);
         }
-
-        return TreePath.toArray(path)
-            .reduce((pathNode, id) => (pathNode ? pathNode.getNode(id) : null), this.root);
+        this._nodes.set(node.id, node);
     }
 
     /**
-     * Get the max node flow of the network.
+     * Get the node with a certain id
      *
-     * @return {number} the flow
+     * @param {number|string} id the id of the node
+     * @return {?(Network|Node)} the node
      */
-    get maxNodeFlow() {
-        let max = 0;
-        for (let node of this.traverseDepthFirst()) {
-            max = Math.max(max, node.flow);
-        }
-        return max;
+    getNode(id) {
+        return this._nodes.get(id);
     }
 
     /**
-     * Get the max link flow of the network.
+     * Get an array of all nodes.
      *
-     * @return {number} the flow
+     * @return {Network[]|Node[]} the nodes
      */
-    get maxLinkFlow() {
-        let max = 0;
-        for (let node of this.traverseDepthFirst()) {
-            if (node.links) {
-                max = Math.max(max, node.links.map(n => n.flow).reduce((a, b) => Math.max(a, b), 0));
-            }
-        }
-        return max;
-    }
-
-    /**
-     * Traverse Network depth first.
-     *
-     * @see Module#traverseDepthFirst
-     */
-    traverseDepthFirst() {
-        return this.root.traverseDepthFirst();
-    }
-
-    /**
-     * Traverse Network breadth first.
-     *
-     * @see Module#traverseBreadthFirst
-     */
-    traverseBreadthFirst() {
-        return this.root.traverseBreadthFirst();
+    get nodes() {
+        return Array.from(this._nodes.values());
     }
 }
 
+
+/**
+ * Get the child node that matches the path.
+ *
+ * @param {Network} root the root node
+ * @param {string} path the path formatted like "1:2:3"
+ * @return {?(Network|Node)} the node
+ */
+export const makeGetNodeByPath = root => path => {
+    if (path.toString() === root.path.toString()) {
+        return root;
+    }
+
+    return TreePath.toArray(path)
+        .reduce((pathNode, id) => (pathNode ? pathNode.getNode(id) : null), root);
+};
+
+
+/**
+ * Pre-order traverse all nodes below.
+ *
+ * @param {Network} root the root node
+ * @yields {Network|Node} the nodes
+ */
+export function* traverseDepthFirst(root) {
+    const queue = [root];
+    while (queue.length) {
+        const node = queue.pop();
+        yield node;
+        if (node.nodes) {
+            queue.push(...[...node.nodes].reverse());
+        }
+    }
+}
+
+/**
+ * Breadth first traverse all nodes below.
+ *
+ * @param {Network} root the root node
+ * @yields {Network|Node} the nodes
+ */
+export function* traverseBreadthFirst(root) {
+    const queue = [root];
+    while (queue.length) {
+        const node = queue.shift();
+        yield node;
+        if (node.nodes) {
+            queue.push(...node.nodes);
+        }
+    }
+}
 
 /**
  * Helper class to construct Networks
@@ -97,7 +135,8 @@ export default class NetworkBuilder {
      * @param {boolean} [directed=true] directedness of returned Network
      */
     constructor(directed = true) {
-        this.network = new Network(directed);
+        this.network = new Network('root');
+        this.network.directed = directed;
         this.connected = false;
     }
 
@@ -123,7 +162,7 @@ export default class NetworkBuilder {
     }
 
     /**
-     * Add a Module to the Network
+     * Add a module to the Network
      *
      * @param {Object} node the node representing the module
      * @param {number|string} node.path the path
@@ -133,7 +172,7 @@ export default class NetworkBuilder {
      */
     addModule(node) {
         if (node.path === 'root') {
-            this.network.root.links = node.links;
+            this.network.links = node.links;
             return;
         }
 
@@ -141,11 +180,11 @@ export default class NetworkBuilder {
             .reduce((pathNode, childId) => {
                 let child = pathNode.getNode(childId);
                 if (!child) {
-                    child = new Module(childId);
+                    child = new Network(childId);
                     pathNode.addNode(child);
                 }
                 return child;
-            }, this.network.root);
+            }, this.network);
 
         if (node.name) {
             childNode.name = node.name;
@@ -173,7 +212,7 @@ export default class NetworkBuilder {
                 pathNode.flow += node.flow;
                 pathNode.largest.push(childNode);
                 return pathNode.getNode(childId);
-            }, this.network.root);
+            }, this.network);
 
         parent.flow += node.flow;
         parent.largest.push(childNode);
@@ -189,7 +228,7 @@ export default class NetworkBuilder {
         if (!this.connected) {
             this.connected = true;
 
-            for (let node of this.network.traverseDepthFirst()) {
+            for (let node of traverseDepthFirst(this.network)) {
                 if (node.links) {
                     node.links = node.links.map(link => ({
                         source: node.getNode(link.source),

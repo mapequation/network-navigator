@@ -12,6 +12,7 @@
  * @author Anton Eriksson
  */
 
+import { traverseBreadthFirst, traverseDepthFirst } from 'network';
 import { byFlow } from '../filter';
 
 export function flowFormat(flow) {
@@ -47,16 +48,16 @@ export default function ftreeFromNetwork(network) {
     let nodes = '';
     let links = '';
 
-    for (let node of network.traverseBreadthFirst()) {
-        if (node.hasChildren) {
+    for (let node of traverseBreadthFirst(network)) {
+        if (node.nodes) {
             if (node.path.toString() !== 'root') {
                 modules += `${node.path} ${flowFormat(node.flow)} "${node.name}" ${flowFormat(node.exitFlow)}\n`;
             }
         }
     }
 
-    for (let node of network.traverseDepthFirst()) {
-        if (!node.hasChildren) {
+    for (let node of traverseDepthFirst(network)) {
+        if (!node.nodes) {
             nodes += `${node.path} ${flowFormat(node.flow)} "${node.name}" ${node.physicalId}\n`;
         } else {
             links += `*Links ${node.path} ${flowFormat(node.exitFlow)} ${node.links.length} ${node.nodes.length}\n`;

@@ -10,6 +10,7 @@
 import * as d3 from 'd3';
 import { halfLink, undirectedLink } from 'network-rendering';
 import { byFlow } from 'filter';
+import { traverseDepthFirst } from 'network';
 import PriorityQueue from 'priority-queue';
 
 const ZOOM_EXTENT_MIN = 0.1;
@@ -43,7 +44,7 @@ function showInfoBox(node) {
     let dy = 0;
     queue.items.forEach((item) => {
         info.append('text')
-            .text(ellipsis(item.name, 30))
+            .text(ellipsis(item.name || item.largest.items.map(i => i.name).join(', '), 30))
             .attr('x', +infoBox.attr('x') + 10)
             .attr('y', +infoBox.attr('y') + 20)
             .attr('dy', dy)
@@ -264,8 +265,8 @@ export default function makeRenderFunction(style, directed = true) {
         const mark = node.append('circle')
             .attr('r', (n) => {
                 let hits = n.marked ? 1 : 0;
-                if (hits === 0 && n.hasChildren) {
-                    hits = Array.from(n.traverseDepthFirst())
+                if (hits === 0 && n.nodes) {
+                    hits = Array.from(traverseDepthFirst(n))
                         .filter(child => child.marked)
                         .length;
                 }
@@ -278,7 +279,7 @@ export default function makeRenderFunction(style, directed = true) {
             .enter()
             .append('text')
             .attr('class', 'label')
-            .text(n => ellipsis(n.name))
+            .text(n => ellipsis(n.name || n.largest.items.map(i => i.name).join(', ')))
             .attr('text-anchor', 'left')
             .style('fill', 'black')
             .style('font-size', 12)

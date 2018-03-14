@@ -17,12 +17,4 @@ export default class Node {
         this.physicalId = physicalId;
         this.marked = false;
     }
-
-    get hasChildren() {
-        return false;
-    }
-
-    toString() {
-        return this.name;
-    }
 }
