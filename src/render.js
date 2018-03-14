@@ -59,14 +59,15 @@ function hideInfoBox() {
  * Factory function to set up svg and return
  * a render function to render a network.
  *
- * @param {Observable} notifier network layer changes are broadcasted here
  * @param {Object} style renderStyle object
  * @param {boolean} [directed=true] directed or undirected links, affects link appearance
  * @return {makeRenderFunction~render} the render function
  */
-export default function makeRenderFunction(notifier, style, directed = true) {
+export default function makeRenderFunction(style, directed = true) {
     const width = window.innerWidth;
     const height = window.innerHeight;
+
+    const dispatch = d3.dispatch('zoom', 'path', 'select');
 
     const svg = d3.select('svg')
         .attr('width', width)
@@ -86,11 +87,7 @@ export default function makeRenderFunction(notifier, style, directed = true) {
     const zoom = d3.zoom()
         .scaleExtent([0.1, 50])
         .on('zoom', () => {
-            notifier.notify({
-                type: 'ZOOM',
-                payload: d3.event.transform,
-            });
-
+            dispatch.call('zoom', null, d3.event.transform);
             g.attr('transform', d3.event.transform);
         });
 
@@ -111,12 +108,7 @@ export default function makeRenderFunction(notifier, style, directed = true) {
 
         hideInfoBox();
 
-        notifier.notify({
-            type: 'PATH',
-            payload: {
-                node: parent.parent,
-            },
-        });
+        dispatch.call('path', null, parent.parent);
 
         const { x, y } = (() => {
             const parentElem = d3.select(`#${parent.path.toId()}`);
@@ -149,12 +141,7 @@ export default function makeRenderFunction(notifier, style, directed = true) {
         svg.transition()
             .duration(400)
             .on('end', () => {
-                notifier.notify({
-                    type: 'PATH',
-                    payload: {
-                        node,
-                    },
-                });
+                dispatch.call('path', null, node);
             })
             .call(zoom.transform, d3.zoomIdentity.translate(...translate).scale(scale))
             .transition()
@@ -239,12 +226,7 @@ export default function makeRenderFunction(notifier, style, directed = true) {
             .on('click', (n) => {
                 clearTimeout(clickTimeout);
                 clickTimeout = setTimeout(() => {
-                    notifier.notify({
-                        type: 'SELECT',
-                        payload: {
-                            node: n,
-                        },
-                    });
+                    dispatch.call('select', null, n)
                 }, 200);
             })
             .on('mouseover', function (n) {
@@ -341,8 +323,8 @@ export default function makeRenderFunction(notifier, style, directed = true) {
             return k => l => 1 - l.index / len < k;
         })();
 
-        notifier.on('ZOOM', (message) => {
-            const { x, y, k } = message.payload;
+        dispatch.on('zoom', (transform) => {
+            const { x, y, k } = transform;
             labelAttr.x = n => x + k * n.x;
             labelAttr.y = n => y + k * n.y;
             labelAttr.dx = n => k * 1.1 * style.nodeRadius(n);
@@ -387,6 +369,8 @@ export default function makeRenderFunction(notifier, style, directed = true) {
 
         simulation.restart();
     };
+
+    render.dispatch = dispatch;
 
     return render;
 }

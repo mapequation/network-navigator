@@ -10,7 +10,6 @@ import ftreeFromNetwork from 'file-formats/ftree-from-network';
 import networkFromPajek from 'file-formats/network-from-pajek';
 import makeRenderFunction from 'render';
 import makeRenderStyle from 'render-style';
-import Observable from 'observable';
 import CullVisitor from 'cullvisitor';
 import FilterVisitor from 'filtervisitor';
 
@@ -28,9 +27,8 @@ function runApplication(network, file) {
         download: false,
     };
 
-    const renderNotifier = new Observable();
     const renderStyle = makeRenderStyle(network);
-    const render = makeRenderFunction(renderNotifier, renderStyle, network.directed);
+    const render = makeRenderFunction(renderStyle, network.directed);
 
     const setDirty = () => {
         const branch = network.getNodeByPath(state.path);
@@ -71,16 +69,15 @@ function runApplication(network, file) {
         }
     };
 
-    renderNotifier.on('PATH', (message) => {
-        state.path = message.payload.node.path;
+    render.dispatch.on('path', (node) => {
+        state.path = node.path;
         state.selectedNode = null;
         state.selected = '';
         cullLargest();
         renderBranch();
     });
 
-    renderNotifier.on('SELECT', (message) => {
-        const { node } = message.payload
+    render.dispatch.on('select', (node) => {
         state.selectedNode = node;
         state.selected = node ? node.name : '';
     });
