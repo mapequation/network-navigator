@@ -1,76 +1,82 @@
 import * as d3 from 'd3';
-import Node from 'node';
 import TreePath from 'treepath';
 import PriorityQueue from 'priority-queue';
 import { byFlow } from 'filter';
 
+
+const common = (id, flow = 0) => ({
+    id,
+    path: new TreePath(id),
+    flow,
+    exitFlow: 0,
+    shouldRender: true,
+});
+
 /**
- * Class to represent a network of nodes and links.
+ * Create a Node
+ *
+ * @param {number} id the id
+ * @param {string} name the name
+ * @param {number} flow the flow
+ * @param {number} physicalId the physical id
+ */
+export function Node(id, name, flow, physicalId) {
+    let node = {
+        name,
+        physicalId,
+        marked: false,
+    };
+
+    return Object.assign(node, common(id, flow));
+}
+
+/**
+ * Create a Network of nodes and links.
  *
  * @see NetworkBuilder
  * @see Node
  *
- * @author Anton Eriksson
+ * @param {number|string} id the id
  */
-export class Network {
-    /**
-     * Construct a new Network
-     *
-     * @param {number|string} id the id
-     */
-    constructor(id) {
-        this.id = id;
-        this.path = new TreePath(id);
-        this.name = null;
-        this.flow = 0;
-        this.exitFlow = 0;
-        this.parent = null;
-        this.shouldRender = true;
-        this._nodes = new Map();
-        this.links = [];
-        this.largest = new PriorityQueue(byFlow, 4);
-        this.state = {
+export function Network(id) {
+    let network = {
+        nodes: [],
+        links: [],
+        largest: new PriorityQueue(byFlow, 4),
+        state: {
             simulation: d3.forceSimulation()
                 .alphaDecay(0.06)
                 .stop(),
 
             dirty: false,
-        };
-    }
+        },
 
-    /**
-     * Add a node
-     *
-     * @param {Network|Node} node the node to add
-     */
-    addNode(node) {
-        node.parent = this;
-        if (this.path.toString() !== 'root') {
-            node.path = TreePath.join(this.path, node.id);
-        }
-        this._nodes.set(node.id, node);
-    }
+        /**
+         * Add a node
+         *
+         * @param {Network|Node} node the node to add
+         */
+        addNode(node) {
+            node.parent = this;
+            if (this.path.toString() !== 'root') {
+                node.path = TreePath.join(this.path, node.id);
+            }
+            this.nodes.push(node);
+        },
 
-    /**
-     * Get the node with a certain id
-     *
-     * @param {number|string} id the id of the node
-     * @return {?(Network|Node)} the node
-     */
-    getNode(id) {
-        return this._nodes.get(id);
-    }
+        /**
+         * Get the node with a certain id
+         *
+         * @param {number|string} id the id of the node
+         * @return {?(Network|Node)} the node
+         */
+        getNode(id) {
+            return this.nodes.find(node => node.id === id);
+        },
+    };
 
-    /**
-     * Get an array of all nodes.
-     *
-     * @return {Network[]|Node[]} the nodes
-     */
-    get nodes() {
-        return Array.from(this._nodes.values());
-    }
+    return Object.assign(network, common(id));
 }
-
 
 /**
  * Get the child node that matches the path.
@@ -124,6 +130,23 @@ export function* traverseBreadthFirst(root) {
 }
 
 /**
+ * Connect all links in network
+ *
+ * @param {Network} root the root of the network
+ */
+function connectLinks(root) {
+    for (let node of traverseDepthFirst(root)) {
+        if (node.links) {
+            node.links = node.links.map(link => ({
+                source: node.getNode(link.source),
+                target: node.getNode(link.target),
+                flow: link.flow
+            }));
+        }
+    }
+}
+
+/**
  * Helper class to construct Networks
  *
  * @see Network
@@ -135,7 +158,7 @@ export default class NetworkBuilder {
      * @param {boolean} [directed=true] directedness of returned Network
      */
     constructor(directed = true) {
-        this.network = new Network('root');
+        this.network = Network('root');
         this.network.directed = directed;
         this.connected = false;
     }
@@ -180,7 +203,7 @@ export default class NetworkBuilder {
             .reduce((pathNode, childId) => {
                 let child = pathNode.getNode(childId);
                 if (!child) {
-                    child = new Network(childId);
+                    child = Network(childId);
                     pathNode.addNode(child);
                 }
                 return child;
@@ -205,7 +228,7 @@ export default class NetworkBuilder {
      */
     addNode(node) {
         const path = TreePath.toArray(node.path);
-        const childNode = new Node(path.pop(), node.name, node.flow, node.node);
+        const childNode = Node(path.pop(), node.name, node.flow, node.node);
 
         const parent = path
             .reduce((pathNode, childId) => {
@@ -227,16 +250,7 @@ export default class NetworkBuilder {
     getNetwork() {
         if (!this.connected) {
             this.connected = true;
-
-            for (let node of traverseDepthFirst(this.network)) {
-                if (node.links) {
-                    node.links = node.links.map(link => ({
-                        source: node.getNode(link.source),
-                        target: node.getNode(link.target),
-                        flow: link.flow
-                    }));
-                }
-            }
+            connectLinks(this.network);
         }
 
         return this.network;
