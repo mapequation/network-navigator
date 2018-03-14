@@ -12,6 +12,8 @@ import { halfLink, undirectedLink } from 'network-rendering';
 import { byFlow } from 'filter';
 import PriorityQueue from 'priority-queue';
 
+const ZOOM_EXTENT_MIN = 0.1;
+const ZOOM_EXTENT_MAX = 50;
 
 const ellipsis = (text, len = 25) => (text.length > len ? `${text.substr(0, len - 3)}...` : text);
 
@@ -85,7 +87,7 @@ export default function makeRenderFunction(style, directed = true) {
         .attr('class', 'network labels')
 
     const zoom = d3.zoom()
-        .scaleExtent([0.1, 50])
+        .scaleExtent([ZOOM_EXTENT_MIN, ZOOM_EXTENT_MAX])
         .on('zoom', () => {
             dispatch.call('zoom', null, d3.event.transform);
             g.attr('transform', d3.event.transform);
@@ -117,7 +119,7 @@ export default function makeRenderFunction(style, directed = true) {
             }
             return { x: width / 2, y: height / 2 };
         })();
-        const scale = 50;
+        const scale = ZOOM_EXTENT_MAX;
         const translate = [width / 2 - scale * x, height / 2 - scale * y];
 
         svg.call(zoom.transform, d3.zoomIdentity.translate(...translate).scale(scale));
@@ -135,7 +137,7 @@ export default function makeRenderFunction(style, directed = true) {
         parentNodes.push(node);
 
         const { x, y } = node;
-        const scale = 50;
+        const scale = ZOOM_EXTENT_MAX;
         const translate = [width / 2 - scale * x, height / 2 - scale * y];
 
         svg.transition()

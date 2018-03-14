@@ -1,13 +1,11 @@
-import NodeVisitor from 'nodevisitor';
 import {
     sumFlow,
     takeLargest,
     connectedLinks,
 } from 'filter';
 
-export default class CullVisitor extends NodeVisitor {
+export default class CullVisitor {
     constructor(state) {
-        super();
         this.state = state;
     }
 

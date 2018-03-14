@@ -1,6 +1,5 @@
 import Module from 'module';
 import Node from 'node';
-import Link from 'link';
 import TreePath from 'treepath';
 
 export { Module, Node };
@@ -116,8 +115,11 @@ export class Network extends Module {
 
         for (let node of this.traverseDepthFirst()) {
             if (node.links) {
-                node.links = node.links.map(link =>
-                    new Link(node.getNode(link.source), node.getNode(link.target), link.flow));
+                node.links = node.links.map(link => ({
+                    source: node.getNode(link.source),
+                    target: node.getNode(link.target),
+                    flow: link.flow
+                }));
 
                 node.links.forEach((link) => {
                     link.source.outLinks.push(link);

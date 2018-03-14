@@ -31,10 +31,6 @@ export default class Module {
         this.shouldRender = true;
     }
 
-    accept(visitor) {
-        visitor.visit(this);
-    }
-
     /**
      * Add a node
      *

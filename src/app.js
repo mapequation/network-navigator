@@ -37,12 +37,14 @@ function runApplication(network, file) {
 
     const cullLargest = () => {
         const branch = network.getNodeByPath(state.path);
-        branch.accept(new CullVisitor(state));
+        const visitor = new CullVisitor(state);
+        visitor.visit(branch);
     };
 
     const filterFlow = () => {
         const branch = network.getNodeByPath(state.path);
-        branch.accept(new FilterVisitor(state));
+        const visitor = new FilterVisitor(state);
+        visitor.visit(branch);
     };
 
     const renderBranch = () => {

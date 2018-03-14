@@ -1,12 +1,10 @@
-import NodeVisitor from 'nodevisitor';
 import {
     accumulateLargest,
     connectedLinks,
 } from 'filter';
 
-export default class FilterVisitor extends NodeVisitor {
+export default class FilterVisitor {
     constructor(state) {
-        super();
         this.state = state;
     }
 

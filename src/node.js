@@ -20,10 +20,6 @@ export default class Node {
         this.shouldRender = true;
     }
 
-    accept(visitor) {
-        visitor.visit(this);
-    }
-
     get hasChildren() {
         return false;
     }
