@@ -196,11 +196,6 @@ export default class NetworkBuilder {
                         target: node.getNode(link.target),
                         flow: link.flow
                     }));
-
-                    node.links.forEach((link) => {
-                        link.source.outLinks.push(link);
-                        link.target.inLinks.push(link);
-                    });
                 }
             }
         }

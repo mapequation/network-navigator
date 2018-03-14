@@ -1,7 +1,7 @@
+import * as d3 from 'd3-force';
 import PriorityQueue from 'priority-queue';
 import TreePath from 'treepath';
 import { byFlow } from 'filter';
-import State from 'state';
 
 
 /**
@@ -18,17 +18,21 @@ export default class Module {
     constructor(id) {
         this.id = id;
         this.path = new TreePath(id);
-        this.parent = null;
         this._name = null;
-        this.largest = new PriorityQueue(byFlow, 4);
         this.flow = 0;
         this.exitFlow = 0;
+        this.parent = null;
+        this.shouldRender = true;
         this._nodes = new Map();
         this.links = [];
-        this.inLinks = [];
-        this.outLinks = [];
-        this.state = new State();
-        this.shouldRender = true;
+        this.largest = new PriorityQueue(byFlow, 4);
+        this.state = {
+            simulation: d3.forceSimulation()
+                .alphaDecay(0.06)
+                .stop(),
+
+            dirty: false,
+        };
     }
 
     /**

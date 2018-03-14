@@ -8,16 +8,14 @@ import TreePath from 'treepath';
 export default class Node {
     constructor(id, name, flow, physicalId) {
         this.id = id;
-        this.physicalId = physicalId;
         this.path = new TreePath(id);
-        this.parent = null;
         this.name = name;
         this.flow = flow;
         this.exitFlow = 0;
-        this.inLinks = [];
-        this.outLinks = [];
-        this.marked = false;
+        this.parent = null;
         this.shouldRender = true;
+        this.physicalId = physicalId;
+        this.marked = false;
     }
 
     get hasChildren() {
