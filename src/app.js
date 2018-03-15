@@ -8,8 +8,13 @@ import NetworkBuilder, { traverseDepthFirst, makeGetNodeByPath } from 'network';
 import ftreeFromNetwork from 'file-formats/ftree-from-network';
 import makeRenderFunction from 'render';
 import makeRenderStyle from 'render-style';
-import CullVisitor from 'cullvisitor';
-import FilterVisitor from 'filtervisitor';
+import {
+    byFlow,
+    sumFlow,
+    takeLargest,
+    accumulateLargest,
+    connectedLinks,
+} from 'filter';
 
 function runApplication(network, file) {
     const state = {
@@ -46,15 +51,33 @@ function runApplication(network, file) {
     };
 
     const cullLargest = () => {
-        const branch = getNodeByPath(state.path);
-        const visitor = new CullVisitor(state);
-        visitor.visit(branch);
+        let { nodes, links } = getNodeByPath(state.path);
+        const nodeFlow = sumFlow(nodes);
+
+        nodes.forEach(node => node.shouldRender = false);
+        links.forEach(link => link.shouldRender = false);
+
+        nodes = takeLargest(nodes, 20);
+        links = connectedLinks({ nodes, links });
+
+        nodes.forEach(node => node.shouldRender = true);
+        links.forEach(link => link.shouldRender = true);
+
+        state.nodeFlow = nodeFlow ? sumFlow(nodes) / nodeFlow : 1;
     };
 
     const filterFlow = () => {
-        const branch = getNodeByPath(state.path);
-        const visitor = new FilterVisitor(state);
-        visitor.visit(branch);
+        let { nodes, links } = getNodeByPath(state.path);
+
+        nodes.forEach(node => node.shouldRender = false);
+        links.forEach(link => link.shouldRender = false);
+
+        nodes = accumulateLargest(nodes, state.nodeFlow);
+        links = accumulateLargest(links, state.linkFlow);
+        links = connectedLinks({ nodes, links });
+
+        nodes.forEach(node => node.shouldRender = true);
+        links.forEach(link => link.shouldRender = true);
     };
 
     const renderBranch = () => {

@@ -265,7 +265,7 @@ export default function makeRenderFunction(style, directed = true) {
             .attr('r', style.nodeRadius)
             .style('fill', style.nodeFillColor)
             .style('stroke', style.nodeBorderColor)
-            .style('stroke-width', style.nodeBorderWidth)
+            .style('stroke-width', style.nodeBorderWidth);
 
         const mark = node.append('circle')
             .attr('r', (n) => {
