@@ -29,6 +29,9 @@ export default class TreePath {
      * @param {string|number} path
      */
     static join(parentPath, path) {
+        if (parentPath.toString() === 'root') {
+            return new TreePath(path);
+        }
         return TreePath.fromArray([parentPath.toString(), path.toString()]);
     }
 

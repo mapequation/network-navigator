@@ -11,7 +11,6 @@ import * as d3 from 'd3';
 import { halfLink, undirectedLink } from 'network-rendering';
 import { byFlow } from 'filter';
 import { traverseDepthFirst } from 'network';
-import PriorityQueue from 'priority-queue';
 
 const ZOOM_EXTENT_MIN = 0.1;
 const ZOOM_EXTENT_MAX = 50;
@@ -39,12 +38,12 @@ function showInfoBox(node) {
         .style('stroke', 'black')
         .style('stroke-width', '2px');
 
-    const queue = new PriorityQueue(byFlow, 12, node.nodes);
+    const items = node.nodes.slice(0, 12);
 
     let dy = 0;
-    queue.items.forEach((item) => {
+    items.forEach((item) => {
         info.append('text')
-            .text(ellipsis(item.name || item.largest.items.map(i => i.name).join(', '), 30))
+            .text(ellipsis(item.name || item.largest.map(i => i.name).join(', '), 30))
             .attr('x', +infoBox.attr('x') + 10)
             .attr('y', +infoBox.attr('y') + 20)
             .attr('dy', dy)
@@ -182,7 +181,13 @@ export default function makeRenderFunction(style, directed = true) {
         const nodes = network.nodes.filter(node => node.shouldRender);
         const links = network.links.filter(link => link.shouldRender).reverse();
         const { state } = network;
-        const { simulation } = network.state;
+
+        state.simulation = state.simulation
+            || d3.forceSimulation()
+                .alphaDecay(0.06)
+                .stop();
+
+        const simulation = state.simulation;
 
         svg.selectAll('.network').selectAll('*').remove();
 
@@ -279,7 +284,7 @@ export default function makeRenderFunction(style, directed = true) {
             .enter()
             .append('text')
             .attr('class', 'label')
-            .text(n => ellipsis(n.name || n.largest.items.map(i => i.name).join(', ')))
+            .text(n => ellipsis(n.name || n.largest.map(i => i.name).join(', ')))
             .attr('text-anchor', 'left')
             .style('fill', 'black')
             .style('font-size', 12)

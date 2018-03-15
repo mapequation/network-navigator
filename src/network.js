@@ -1,14 +1,14 @@
 import * as d3 from 'd3';
 import TreePath from 'treepath';
-import PriorityQueue from 'priority-queue';
 import { byFlow } from 'filter';
 
 
 const common = (id, flow = 0) => ({
     id,
-    path: new TreePath(id),
     flow,
     exitFlow: 0,
+    path: new TreePath(id),
+    parent: null,
     shouldRender: true,
 });
 
@@ -21,7 +21,7 @@ const common = (id, flow = 0) => ({
  * @param {number} physicalId the physical id
  */
 export function Node(id, name, flow, physicalId) {
-    let node = {
+    const node = {
         name,
         physicalId,
         marked: false,
@@ -39,44 +39,19 @@ export function Node(id, name, flow, physicalId) {
  * @param {number|string} id the id
  */
 export function Network(id) {
-    let network = {
+    const network = {
         nodes: [],
         links: [],
-        largest: new PriorityQueue(byFlow, 4),
+        largest: [],
         state: {
-            simulation: d3.forceSimulation()
-                .alphaDecay(0.06)
-                .stop(),
-
             dirty: false,
-        },
-
-        /**
-         * Add a node
-         *
-         * @param {Network|Node} node the node to add
-         */
-        addNode(node) {
-            node.parent = this;
-            if (this.path.toString() !== 'root') {
-                node.path = TreePath.join(this.path, node.id);
-            }
-            this.nodes.push(node);
-        },
-
-        /**
-         * Get the node with a certain id
-         *
-         * @param {number|string} id the id of the node
-         * @return {?(Network|Node)} the node
-         */
-        getNode(id) {
-            return this.nodes.find(node => node.id === id);
         },
     };
 
     return Object.assign(network, common(id));
 }
+
+const findById = (xs, id) => xs.find(x => x.id === id);
 
 /**
  * Get the child node that matches the path.
@@ -91,7 +66,7 @@ export const makeGetNodeByPath = root => path => {
     }
 
     return TreePath.toArray(path)
-        .reduce((pathNode, id) => (pathNode ? pathNode.getNode(id) : null), root);
+        .reduce((pathNode, id) => (pathNode ? findById(pathNode.nodes, id) : null), root);
 };
 
 
@@ -138,8 +113,8 @@ function connectLinks(root) {
     for (let node of traverseDepthFirst(root)) {
         if (node.links) {
             node.links = node.links.map(link => ({
-                source: node.getNode(link.source),
-                target: node.getNode(link.target),
+                source: findById(node.nodes, link.source),
+                target: findById(node.nodes, link.target),
                 flow: link.flow
             }));
         }
@@ -201,10 +176,12 @@ export default class NetworkBuilder {
 
         const childNode = TreePath.toArray(node.path)
             .reduce((pathNode, childId) => {
-                let child = pathNode.getNode(childId);
+                let child = findById(pathNode.nodes, childId);
                 if (!child) {
                     child = Network(childId);
-                    pathNode.addNode(child);
+                    child.parent = pathNode;
+                    child.path = TreePath.join(pathNode.path, child.id)
+                    pathNode.nodes.push(child);
                 }
                 return child;
             }, this.network);
@@ -234,12 +211,22 @@ export default class NetworkBuilder {
             .reduce((pathNode, childId) => {
                 pathNode.flow += node.flow;
                 pathNode.largest.push(childNode);
-                return pathNode.getNode(childId);
+                pathNode.largest.sort(byFlow);
+                if (pathNode.largest.length > 4) {
+                    pathNode.largest.pop();
+                }
+                return findById(pathNode.nodes, childId);
             }, this.network);
 
         parent.flow += node.flow;
         parent.largest.push(childNode);
-        parent.addNode(childNode);
+        parent.largest.sort(byFlow);
+        if (parent.largest.length > 4) {
+            parent.largest.pop();
+        }
+        childNode.parent = parent;
+        childNode.path = TreePath.join(parent.path, childNode.id)
+        parent.nodes.push(childNode);
     }
 
     /**
