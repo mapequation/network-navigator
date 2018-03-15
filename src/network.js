@@ -1,6 +1,4 @@
-import * as d3 from 'd3';
 import TreePath from 'treepath';
-import { byFlow } from 'filter';
 
 
 const common = (id, flow = 0) => ({
@@ -51,7 +49,7 @@ export function Network(id) {
     return Object.assign(network, common(id));
 }
 
-const findById = (xs, id) => xs.find(x => x.id === id);
+export const findById = (xs, id) => xs.find(x => x.id === id);
 
 /**
  * Get the child node that matches the path.
@@ -109,7 +107,7 @@ export function* traverseBreadthFirst(root) {
  *
  * @param {Network} root the root of the network
  */
-function connectLinks(root) {
+export function connectLinks(root) {
     for (let node of traverseDepthFirst(root)) {
         if (node.links) {
             node.links = node.links.map(link => ({
@@ -118,128 +116,5 @@ function connectLinks(root) {
                 flow: link.flow
             }));
         }
-    }
-}
-
-/**
- * Helper class to construct Networks
- *
- * @see Network
- */
-export default class NetworkBuilder {
-    /**
-     * Construct a NetworkBuilder
-     *
-     * @param {boolean} [directed=true] directedness of returned Network
-     */
-    constructor(directed = true) {
-        this.network = Network('root');
-        this.network.directed = directed;
-        this.connected = false;
-    }
-
-    /**
-     * Construct a network from ftree data
-     *
-     * @see parseFTree
-     *
-     * @param {Object} ftree
-     * @return {Network} the constructed network
-     */
-    static fromFTree(ftree) {
-        const { tree, links } = ftree.data;
-        const builder = new NetworkBuilder(ftree.meta.directed);
-
-        // Create the tree structure
-        links.forEach(node => builder.addModule(node));
-
-        // Add the actual nodes
-        tree.forEach(node => builder.addNode(node));
-
-        return builder.getNetwork();
-    }
-
-    /**
-     * Add a module to the Network
-     *
-     * @param {Object} node the node representing the module
-     * @param {number|string} node.path the path
-     * @param {number} node.exitFlow the exit flow
-     * @param {string} [node.name] the node name
-     * @param {Object[]} node.links the links
-     */
-    addModule(node) {
-        if (node.path === 'root') {
-            this.network.links = node.links;
-            return;
-        }
-
-        const childNode = TreePath.toArray(node.path)
-            .reduce((pathNode, childId) => {
-                let child = findById(pathNode.nodes, childId);
-                if (!child) {
-                    child = Network(childId);
-                    child.parent = pathNode;
-                    child.path = TreePath.join(pathNode.path, child.id)
-                    pathNode.nodes.push(child);
-                }
-                return child;
-            }, this.network);
-
-        if (node.name) {
-            childNode.name = node.name;
-        }
-        childNode.exitFlow = node.exitFlow;
-        childNode.links = node.links;
-    }
-
-    /**
-     * Add a Node to the Network
-     *
-     * @param {Object} node the node
-     * @param {number|string} node.path the path
-     * @param {number} node.flow the flow
-     * @param {string} node.name the name
-     * @param {number} node.node the physical id
-     *
-     */
-    addNode(node) {
-        const path = TreePath.toArray(node.path);
-        const childNode = Node(path.pop(), node.name, node.flow, node.node);
-
-        const parent = path
-            .reduce((pathNode, childId) => {
-                pathNode.flow += node.flow;
-                pathNode.largest.push(childNode);
-                pathNode.largest.sort(byFlow);
-                if (pathNode.largest.length > 4) {
-                    pathNode.largest.pop();
-                }
-                return findById(pathNode.nodes, childId);
-            }, this.network);
-
-        parent.flow += node.flow;
-        parent.largest.push(childNode);
-        parent.largest.sort(byFlow);
-        if (parent.largest.length > 4) {
-            parent.largest.pop();
-        }
-        childNode.parent = parent;
-        childNode.path = TreePath.join(parent.path, childNode.id)
-        parent.nodes.push(childNode);
-    }
-
-    /**
-     * Get the constructed Network
-     *
-     * @return {Network} the network
-     */
-    getNetwork() {
-        if (!this.connected) {
-            this.connected = true;
-            connectLinks(this.network);
-        }
-
-        return this.network;
     }
 }
