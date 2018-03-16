@@ -8,7 +8,7 @@
  * @author Anton Eriksson
  */
 
-import { Network, Node, findById, connectLinks } from '../network';
+import * as Network from '../network';
 import TreePath from 'treepath';
 import { byFlow } from 'filter';
 
@@ -20,7 +20,7 @@ import { byFlow } from 'filter';
  * @return {Network} the constructed network
  */
 export default function networkFromFTree(ftree) {
-    const root = Network('root');
+    const root = Network.createNetwork('root');
     root.directed = ftree.meta.directed;
     const { tree, links } = ftree.data;
 
@@ -31,9 +31,9 @@ export default function networkFromFTree(ftree) {
         } else {
             const childNode = TreePath.toArray(node.path)
             .reduce((pathNode, childId) => {
-                let child = findById(pathNode.nodes, childId);
+                let child = Network.findById(pathNode.nodes, childId);
                 if (!child) {
-                    child = Network(childId);
+                    child = Network.createNetwork(childId);
                     child.parent = pathNode;
                     child.path = TreePath.join(pathNode.path, child.id)
                     pathNode.nodes.push(child);
@@ -52,7 +52,7 @@ export default function networkFromFTree(ftree) {
     // Add the actual nodes
     tree.forEach((node) => {
         const path = TreePath.toArray(node.path);
-        const childNode = Node(path.pop(), node.name, node.flow, node.node);
+        const childNode = Network.createNode(path.pop(), node.name, node.flow, node.node);
 
         const parent = path
             .reduce((pathNode, childId) => {
@@ -62,7 +62,7 @@ export default function networkFromFTree(ftree) {
                 if (pathNode.largest.length > 4) {
                     pathNode.largest.pop();
                 }
-                return findById(pathNode.nodes, childId);
+                return Network.findById(pathNode.nodes, childId);
             }, root);
 
         parent.flow += node.flow;
@@ -76,7 +76,7 @@ export default function networkFromFTree(ftree) {
         parent.nodes.push(childNode);
     });
 
-    connectLinks(root);
+    Network.connectLinks(root);
 
     return root;
 }

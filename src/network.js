@@ -1,14 +1,38 @@
 import TreePath from 'treepath';
 
-
-const common = (id, flow = 0) => ({
-    id,
+/************************************************
+ * Common properties for Network, Node and Link *
+ ************************************************/
+const hasFlow = (flow = 0) => ({
     flow,
+});
+
+const hasExitFlow = {
     exitFlow: 0,
+};
+
+const isRenderable = {
+    shouldRender: true,
+};
+
+const treeNode = (id) => ({
+    id,
     path: new TreePath(id),
     parent: null,
-    shouldRender: true,
 });
+
+/**
+ * A node in a network
+ *
+ * Internal use only, @see createNode
+ */
+class Node {
+    constructor(name, physicalId) {
+        this.name = name;
+        this.physicalId = physicalId;
+        this.marked = false;
+    }
+}
 
 /**
  * Create a Node
@@ -17,55 +41,83 @@ const common = (id, flow = 0) => ({
  * @param {string} name the name
  * @param {number} flow the flow
  * @param {number} physicalId the physical id
+ * @return {Node} the node
  */
-export function Node(id, name, flow, physicalId) {
-    const node = {
-        name,
-        physicalId,
-        marked: false,
-    };
+export function createNode(id, name, flow, physicalId) {
+    return Object.assign(new Node(name, physicalId), treeNode(id), hasFlow(flow), hasExitFlow, isRenderable);
+}
 
-    return Object.assign(node, common(id, flow));
+/**
+ * A link in a network
+ *
+ * Internal use only, @see createLink
+ */
+class Link {
+    constructor(source, target) {
+        this.source = source;
+        this.target = target;
+    }
+}
+
+/**
+ * Create a Link
+ *
+ * @param {Node} source the source
+ * @param {Node} target the target
+ * @param {number} [flow=1] the flow
+ * @return {Link} the link
+ */
+export function createLink(source, target, flow = 1) {
+    return Object.assign(new Link(source, target), hasFlow(flow), isRenderable);
+}
+
+/**
+ * A network of nodes and links
+ *
+ * Internal use only, @see createNetwork
+ */
+class Network {
+    constructor() {
+        this.nodes = [];
+        this.links = [];
+        this.largest = [];
+        this.state = {};
+    }
 }
 
 /**
  * Create a Network of nodes and links.
  *
- * @see Node
- *
  * @param {number|string} id the id
  */
-export function Network(id) {
-    const network = {
-        nodes: [],
-        links: [],
-        largest: [],
-        state: {
-            dirty: false,
-        },
-    };
-
-    return Object.assign(network, common(id));
+export function createNetwork(id) {
+    return Object.assign(new Network(), treeNode(id), hasFlow(), hasExitFlow, isRenderable);
 }
 
 export const findById = (xs, id) => xs.find(x => x.id === id);
 
 /**
- * Get the child node that matches the path.
+ * Factory function for creating node search functions.
  *
- * @param {Network} root the root node
- * @param {string} path the path formatted like "1:2:3"
- * @return {?(Network|Node)} the node
+ * @param {Network} root the root
+ * @return {Function} getNodeByPath
  */
-export const makeGetNodeByPath = root => path => {
-    if (path.toString() === root.path.toString()) {
-        return root;
+export function makeGetNodeByPath(root) {
+    /**
+     * Get the child node that matches the path.
+     *
+     * @param {string} path the path formatted like "1:2:3"
+     * @return {?(Network|Node)} the node
+     */
+    return function getNodeByPath(path) {
+        if (path.toString() === root.path.toString()) {
+            return root;
+        }
+
+        return TreePath.toArray(path)
+            .reduce((parent, id) => findById(parent.nodes, id), root);
     }
-
-    return TreePath.toArray(path)
-        .reduce((pathNode, id) => (pathNode ? findById(pathNode.nodes, id) : null), root);
-};
-
+}
 
 /**
  * Pre-order traverse all nodes below.
@@ -109,11 +161,8 @@ export function* traverseBreadthFirst(root) {
 export function connectLinks(root) {
     for (let node of traverseDepthFirst(root)) {
         if (node.links) {
-            node.links = node.links.map(link => ({
-                source: findById(node.nodes, link.source),
-                target: findById(node.nodes, link.target),
-                flow: link.flow
-            }));
+            node.links = node.links.map(link =>
+                createLink(findById(node.nodes, link.source), findById(node.nodes, link.target), link.flow));
         }
     }
 }
