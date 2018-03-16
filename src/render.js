@@ -270,16 +270,11 @@ export default function makeRenderFunction(style, directed = true) {
             .style('stroke', style.nodeBorderColor)
             .style('stroke-width', style.nodeBorderWidth);
 
+        const numberOfHits = n =>
+            +n.marked || Array.from(traverseDepthFirst(n)).filter(child => child.marked).length;
+
         const mark = node.append('circle')
-            .attr('r', (n) => {
-                let hits = n.marked ? 1 : 0;
-                if (hits === 0 && n.nodes) {
-                    hits = Array.from(traverseDepthFirst(n))
-                        .filter(child => child.marked)
-                        .length;
-                }
-                return style.searchMarkRadius(hits);
-            })
+            .attr('r', n => style.searchMarkRadius(numberOfHits(n)))
             .style('fill', '#F48074');
 
         const label = labels.selectAll('.label')
@@ -314,6 +309,7 @@ export default function makeRenderFunction(style, directed = true) {
                 .attr('cx', n => n.x)
                 .attr('cy', n => n.y);
             mark
+                .attr('r', n => style.searchMarkRadius(numberOfHits(n)))
                 .attr('cx', n => n.x)
                 .attr('cy', n => n.y);
             label
@@ -340,7 +336,10 @@ export default function makeRenderFunction(style, directed = true) {
             const { x, y, k } = transform;
             labelAttr.x = n => x + k * n.x;
             labelAttr.y = n => y + k * n.y;
-            labelAttr.dx = n => k * 1.1 * style.nodeRadius(n);
+            labelAttr.dx = (n) => {
+                const r = 1.1 * style.nodeRadius(n);
+                return k * r + (k > 1 ? (1 - k) * r : 0)
+            };
             labelAttr.visibility = labelVisible(k);
             labelAttr.text = (n) => {
                 const node = k < 0.15 && n.id === 1 && n.parent ? n.parent : n;
