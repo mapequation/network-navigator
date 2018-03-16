@@ -124,7 +124,6 @@ function runApplication(network, file) {
     gui.add(state, 'charge', 0, 2000).step(100).onFinishChange(() => { setDirty(); renderBranch(); });
     gui.add(state, 'nodeFlow', 0, 1).step(0.01).onFinishChange(() => { filterFlow(); setDirty(); renderBranch(); }).listen();
     gui.add(state, 'linkFlow', 0, 1).step(0.01).onFinishChange(() => { filterFlow(); setDirty(); renderBranch(); }).listen();
-    gui.add(state, 'path').listen();
     gui.add(state, 'search').onChange((name) => { search(name); renderBranch(); });
     gui.add(state, 'selected').onFinishChange((name) => {
         if (state.selectedNode) state.selectedNode.name = name;
@@ -133,7 +132,7 @@ function runApplication(network, file) {
     gui.add(state, 'download').onChange(() => {
         const ftree = ftreeFromNetwork(network);
         const blob = new Blob([ftree], { type: 'text/plain;charset=utf-8;' });
-        FileSaver.saveAs(blob, file.name);
+        FileSaver.saveAs(blob, state.filename);
         setTimeout(() => { state.download = false; }, 100);
     }).listen();
 

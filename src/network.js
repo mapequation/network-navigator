@@ -31,7 +31,6 @@ export function Node(id, name, flow, physicalId) {
 /**
  * Create a Network of nodes and links.
  *
- * @see NetworkBuilder
  * @see Node
  *
  * @param {number|string} id the id

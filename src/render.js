@@ -16,6 +16,9 @@ const ZOOM_EXTENT_MIN = 0.1;
 const ZOOM_EXTENT_MAX = 50;
 
 const ellipsis = (text, len = 25) => (text.length > len ? `${text.substr(0, len - 3)}...` : text);
+const capitalizeWord = word => word && word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+const capitalize = str => str.split(' ').map(capitalizeWord).join(' ');
+const nodeName = node => capitalize(ellipsis(node.name || node.largest.map(childNode => childNode.name).join(', ')))
 
 function showInfoBox(node) {
     if (!node.nodes) return;
@@ -237,7 +240,7 @@ export default function makeRenderFunction(style, directed = true) {
                     dispatch.call('select', null, n)
                 }, 200);
             })
-            .on('mouseover', function (n) {
+            .on('mouseover', function onNodeMouseOver(n) {
                 showInfoBox(n);
                 d3.select(this).select('circle')
                     .style('stroke', '#F48074');
@@ -248,7 +251,7 @@ export default function makeRenderFunction(style, directed = true) {
                     .raise()
                     .style('fill', '#F48074');
             })
-            .on('mouseout', function (n) {
+            .on('mouseout', function onNodeMouseOut(n) {
                 hideInfoBox();
                 d3.select(this).select('circle')
                     .style('stroke', style.nodeBorderColor);
@@ -279,12 +282,12 @@ export default function makeRenderFunction(style, directed = true) {
             })
             .style('fill', '#F48074');
 
-        const text = labels.selectAll('.label')
+        const label = labels.selectAll('.label')
             .data(nodes)
             .enter()
             .append('text')
             .attr('class', 'label')
-            .text(n => ellipsis(n.name || n.largest.map(i => i.name).join(', ')))
+            .text(nodeName)
             .attr('text-anchor', 'left')
             .style('fill', 'black')
             .style('font-size', 12)
@@ -299,6 +302,7 @@ export default function makeRenderFunction(style, directed = true) {
             y: n => n.y,
             dx: n => 1.1 * style.nodeRadius(n),
             visibility: n => 'visible',
+            text: nodeName,
         };
 
         const linkAttr = {
@@ -312,7 +316,8 @@ export default function makeRenderFunction(style, directed = true) {
             mark
                 .attr('cx', n => n.x)
                 .attr('cy', n => n.y);
-            text
+            label
+                .text(labelAttr.text)
                 .attr('x', labelAttr.x)
                 .attr('y', labelAttr.y)
                 .attr('dx', labelAttr.dx)
@@ -322,7 +327,7 @@ export default function makeRenderFunction(style, directed = true) {
         };
 
         const labelVisible = (() => {
-            const visible = d3.scaleLinear().domain([0.15, 0.8]).range([1, nodes.length]).clamp(true);
+            const visible = d3.scaleLinear().domain([0.2, 0.8]).range([1, nodes.length]).clamp(true);
             return k => n => n.id <= visible(k) ? 'visible' : 'hidden';
         })();
 
@@ -337,6 +342,10 @@ export default function makeRenderFunction(style, directed = true) {
             labelAttr.y = n => y + k * n.y;
             labelAttr.dx = n => k * 1.1 * style.nodeRadius(n);
             labelAttr.visibility = labelVisible(k);
+            labelAttr.text = (n) => {
+                const node = k < 0.15 && n.id === 1 && n.parent ? n.parent : n;
+                return nodeName(node);
+            };
             linkAttr.visibility = linkVisible(k);
 
             tick();
