@@ -339,8 +339,9 @@ export default function makeRenderFunction(style, directed = true) {
         })();
 
         const linkVisible = (() => {
-            const len = links.length;
-            return k => l => 1 - l.index / len < k;
+            const len = links.length || 1;
+            const visible = d3.scaleLinear().domain([0.2, 0.8]).range([1 / len, 1]).clamp(true);
+            return k => l => 1 - l.index / len <= visible(k);
         })();
 
         event.on('zoom', (transform) => {
