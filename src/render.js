@@ -41,6 +41,27 @@ function makeDragHandler(simulation) {
         .on('end', dragEnded);
 }
 
+function makeClickHandler() {
+    let clickTimeout;
+    const clickDelay = 200;
+
+    return {
+        doubleClick(callback) {
+            return function(n) {
+                clearTimeout(clickTimeout);
+                callback.call(this, n);
+            }
+        },
+
+        click(callback) {
+            return function(n) {
+                clearTimeout(clickTimeout);
+                clickTimeout = setTimeout(() => callback.call(this, n), clickDelay);
+            }
+        }
+    }
+}
+
 function showInfoBox(node) {
     if (!node.nodes) return;
 
@@ -282,8 +303,7 @@ export default function makeRenderFunction(style, directed = true) {
 
         const dragHandler = makeDragHandler(simulation);
 
-        // Used to distinguish between single and double clicks
-        let clickTimeout = null;
+        const clickHandler = makeClickHandler();
 
         const node = root.append('g')
             .attr('class', 'nodes')
@@ -292,16 +312,8 @@ export default function makeRenderFunction(style, directed = true) {
             .enter()
             .append('g')
             .attr('id', n => n.path.toId())
-            .on('dblclick', (n) => {
-                clearTimeout(clickTimeout);
-                enterChild(n);
-            })
-            .on('click', (n) => {
-                clearTimeout(clickTimeout);
-                clickTimeout = setTimeout(() => {
-                    event.call('select', null, n)
-                }, 200);
-            })
+            .on('dblclick', clickHandler.doubleClick(enterChild))
+            .on('click', clickHandler.click(n => event.call('select', null, n)))
             .on('mouseover', onNodeMouseOver)
             .on('mouseout', onNodeMouseOut(style.nodeBorderColor, style.linkFillColor))
             .call(dragHandler);
