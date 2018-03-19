@@ -12,13 +12,34 @@ import { halfLink, undirectedLink } from 'network-rendering';
 import { byFlow } from 'filter';
 import { traverseDepthFirst } from 'network';
 
-const ZOOM_EXTENT_MIN = 0.1;
-const ZOOM_EXTENT_MAX = 50;
-
 const ellipsis = (text, len = 25) => (text.length > len ? `${text.substr(0, len - 3)}...` : text);
 const capitalizeWord = word => word && word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
 const capitalize = str => str.split(' ').map(capitalizeWord).join(' ');
 const nodeName = node => capitalize(ellipsis(node.name || node.largest.map(childNode => childNode.name).join(', ')))
+
+function makeDragHandler(simulation) {
+    const dragStarted = (node) => {
+        if (!d3.event.active) simulation.alphaTarget(0.3).restart();
+        node.fx = node.x;
+        node.fy = node.y;
+    };
+
+    const drag = (node) => {
+        node.fx = d3.event.x;
+        node.fy = d3.event.y;
+    };
+
+    const dragEnded = (node) => {
+        if (!d3.event.active) simulation.alphaTarget(0);
+        node.fx = null;
+        node.fy = null;
+    };
+
+    return d3.drag()
+        .on('start', dragStarted)
+        .on('drag', drag)
+        .on('end', dragEnded);
+}
 
 function showInfoBox(node) {
     if (!node.nodes) return;
@@ -69,8 +90,15 @@ function hideInfoBox() {
  * @return {makeRenderFunction~render} the render function
  */
 export default function makeRenderFunction(style, directed = true) {
+    const ZOOM_EXTENT_MIN = 0.1;
+    const ZOOM_EXTENT_MAX = 50;
+
     const width = window.innerWidth;
     const height = window.innerHeight;
+    const screenCenter = {
+        x: width / 2,
+        y: height / 2,
+    };
 
     const event = d3.dispatch('zoom', 'path', 'select');
 
@@ -83,7 +111,7 @@ export default function makeRenderFunction(style, directed = true) {
         .attr('width', width)
         .attr('height', height);
 
-    const g = svg.append('g')
+    const root = svg.append('g')
         .attr('class', 'network');
 
     const labels = svg.append('g')
@@ -93,7 +121,7 @@ export default function makeRenderFunction(style, directed = true) {
         .scaleExtent([ZOOM_EXTENT_MIN, ZOOM_EXTENT_MAX])
         .on('zoom', () => {
             event.call('zoom', null, d3.event.transform);
-            g.attr('transform', d3.event.transform);
+            root.attr('transform', d3.event.transform);
         });
 
     svg.call(zoom)
@@ -117,13 +145,10 @@ export default function makeRenderFunction(style, directed = true) {
 
         const { x, y } = (() => {
             const parentElem = d3.select(`#${parent.path.toId()}`);
-            if (parentElem) {
-                return parentElem.datum();
-            }
-            return { x: width / 2, y: height / 2 };
+            return parentElem ? parentElem.datum() : screenCenter;
         })();
         const scale = ZOOM_EXTENT_MAX;
-        const translate = [width / 2 - scale * x, height / 2 - scale * y];
+        const translate = [screenCenter.x - scale * x, screenCenter.y - scale * y];
 
         svg.call(zoom.transform, d3.zoomIdentity.translate(...translate).scale(scale));
         svg.transition()
@@ -141,7 +166,7 @@ export default function makeRenderFunction(style, directed = true) {
 
         const { x, y } = node;
         const scale = ZOOM_EXTENT_MAX;
-        const translate = [width / 2 - scale * x, height / 2 - scale * y];
+        const translate = [screenCenter.x - scale * x, screenCenter.y - scale * y];
 
         svg.transition()
             .duration(400)
@@ -194,24 +219,7 @@ export default function makeRenderFunction(style, directed = true) {
 
         svg.selectAll('.network').selectAll('*').remove();
 
-        const dragStarted = (node) => {
-            if (!d3.event.active) simulation.alphaTarget(0.3).restart();
-            node.fx = node.x;
-            node.fy = node.y;
-        };
-
-        const drag = (node) => {
-            node.fx = d3.event.x;
-            node.fy = d3.event.y;
-        };
-
-        const dragEnded = (node) => {
-            if (!d3.event.active) simulation.alphaTarget(0);
-            node.fx = null;
-            node.fy = null;
-        };
-
-        const link = g.append('g')
+        const link = root.append('g')
             .attr('class', 'links')
             .selectAll('.link')
             .data(links)
@@ -220,10 +228,33 @@ export default function makeRenderFunction(style, directed = true) {
             .attr('class', 'link')
             .style('fill', style.linkFillColor);
 
+        const dragHandler = makeDragHandler(simulation);
+
+        function onNodeMouseOver(n) {
+            showInfoBox(n);
+            d3.select(this).select('circle')
+                .style('stroke', '#F48074');
+            d3.selectAll('.link').filter(d => d.target === n)
+                .raise()
+                .style('fill', '#ba6157');
+            d3.selectAll('.link').filter(d => d.source === n)
+                .raise()
+                .style('fill', '#F48074');
+        }
+
+        function onNodeMouseOut(n) {
+            hideInfoBox();
+            d3.select(this).select('circle')
+                .style('stroke', style.nodeBorderColor);
+            d3.selectAll('.link')
+                .sort((a, b) => a.flow - b.flow)
+                .style('fill', style.linkFillColor);
+        }
+
         // Used to distinguish between single and double clicks
         let clickTimeout = null;
 
-        const node = g.append('g')
+        const node = root.append('g')
             .attr('class', 'nodes')
             .selectAll('.node')
             .data(nodes)
@@ -240,29 +271,9 @@ export default function makeRenderFunction(style, directed = true) {
                     event.call('select', null, n)
                 }, 200);
             })
-            .on('mouseover', function onNodeMouseOver(n) {
-                showInfoBox(n);
-                d3.select(this).select('circle')
-                    .style('stroke', '#F48074');
-                d3.selectAll('.link').filter(d => d.target === n)
-                    .raise()
-                    .style('fill', '#ba6157');
-                d3.selectAll('.link').filter(d => d.source === n)
-                    .raise()
-                    .style('fill', '#F48074');
-            })
-            .on('mouseout', function onNodeMouseOut(n) {
-                hideInfoBox();
-                d3.select(this).select('circle')
-                    .style('stroke', style.nodeBorderColor);
-                d3.selectAll('.link')
-                    .sort((a, b) => a.flow - b.flow)
-                    .style('fill', style.linkFillColor);
-            })
-            .call(d3.drag()
-                .on('start', dragStarted)
-                .on('drag', drag)
-                .on('end', dragEnded));
+            .on('mouseover', onNodeMouseOver)
+            .on('mouseout', onNodeMouseOut)
+            .call(dragHandler);
 
         const circle = node.append('circle')
             .attr('r', style.nodeRadius)
@@ -338,7 +349,8 @@ export default function makeRenderFunction(style, directed = true) {
             labelAttr.y = n => y + k * n.y;
             labelAttr.dx = (n) => {
                 const r = 1.1 * style.nodeRadius(n);
-                return k * r + (k > 1 ? (1 - k) * r : 0)
+                const dx = k * r + (k > 1 ? 1.3 * (1 - k) * r : 0);
+                return Math.max(dx, 0);
             };
             labelAttr.visibility = labelVisible(k);
             labelAttr.text = (n) => {
@@ -358,7 +370,7 @@ export default function makeRenderFunction(style, directed = true) {
             .force('charge', d3.forceManyBody()
                 .strength(-charge)
                 .distanceMax(400))
-            .force('center', d3.forceCenter(width / 2, height / 2));
+            .force('center', d3.forceCenter(screenCenter.x, screenCenter.y));
 
         simulation
             .nodes(nodes)
@@ -386,7 +398,13 @@ export default function makeRenderFunction(style, directed = true) {
         simulation.restart();
     };
 
-    render.on = (name, args) => args ? event.on(name, args) : event.on(name);
+    /**
+     * Accessor for event
+     *
+     * @param {string} name the name
+     * @param {?Function} callback the callback
+     */
+    render.on = (name, callback) => callback ? event.on(name, callback) : event.on(name);
 
     return render;
 }
