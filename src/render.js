@@ -18,7 +18,7 @@ const ZOOM_EXTENT_MAX = 50;
 const ellipsis = (text, len = 25) => (text.length > len ? `${text.substr(0, len - 3)}...` : text);
 const capitalizeWord = word => word && word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
 const capitalize = str => str.split(' ').map(capitalizeWord).join(' ');
-const nodeName = node => capitalize(ellipsis(node.name || node.largest.map(childNode => childNode.name).join(', ')))
+const nodeName = node => capitalize(ellipsis(node.name || node.largest.map(childNode => childNode.name).join(', ')))
 
 function showInfoBox(node) {
     if (!node.nodes) return;
@@ -46,7 +46,7 @@ function showInfoBox(node) {
     let dy = 0;
     items.forEach((item) => {
         info.append('text')
-            .text(ellipsis(item.name || item.largest.map(i => i.name).join(', '), 30))
+            .text(ellipsis(item.name || item.largest.map(i => i.name).join(', '), 30))
             .attr('x', +infoBox.attr('x') + 10)
             .attr('y', +infoBox.attr('y') + 20)
             .attr('dy', dy)
@@ -72,7 +72,7 @@ export default function makeRenderFunction(style, directed = true) {
     const width = window.innerWidth;
     const height = window.innerHeight;
 
-    const dispatch = d3.dispatch('zoom', 'path', 'select');
+    const event = d3.dispatch('zoom', 'path', 'select');
 
     const svg = d3.select('svg')
         .attr('width', width)
@@ -92,7 +92,7 @@ export default function makeRenderFunction(style, directed = true) {
     const zoom = d3.zoom()
         .scaleExtent([ZOOM_EXTENT_MIN, ZOOM_EXTENT_MAX])
         .on('zoom', () => {
-            dispatch.call('zoom', null, d3.event.transform);
+            event.call('zoom', null, d3.event.transform);
             g.attr('transform', d3.event.transform);
         });
 
@@ -113,7 +113,7 @@ export default function makeRenderFunction(style, directed = true) {
 
         hideInfoBox();
 
-        dispatch.call('path', null, parent.parent);
+        event.call('path', null, parent.parent);
 
         const { x, y } = (() => {
             const parentElem = d3.select(`#${parent.path.toId()}`);
@@ -146,7 +146,7 @@ export default function makeRenderFunction(style, directed = true) {
         svg.transition()
             .duration(400)
             .on('end', () => {
-                dispatch.call('path', null, node);
+                event.call('path', null, node);
             })
             .call(zoom.transform, d3.zoomIdentity.translate(...translate).scale(scale))
             .transition()
@@ -183,7 +183,7 @@ export default function makeRenderFunction(style, directed = true) {
     const render = (network, charge, linkDistance) => {
         const nodes = network.nodes.filter(node => node.shouldRender);
         const links = network.links.filter(link => link.shouldRender).reverse();
-        const { state } = network;
+        const { state } = network;
 
         state.simulation = state.simulation
             || d3.forceSimulation()
@@ -237,7 +237,7 @@ export default function makeRenderFunction(style, directed = true) {
             .on('click', (n) => {
                 clearTimeout(clickTimeout);
                 clickTimeout = setTimeout(() => {
-                    dispatch.call('select', null, n)
+                    event.call('select', null, n)
                 }, 200);
             })
             .on('mouseover', function onNodeMouseOver(n) {
@@ -332,7 +332,7 @@ export default function makeRenderFunction(style, directed = true) {
             return k => l => 1 - l.index / len < k;
         })();
 
-        dispatch.on('zoom', (transform) => {
+        event.on('zoom', (transform) => {
             const { x, y, k } = transform;
             labelAttr.x = n => x + k * n.x;
             labelAttr.y = n => y + k * n.y;
@@ -368,7 +368,7 @@ export default function makeRenderFunction(style, directed = true) {
             .force('link')
             .links(links);
 
-        if (state.charge !== charge || state.linkDistance !== linkDistance) {
+        if (state.charge !== charge || state.linkDistance !== linkDistance) {
             state.charge = charge;
             state.linkDistance = linkDistance
             state.dirty = true;
@@ -386,7 +386,7 @@ export default function makeRenderFunction(style, directed = true) {
         simulation.restart();
     };
 
-    render.dispatch = dispatch;
+    render.on = (name, args) => args ? event.on(name, args) : event.on(name);
 
     return render;
 }

@@ -105,7 +105,7 @@ function runApplication(network, file) {
         }
     };
 
-    render.dispatch.on('path', (node) => {
+    render.on('path', (node) => {
         state.path = node.path;
         state.selectedNode = null;
         state.selected = '';
@@ -113,9 +113,9 @@ function runApplication(network, file) {
         renderBranch();
     });
 
-    render.dispatch.on('select', (node) => {
+    render.on('select', (node) => {
         state.selectedNode = node;
-        state.selected = node ? node.name : '';
+        state.selected = node ? node.name || node.largest.map(n => n.name).join(', ') : '';
     });
 
     const gui = new dat.GUI();
