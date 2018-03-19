@@ -81,6 +81,37 @@ function hideInfoBox() {
     d3.selectAll('.infobox').remove();
 }
 
+function highlight(n) {
+    d3.select(this).select('circle')
+        .style('stroke', '#F48074');
+    d3.selectAll('.link').filter(d => d.target === n)
+        .raise()
+        .style('fill', '#ba6157');
+    d3.selectAll('.link').filter(d => d.source === n)
+        .raise()
+        .style('fill', '#F48074');
+}
+
+function restore(nodeBorderColor, linkFillColor) {
+    d3.select(this).select('circle')
+        .style('stroke', nodeBorderColor);
+    d3.selectAll('.link')
+        .sort((a, b) => a.flow - b.flow)
+        .style('fill', linkFillColor);
+}
+
+function onNodeMouseOver(n) {
+    highlight.call(this, n);
+    showInfoBox(n);
+}
+
+function onNodeMouseOut(nodeBorderColor, linkFillColor) {
+    return function(n) {
+        restore.call(this, nodeBorderColor, linkFillColor);
+        hideInfoBox();
+    }
+}
+
 /**
  * Factory function to set up svg and return
  * a render function to render a network.
@@ -143,10 +174,8 @@ export default function makeRenderFunction(style, directed = true) {
 
         event.call('path', null, parent.parent);
 
-        const { x, y } = (() => {
-            const parentElem = d3.select(`#${parent.path.toId()}`);
-            return parentElem ? parentElem.datum() : screenCenter;
-        })();
+        const parentElem = d3.select(`#${parent.path.toId()}`);
+        const { x, y } = parentElem ? parentElem.datum() : screenCenter;
         const scale = ZOOM_EXTENT_MAX;
         const translate = [screenCenter.x - scale * x, screenCenter.y - scale * y];
 
@@ -164,15 +193,12 @@ export default function makeRenderFunction(style, directed = true) {
 
         parentNodes.push(node);
 
-        const { x, y } = node;
         const scale = ZOOM_EXTENT_MAX;
-        const translate = [screenCenter.x - scale * x, screenCenter.y - scale * y];
+        const translate = [screenCenter.x - scale * node.x, screenCenter.y - scale * node.y];
 
         svg.transition()
             .duration(400)
-            .on('end', () => {
-                event.call('path', null, node);
-            })
+            .on('end', () => event.call('path', null, node))
             .call(zoom.transform, d3.zoomIdentity.translate(...translate).scale(scale))
             .transition()
             .duration(0)
@@ -240,12 +266,8 @@ export default function makeRenderFunction(style, directed = true) {
         const links = network.links.filter(link => link.shouldRender).reverse();
         const { state } = network;
 
-        state.simulation = state.simulation
-            || d3.forceSimulation()
-                .alphaDecay(0.06)
-                .stop();
-
-        const simulation = state.simulation;
+        const simulation = state.simulation =
+            state.simulation || d3.forceSimulation().stop();
 
         svg.selectAll('.network').selectAll('*').remove();
 
@@ -259,27 +281,6 @@ export default function makeRenderFunction(style, directed = true) {
             .style('fill', style.linkFillColor);
 
         const dragHandler = makeDragHandler(simulation);
-
-        function onNodeMouseOver(n) {
-            showInfoBox(n);
-            d3.select(this).select('circle')
-                .style('stroke', '#F48074');
-            d3.selectAll('.link').filter(d => d.target === n)
-                .raise()
-                .style('fill', '#ba6157');
-            d3.selectAll('.link').filter(d => d.source === n)
-                .raise()
-                .style('fill', '#F48074');
-        }
-
-        function onNodeMouseOut(n) {
-            hideInfoBox();
-            d3.select(this).select('circle')
-                .style('stroke', style.nodeBorderColor);
-            d3.selectAll('.link')
-                .sort((a, b) => a.flow - b.flow)
-                .style('fill', style.linkFillColor);
-        }
 
         // Used to distinguish between single and double clicks
         let clickTimeout = null;
@@ -302,7 +303,7 @@ export default function makeRenderFunction(style, directed = true) {
                 }, 200);
             })
             .on('mouseover', onNodeMouseOver)
-            .on('mouseout', onNodeMouseOut)
+            .on('mouseout', onNodeMouseOut(style.nodeBorderColor, style.linkFillColor))
             .call(dragHandler);
 
         const circle = node.append('circle')
