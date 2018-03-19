@@ -180,6 +180,8 @@ export default function makeRenderFunction(style, directed = true) {
     }
 
     d3.select('body').on('keydown', () => {
+        const translateAmount = 100;
+        const translateDuration = 250;
         const key = d3.event.key || d3.event.keyCode;
         switch (key) {
         case 'Esc':
@@ -192,6 +194,34 @@ export default function makeRenderFunction(style, directed = true) {
             svg.transition()
                 .duration(200)
                 .call(zoom.transform, d3.zoomIdentity);
+            break;
+        case 'ArrowUp':
+        case 'w':
+        case 'W':
+            svg.transition()
+                .duration(translateDuration)
+                .call(zoom.translateBy, 0, translateAmount);
+            break;
+        case 'ArrowDown':
+        case 's':
+        case 'S':
+            svg.transition()
+                .duration(translateDuration)
+                .call(zoom.translateBy, 0, -translateAmount);
+            break;
+        case 'ArrowLeft':
+        case 'a':
+        case 'A':
+            svg.transition()
+                .duration(translateDuration)
+                .call(zoom.translateBy, translateAmount, 0);
+            break;
+        case 'ArrowRight':
+        case 'd':
+        case 'D':
+            svg.transition()
+                .duration(translateDuration)
+                .call(zoom.translateBy, -translateAmount, 0);
             break;
         default:
             break;
