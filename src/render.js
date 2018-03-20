@@ -227,7 +227,7 @@ export default function makeRenderFunction(style, directed = true) {
     }
 
     d3.select('body').on('keydown', () => {
-        const translateAmount = 100;
+        const translateAmount = 50;
         const translateDuration = 250;
         const key = d3.event.key || d3.event.keyCode;
         switch (key) {
@@ -383,7 +383,7 @@ export default function makeRenderFunction(style, directed = true) {
 
         const linkVisible = (() => {
             const len = links.length || 1;
-            const visible = d3.scaleLinear().domain([0.2, 0.8]).range([1 / len, 1]).clamp(true);
+            const visible = d3.scaleSqrt().domain([0.2, 2.5]).range([1 / len, 1]).clamp(true);
             return k => l => 1 - l.index / len <= visible(k);
         })();
 
@@ -393,7 +393,7 @@ export default function makeRenderFunction(style, directed = true) {
             labelAttr.y = n => y + k * n.y;
             labelAttr.dx = (n) => {
                 const r = 1.1 * style.nodeRadius(n);
-                const dx = k * r + (k > 1 ? 1.3 * (1 - k) * r : 0);
+                const dx = k * r + (k > 1 ? 1.5 * (1 - k) * r : 0);
                 return Math.max(dx, 0);
             };
             labelAttr.visibility = labelVisible(k);
