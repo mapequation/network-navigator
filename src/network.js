@@ -81,7 +81,6 @@ class Network {
         this.nodes = [];
         this.links = [];
         this.largest = [];
-        this.state = {};
     }
 }
 

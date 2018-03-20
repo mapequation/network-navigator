@@ -7,8 +7,10 @@ import parseFTree from 'file-formats/ftree';
 import networkFromFTree from 'file-formats/network-from-ftree';
 import ftreeFromNetwork from 'file-formats/ftree-from-network';
 import { traverseDepthFirst, makeGetNodeByPath } from 'network';
-import makeRenderFunction from 'render';
+import { halfLink, undirectedLink } from 'network-rendering';
+import NetworkSimulation from 'network-simulation';
 import makeRenderStyle from 'render-style';
+import { highlightNode, restoreNode } from 'highlight-node';
 import {
     byFlow,
     sumFlow,
@@ -43,8 +45,135 @@ function runApplication(network, file) {
         .reduce((max, curr) => Math.max(max, curr), -Infinity);
 
     const renderStyle = makeRenderStyle(maxNodeFlow, maxLinkFlow);
-    const render = makeRenderFunction(renderStyle, network.directed);
+    const linkRenderer = (network.directed ? halfLink : undirectedLink)()
+        .nodeRadius(renderStyle.nodeRadius)
+        .width(renderStyle.linkWidth);
     const getNodeByPath = makeGetNodeByPath(network);
+
+    const ZOOM_EXTENT_MIN = 0.1;
+    const ZOOM_EXTENT_MAX = 50;
+
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+    const screenCenter = {
+        x: width / 2,
+        y: height / 2,
+    };
+
+    const event = d3.dispatch('zoom', 'path', 'select');
+
+    const svg = d3.select('svg')
+        .attr('width', width)
+        .attr('height', height);
+
+    svg.append('rect')
+        .attr('class', 'background')
+        .attr('width', width)
+        .attr('height', height);
+
+    const root = svg.append('g')
+        .attr('class', 'network');
+
+    const labels = svg.append('g')
+        .attr('class', 'network labels')
+
+    const zoom = d3.zoom()
+        .scaleExtent([ZOOM_EXTENT_MIN, ZOOM_EXTENT_MAX])
+        .on('zoom', () => {
+            event.call('zoom', null, d3.event.transform);
+            root.attr('transform', d3.event.transform);
+        });
+
+    svg.call(zoom)
+        .on('dblclick.zoom', null);
+
+    const parentNodes = [];
+
+    function returnToParent() {
+        const parent = parentNodes.pop();
+
+        // Do nothing if we're at the top
+        if (!parent) return;
+
+        event.call('path', null, parent.parent);
+
+        const parentElem = d3.select(`#${parent.path.toId()}`);
+        const { x, y } = parentElem ? parentElem.datum() : screenCenter;
+        const scale = ZOOM_EXTENT_MAX;
+        const translate = [screenCenter.x - scale * x, screenCenter.y - scale * y];
+
+        svg.call(zoom.transform, d3.zoomIdentity.translate(...translate).scale(scale));
+        svg.transition()
+            .duration(200)
+            .call(zoom.transform, d3.zoomIdentity);
+    }
+
+    function enterChild(node) {
+        // Do nothing if node has no child nodes
+        if (!(node.nodes && node.nodes.length)) return;
+
+        parentNodes.push(node);
+
+        const scale = ZOOM_EXTENT_MAX;
+        const translate = [screenCenter.x - scale * node.x, screenCenter.y - scale * node.y];
+
+        svg.transition()
+            .duration(400)
+            .on('end', () => event.call('path', null, node))
+            .call(zoom.transform, d3.zoomIdentity.translate(...translate).scale(scale))
+            .transition()
+            .duration(0)
+            .call(zoom.transform, d3.zoomIdentity);
+    }
+
+    d3.select('body').on('keydown', () => {
+        const translateAmount = 50;
+        const translateDuration = 250;
+        const key = d3.event.key || d3.event.keyCode;
+        switch (key) {
+        case 'Esc':
+        case 'Escape':
+        case 27:
+            returnToParent();
+            break;
+        case 'Space':
+        case ' ':
+            svg.transition()
+                .duration(200)
+                .call(zoom.transform, d3.zoomIdentity);
+            break;
+        case 'ArrowUp':
+        case 'w':
+        case 'W':
+            svg.transition()
+                .duration(translateDuration)
+                .call(zoom.translateBy, 0, translateAmount);
+            break;
+        case 'ArrowDown':
+        case 's':
+        case 'S':
+            svg.transition()
+                .duration(translateDuration)
+                .call(zoom.translateBy, 0, -translateAmount);
+            break;
+        case 'ArrowLeft':
+        case 'a':
+        case 'A':
+            svg.transition()
+                .duration(translateDuration)
+                .call(zoom.translateBy, translateAmount, 0);
+            break;
+        case 'ArrowRight':
+        case 'd':
+        case 'D':
+            svg.transition()
+                .duration(translateDuration)
+                .call(zoom.translateBy, -translateAmount, 0);
+            break;
+        default:
+            break;
+        }
+    });
 
     const setDirty = () => {
         const branch = getNodeByPath(state.path);
@@ -81,12 +210,26 @@ function runApplication(network, file) {
         links.forEach(link => link.shouldRender = true);
     };
 
-    const renderBranch = () => {
+    const simulations = new Map();
+    event.on('zoom', transform =>
+        simulations.forEach(s => s.applyTransform(transform)));
+
+    const render = () => {
         const branch = getNodeByPath(state.path);
 
-        render(branch, state.charge, state.linkDistance);
+        const simulation = simulations.get(state.path) ||
+            new NetworkSimulation(linkRenderer, renderStyle, screenCenter, root, labels, state);
+        simulations.set(state.path, simulation);
 
-        branch.state.dirty = false;
+        simulation.on('dblclick', function (node) {
+            simulation.stop();
+            enterChild(node);
+        });
+        simulation.on('click', function (node) { event.call('select', this, node) });
+        simulation.on('mouseover', highlightNode);
+        simulation.on('mouseout', restoreNode(renderStyle));
+
+        simulation.init(branch);
     };
 
     const search = (name) => {
@@ -105,29 +248,30 @@ function runApplication(network, file) {
         }
     };
 
-    render.on('path', (node) => {
+    event.on('path', (node) => {
         state.path = node.path;
         state.selectedNode = null;
         state.selected = '';
         cullLargest();
-        renderBranch();
+        render();
     });
 
-    render.on('select', (node) => {
+    event.on('select', (node) => {
         state.selectedNode = node;
         state.selected = node ? node.name || node.largest.map(n => n.name).join(', ') : '';
     });
 
     const gui = new dat.GUI();
     gui.add(state, 'filename');
-    gui.add(state, 'linkDistance', 50, 500).step(25).onFinishChange(() => { setDirty(); renderBranch(); });
-    gui.add(state, 'charge', 0, 2000).step(100).onFinishChange(() => { setDirty(); renderBranch(); });
-    gui.add(state, 'nodeFlow', 0, 1).step(0.01).onFinishChange(() => { filterFlow(); setDirty(); renderBranch(); }).listen();
-    gui.add(state, 'linkFlow', 0, 1).step(0.01).onFinishChange(() => { filterFlow(); setDirty(); renderBranch(); }).listen();
-    gui.add(state, 'search').onChange((name) => { search(name); renderBranch(); });
+    gui.add(state, 'linkDistance', 50, 500).step(25).onFinishChange(() => { setDirty(); render(); });
+    gui.add(state, 'charge', 0, 2000).step(100).onFinishChange(() => { setDirty(); render(); });
+    gui.add(state, 'nodeFlow', 0, 1).step(0.01).onFinishChange(() => { filterFlow(); setDirty(); render(); }).listen();
+    gui.add(state, 'linkFlow', 0, 1).step(0.01).onFinishChange(() => { filterFlow(); setDirty(); render(); }).listen();
+    gui.add(state, 'path').listen();
+    gui.add(state, 'search').onChange((name) => { search(name); render(); });
     gui.add(state, 'selected').onFinishChange((name) => {
         if (state.selectedNode) state.selectedNode.name = name;
-        renderBranch();
+        render();
     }).listen();
     gui.add(state, 'download').onChange(() => {
         const ftree = ftreeFromNetwork(network);
@@ -137,7 +281,7 @@ function runApplication(network, file) {
     }).listen();
 
     cullLargest();
-    renderBranch();
+    render();
 }
 
 const svg = d3.select('svg')
