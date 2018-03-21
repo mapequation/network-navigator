@@ -8,7 +8,8 @@ import networkFromFTree from 'file-formats/network-from-ftree';
 import ftreeFromNetwork from 'file-formats/ftree-from-network';
 import { traverseDepthFirst, makeGetNodeByPath } from 'network';
 import { halfLink, undirectedLink } from 'network-rendering';
-import NetworkSimulation from 'network-simulation';
+import NetworkLayout from 'network-layout';
+import Simulation from 'simulation';
 import makeRenderStyle from 'render-style';
 import { highlightNode, restoreNode } from 'highlight-node';
 import {
@@ -210,26 +211,26 @@ function runApplication(network, file) {
         links.forEach(link => link.shouldRender = true);
     };
 
-    const simulations = new Map();
-    event.on('zoom', transform =>
-        simulations.forEach(s => s.applyTransform(transform)));
+    const layouts = new Map();
+    event.on('zoom', transform => layouts.forEach(s => s.applyTransform(transform)));
 
     const render = () => {
         const branch = getNodeByPath(state.path);
 
-        const simulation = simulations.get(state.path) ||
-            new NetworkSimulation(linkRenderer, renderStyle, screenCenter, root, labels, state);
-        simulations.set(state.path, simulation);
+        const layout = layouts.get(state.path) ||
+            NetworkLayout(linkRenderer, renderStyle, root, labels, Simulation(screenCenter, state));
+        layouts.set(state.path, layout);
 
-        simulation.on('dblclick', function (node) {
-            simulation.stop();
+        layout.on('dblclick', function (node) {
             enterChild(node);
         });
-        simulation.on('click', function (node) { event.call('select', this, node) });
-        simulation.on('mouseover', highlightNode);
-        simulation.on('mouseout', restoreNode(renderStyle));
+        layout.on('click', function (node) {
+            event.call('select', this, node);
+        });
+        layout.on('mouseover', highlightNode);
+        layout.on('mouseout', restoreNode(renderStyle));
 
-        simulation.init(branch);
+        layout.init(branch);
     };
 
     const search = (name) => {

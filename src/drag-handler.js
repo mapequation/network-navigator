@@ -1,8 +1,8 @@
-import * as d3 from 'd3';
+import { event, drag } from 'd3';
 
 export default function makeDragHandler(simulation) {
-    const dragStarted = (node) => {
-        if (!d3.event.active) simulation.alphaTarget(0.3).restart();
+    const onDragStart = (node) => {
+        if (!event.active) simulation.alphaTarget(0.3).restart();
         node.fx = node.x;
         node.fy = node.y;
     };
@@ -12,14 +12,14 @@ export default function makeDragHandler(simulation) {
         node.fy = event.y;
     };
 
-    const dragEnded = (node) => {
-        if (!d3.event.active) simulation.alphaTarget(0);
+    const onDragEnd = (node) => {
+        if (event.active) simulation.alphaTarget(0);
         node.fx = null;
         node.fy = null;
     };
 
-    return d3.drag()
-        .on('start', dragStarted)
+    return drag()
+        .on('start', onDragStart)
         .on('drag', onDrag)
-        .on('end', dragEnded);
+        .on('end', onDragEnd);
 }
