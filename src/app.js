@@ -2,7 +2,7 @@ import * as d3 from 'd3';
 import dat from 'dat.gui';
 import Dropzone from 'dropzone';
 import FileSaver from 'file-saver';
-import parseFile from 'parse';
+import parseFile from 'parse-file';
 import parseFTree from 'file-formats/ftree';
 import networkFromFTree from 'file-formats/network-from-ftree';
 import ftreeFromNetwork from 'file-formats/ftree-from-network';
