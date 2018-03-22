@@ -13,6 +13,7 @@ const hasExitFlow = {
 
 const isRenderable = {
     shouldRender: true,
+    visible: false,
 };
 
 const treeNode = (id) => ({

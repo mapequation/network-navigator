@@ -11,7 +11,6 @@ import { halfLink, undirectedLink } from 'network-rendering';
 import NetworkLayout from 'network-layout';
 import Simulation from 'simulation';
 import makeRenderStyle from 'render-style';
-import { highlightNode, restoreNode } from 'highlight-node';
 import {
     byFlow,
     sumFlow,
@@ -52,7 +51,7 @@ function runApplication(network, file) {
     const getNodeByPath = makeGetNodeByPath(network);
 
     const ZOOM_EXTENT_MIN = 0.1;
-    const ZOOM_EXTENT_MAX = 50;
+    const ZOOM_EXTENT_MAX = 200;
 
     const width = window.innerWidth;
     const height = window.innerHeight;
@@ -60,8 +59,6 @@ function runApplication(network, file) {
         x: width / 2,
         y: height / 2,
     };
-
-    const event = d3.dispatch('zoom', 'path', 'select');
 
     const svg = d3.select('svg')
         .attr('width', width)
@@ -78,65 +75,25 @@ function runApplication(network, file) {
     const labels = svg.append('g')
         .attr('class', 'network labels')
 
+    let translateAmount = 100;
+
+    const dispatch = d3.dispatch('zoom');
+
     const zoom = d3.zoom()
         .scaleExtent([ZOOM_EXTENT_MIN, ZOOM_EXTENT_MAX])
         .on('zoom', () => {
-            event.call('zoom', null, d3.event.transform);
+            translateAmount = 100 / d3.event.transform.k;
+            dispatch.call('zoom', null, d3.event.transform);
             root.attr('transform', d3.event.transform);
         });
 
     svg.call(zoom)
         .on('dblclick.zoom', null);
 
-    const parentNodes = [];
-
-    function returnToParent() {
-        const parent = parentNodes.pop();
-
-        // Do nothing if we're at the top
-        if (!parent) return;
-
-        event.call('path', null, parent.parent);
-
-        const parentElem = d3.select(`#${parent.path.toId()}`);
-        const { x, y } = parentElem ? parentElem.datum() : screenCenter;
-        const scale = ZOOM_EXTENT_MAX;
-        const translate = [screenCenter.x - scale * x, screenCenter.y - scale * y];
-
-        svg.call(zoom.transform, d3.zoomIdentity.translate(...translate).scale(scale));
-        svg.transition()
-            .duration(200)
-            .call(zoom.transform, d3.zoomIdentity);
-    }
-
-    function enterChild(node) {
-        // Do nothing if node has no child nodes
-        if (!(node.nodes && node.nodes.length)) return;
-
-        parentNodes.push(node);
-
-        const scale = ZOOM_EXTENT_MAX;
-        const translate = [screenCenter.x - scale * node.x, screenCenter.y - scale * node.y];
-
-        svg.transition()
-            .duration(400)
-            .on('end', () => event.call('path', null, node))
-            .call(zoom.transform, d3.zoomIdentity.translate(...translate).scale(scale))
-            .transition()
-            .duration(0)
-            .call(zoom.transform, d3.zoomIdentity);
-    }
-
     d3.select('body').on('keydown', () => {
-        const translateAmount = 50;
         const translateDuration = 250;
         const key = d3.event.key || d3.event.keyCode;
         switch (key) {
-        case 'Esc':
-        case 'Escape':
-        case 27:
-            returnToParent();
-            break;
         case 'Space':
         case ' ':
             svg.transition()
@@ -144,29 +101,21 @@ function runApplication(network, file) {
                 .call(zoom.transform, d3.zoomIdentity);
             break;
         case 'ArrowUp':
-        case 'w':
-        case 'W':
             svg.transition()
                 .duration(translateDuration)
                 .call(zoom.translateBy, 0, translateAmount);
             break;
         case 'ArrowDown':
-        case 's':
-        case 'S':
             svg.transition()
                 .duration(translateDuration)
                 .call(zoom.translateBy, 0, -translateAmount);
             break;
         case 'ArrowLeft':
-        case 'a':
-        case 'A':
             svg.transition()
                 .duration(translateDuration)
                 .call(zoom.translateBy, translateAmount, 0);
             break;
         case 'ArrowRight':
-        case 'd':
-        case 'D':
             svg.transition()
                 .duration(translateDuration)
                 .call(zoom.translateBy, -translateAmount, 0);
@@ -211,24 +160,51 @@ function runApplication(network, file) {
         links.forEach(link => link.shouldRender = true);
     };
 
+    const rootLayout = NetworkLayout({
+        linkRenderer,
+        style: renderStyle,
+        renderTarget: { parent: root, labels },
+        localTransform: null,
+        simulation: Simulation(screenCenter, state)
+    });
+
     const layouts = new Map();
-    event.on('zoom', transform => layouts.forEach(s => s.applyTransform(transform)));
+    layouts.set(state.path, rootLayout);
+
+    dispatch.on('zoom', transform => layouts.forEach(s => s.applyTransform(transform)));
 
     const render = () => {
         const branch = getNodeByPath(state.path);
+        const layout = layouts.get(state.path);
 
-        const layout = layouts.get(state.path) ||
-            NetworkLayout(linkRenderer, renderStyle, root, labels, Simulation(screenCenter, state));
-        layouts.set(state.path, layout);
-
-        layout.on('dblclick', function (node) {
-            enterChild(node);
-        });
         layout.on('click', function (node) {
-            event.call('select', this, node);
+            console.log(node);
+            state.selectedNode = node;
+            state.selected = node ? node.name || node.largest.map(n => n.name).join(', ') : '';
         });
-        layout.on('mouseover', highlightNode);
-        layout.on('mouseout', restoreNode(renderStyle));
+
+        layout.on('render', ({ network, localTransform, renderTarget }) => {
+            state.path = network.path;
+
+            layouts.set(state.path, NetworkLayout({
+                linkRenderer,
+                style: renderStyle,
+                localTransform,
+                renderTarget,
+                simulation: Simulation({ x: network.x, y: network.y }, { charge: 500, linkDistance: 300}),
+            }));
+
+            cullLargest();
+            render();
+        });
+
+        layout.on('destroy', (path) => {
+            const oldLayout = layouts.get(path);
+            if (oldLayout) {
+                oldLayout.destroy();
+                layouts.delete(path);
+            }
+        });
 
         layout.init(branch);
     };
@@ -244,23 +220,12 @@ function runApplication(network, file) {
                         : false;
                 }
             }
+
+            layouts.forEach(l => l.update());
         } catch (e) {
             // No-op
         }
     };
-
-    event.on('path', (node) => {
-        state.path = node.path;
-        state.selectedNode = null;
-        state.selected = '';
-        cullLargest();
-        render();
-    });
-
-    event.on('select', (node) => {
-        state.selectedNode = node;
-        state.selected = node ? node.name || node.largest.map(n => n.name).join(', ') : '';
-    });
 
     const gui = new dat.GUI();
     gui.add(state, 'filename');

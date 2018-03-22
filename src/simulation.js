@@ -7,7 +7,7 @@ import {
 } from 'd3';
 
 
-export default function Simulation(center, { charge, linkDistance }) {
+export default function Simulation({ x, y }, { charge, linkDistance }) {
     const simulation = forceSimulation()
         .force('collide', forceCollide(20))
         .force('link', forceLink()
@@ -15,7 +15,7 @@ export default function Simulation(center, { charge, linkDistance }) {
         .force('charge', forceManyBody()
             .strength(-charge)
             .distanceMax(400))
-        .force('center', forceCenter(center.x, center.y))
+        .force('center', forceCenter(x, y))
         .stop();
 
     simulation.init = ({ nodes, links }) => {
