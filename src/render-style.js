@@ -4,7 +4,7 @@
  * @author Anton Eriksson
  */
 
-import { scaleLinear, scaleSqrt } from 'd3-scale';
+import { scaleLinear, scaleSqrt } from 'd3';
 
 
 /**
