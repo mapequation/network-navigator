@@ -46,11 +46,11 @@ export default function makeRenderStyle(maxNodeFlow, maxLinkFlow) {
 
 export function makeLinkLod(links) {
     const len = links.length || 1;
-    const visible = scaleSqrt().domain([0.4, 2.5]).range([1 / len, 1]).clamp(true);
+    const visible = scaleLinear().domain([0.5, 2.5]).range([1 / len, 1]).clamp(true);
     return k => l => 1 - l.index / len <= visible(k);
 };
 
 export function makeNodeLod(nodes) {
-    const visible = scaleLinear().domain([0.4, 0.8]).range([1, nodes.length]).clamp(true);
+    const visible = scaleLinear().domain([0.5, 0.8]).range([1, nodes.length]).clamp(true);
     return k => n => n.id <= visible(k);
 };

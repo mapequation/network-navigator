@@ -1,34 +1,31 @@
 import * as d3 from 'd3';
+import * as _ from 'lodash';
 import { clickHandler, doubleClickHandler } from 'click-handler';
 import makeDragHandler from 'drag-handler';
 import { makeLinkLod, makeNodeLod } from 'render-style';
 import { highlightNode, restoreNode } from 'highlight-node';
 import { traverseDepthFirst } from 'network';
 
-const ellipsis = (text, len = 25) => (text.length > len ? `${text.substr(0, len - 3)}...` : text);
-const capitalizeWord = word => word && word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
-const capitalize = str => str.split(' ').map(capitalizeWord).join(' ');
-const nodeName = node => capitalize(ellipsis(node.name || node.largest.map(childNode => childNode.name).join(', ')))
-const numberOfHits = n =>
-    +n.marked || Array.from(traverseDepthFirst(n)).filter(child => child.marked).length;
-
 const { innerWidth, innerHeight } = window;
 
+const ellipsis = (text, len = 25) => (text.length > len ? `${text.substr(0, len - 3)}...` : text);
+const nodeName = node => _.startCase(_.lowerCase(ellipsis(node.name || node.largest.map(childNode => childNode.name).join(', '))));
+const numberOfHits = n => !n.visible
+    ? +n.marked || Array.from(traverseDepthFirst(n)).filter(child => child.marked).length
+    : 0;
+
 const screenScale = ({ x, y, k }) => point => ({ x: point.x * k + x, y: point.y * k + y });
+
+const distance = (p1, p2) => Math.sqrt((p1.x - p2.x)**2 + (p1.y - p2.y)**2)
 
 const insideScreenBounds = point =>
     0 < point.x && point.x < innerWidth && 0 < point.y && point.y < innerHeight
 
-const withinRadiusFromBounds = (point, radius) => [
-    Math.abs(point.x/* - 0*/), Math.abs(point.x - innerWidth),
-    Math.abs(point.y/* - 0*/), Math.abs(point.y - innerHeight),
-].some(distance => distance < radius);
-
-const radiusIsLarge = radius => radius > Math.min(innerWidth, innerHeight) / 4;
+const radiusLargeEnough = radius => radius > Math.min(innerWidth, innerHeight) / 4;
 
 function isRenderTarget({ x, y, k }, nodeRadius) {
     const scaled = screenScale({ x, y, k });
-    return node => radiusIsLarge(nodeRadius(node) * k) && insideScreenBounds(scaled(node));
+    return node => radiusLargeEnough(nodeRadius(node) * k) && insideScreenBounds(scaled(node));
 }
 
 export default function NetworkLayout({
@@ -46,6 +43,7 @@ export default function NetworkLayout({
         labels: renderTarget.labels,
     };
 
+    let stopped = false;
     let thisNetwork = null;
     let nodes = [];
     let links = [];
@@ -181,29 +179,28 @@ export default function NetworkLayout({
             label.accessors.lod(k)(n) ? 'visible' : 'hidden'
         label.accessors.text = (n) => {
             const node = k < 0.15 && n.id === 1 && n.parent ? n.parent : n;
-            return k > 3 && n.nodes ? '' : nodeName(node);
+            return n.visible && n.nodes ? '' : nodeName(node);
         };
         link.accessors.path = l =>
-            k < 12 && link.accessors.lod(k)(l) ? linkRenderer(l) : null;
+            (k < 12 && link.accessors.lod(k)(l)) || !l.source.nodes ? linkRenderer(l) : null;
 
         if (k > 1.5) {
             const zoomNormalized = d3.scaleLinear().domain([1.5, 6.5]).range([0, 1]).clamp(true);
             const c = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
             const scaled = screenScale({ x, y, k });
-            const distance = (p1, p2) => Math.sqrt((p1.x - p2.x)**2 + (p1.y - p2.y)**2)
-            const distanceFromCenter = n => distance(n, c);
+            const distanceFromCenter = n => distance(scaled(n), c);
             const distanceNormalized = d3.scaleLinear().domain([600, 0]).range([0, 1]).clamp(true);
 
             circle.accessors.fill = (n) => {
                 if (!n.nodes) return style.nodeFillColor(n);
-                const d = n => (k < 5 ? distanceNormalized(distanceFromCenter(scaled(n))) : 1);
+                const d = n => (k < 5 ? distanceNormalized(distanceFromCenter(n)) : 1);
                 return d3.interpolateRgb(style.nodeFillColor(n), '#ffffff')
                     (zoomNormalized(k) * d(n));
             };
             circle.accessors.r = (n) => {
                 if (!n.nodes) return style.nodeRadius(n);
                 return d3.interpolateNumber(style.nodeRadius(n), 150)
-                    (zoomNormalized(k) * distanceNormalized(distanceFromCenter(scaled(n))));
+                    (zoomNormalized(k) * distanceNormalized(distanceFromCenter(n)));
             };
         }
 
@@ -211,9 +208,12 @@ export default function NetworkLayout({
             elements.node.on('.drag', null);
             dispatch.on('mouseover', null);
             simulation.stop();
+            stopped = true;
+
+            const renderTarget = isRenderTarget({ x, y, k }, circle.accessors.r);
 
             nodes.filter(n => n.nodes && !n.visible)
-                .filter(isRenderTarget({ x, y, k }, circle.accessors.r))
+                .filter(renderTarget)
                 .forEach((n) => {
                     const childScale = 0.15;
                     const childTranslate = [n.x * (1 - childScale), n.y * (1 - childScale)];
@@ -238,10 +238,11 @@ export default function NetworkLayout({
                         },
                     });
                 });
-        } else {
+        } else if (stopped) {
             elements.node.call(onDrag);
             dispatch.on('mouseover', highlightNode);
             simulation.restart();
+            stopped = false;
 
             nodes.filter(n => n.visible)
                 .forEach(n => dispatch.call('destroy', null, n.path));

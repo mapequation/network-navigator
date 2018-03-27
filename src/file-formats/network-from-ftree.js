@@ -31,12 +31,12 @@ export default function networkFromFTree(ftree) {
         } else {
             const childNode = TreePath.toArray(node.path)
             .reduce((pathNode, childId) => {
-                let child = Network.findById(pathNode.nodes, childId);
+                let child = Network.getNode(pathNode, childId);
                 if (!child) {
                     child = Network.createNetwork(childId);
                     child.parent = pathNode;
                     child.path = TreePath.join(pathNode.path, child.id)
-                    pathNode.nodes.push(child);
+                    Network.addNode(pathNode, child);
                 }
                 return child;
             }, root);
@@ -62,7 +62,7 @@ export default function networkFromFTree(ftree) {
                 if (pathNode.largest.length > 4) {
                     pathNode.largest.pop();
                 }
-                return Network.findById(pathNode.nodes, childId);
+                return Network.getNode(pathNode, childId);
             }, root);
 
         parent.flow += node.flow;
@@ -73,7 +73,7 @@ export default function networkFromFTree(ftree) {
         }
         childNode.parent = parent;
         childNode.path = TreePath.join(parent.path, childNode.id)
-        parent.nodes.push(childNode);
+        Network.addNode(parent, childNode);
     });
 
     Network.connectLinks(root);

@@ -1,4 +1,5 @@
 import * as d3 from 'd3';
+import * as _ from 'lodash';
 import dat from 'dat.gui';
 import Dropzone from 'dropzone';
 import FileSaver from 'file-saver';
@@ -38,12 +39,11 @@ function runApplication(network, file) {
         .map(node => node.flow)
         .reduce((max, curr) => Math.max(max, curr), -Infinity);
 
-    const maxLinkFlow = Array.from(traverseDepthFirst(network))
-        .filter(node => node.links)
-        .map(node => node.links)
-        .reduce((acc, curr) => acc.concat(curr), [])
-        .map(link => link.flow)
-        .reduce((max, curr) => Math.max(max, curr), -Infinity);
+    const maxLinkFlow = _.maxBy(
+        _.flatMap(
+            Array.from(traverseDepthFirst(network)),
+            node => node.links || []
+        ), link => link.flow).flow
 
     const renderStyle = makeRenderStyle(maxNodeFlow, maxLinkFlow);
     const linkRenderer = (network.directed ? halfLink : undirectedLink)()
@@ -95,11 +95,11 @@ function runApplication(network, file) {
         .onPlusClick(() =>
             svg.transition()
                 .duration(300)
-                .call(zoom.scaleBy, 1.5))
+                .call(zoom.scaleBy, 2))
         .onMinusClick(() =>
             svg.transition()
                 .duration(300)
-                .call(zoom.scaleBy, 0.66));
+                .call(zoom.scaleBy, 0.5));
 
     d3.select('body').on('keydown', () => {
         const translateDuration = 250;
@@ -135,11 +135,6 @@ function runApplication(network, file) {
             break;
         }
     });
-
-    const setDirty = () => {
-        const branch = getNodeByPath(state.path);
-        branch.state.dirty = true;
-    };
 
     const cullLargest = () => {
         let { nodes, links } = getNodeByPath(state.path);
@@ -184,6 +179,7 @@ function runApplication(network, file) {
 
     const layouts = new Map();
     layouts.set(state.path, rootLayout);
+    const updateLayouts = () => layouts.forEach(l => l.update());
 
     dispatch.on('zoom', transform => layouts.forEach(s => s.applyTransform(transform)));
 
@@ -205,7 +201,7 @@ function runApplication(network, file) {
                 style: renderStyle,
                 localTransform,
                 renderTarget,
-                simulation: Simulation({ x: network.x, y: network.y }, { charge: 500, linkDistance: 300}),
+                simulation: Simulation({ x: network.x, y: network.y }, state),
             }));
 
             cullLargest();
@@ -235,7 +231,7 @@ function runApplication(network, file) {
                 }
             }
 
-            layouts.forEach(l => l.update());
+            updateLayouts();
         } catch (e) {
             // No-op
         }
@@ -243,15 +239,14 @@ function runApplication(network, file) {
 
     const gui = new dat.GUI();
     gui.add(state, 'filename');
-    gui.add(state, 'linkDistance', 50, 500).step(25).onFinishChange(() => { setDirty(); render(); });
-    gui.add(state, 'charge', 0, 2000).step(100).onFinishChange(() => { setDirty(); render(); });
-    gui.add(state, 'nodeFlow', 0, 1).step(0.01).onFinishChange(() => { filterFlow(); setDirty(); render(); }).listen();
-    gui.add(state, 'linkFlow', 0, 1).step(0.01).onFinishChange(() => { filterFlow(); setDirty(); render(); }).listen();
-    gui.add(state, 'path').listen();
-    gui.add(state, 'search').onChange((name) => { search(name); render(); });
+    gui.add(state, 'linkDistance', 50, 500).step(25).onFinishChange(() => { render(); });
+    gui.add(state, 'charge', 0, 2000).step(100).onFinishChange(() => { render(); });
+    gui.add(state, 'nodeFlow', 0, 1).step(0.01).onFinishChange(() => { filterFlow(); render(); }).listen();
+    gui.add(state, 'linkFlow', 0, 1).step(0.01).onFinishChange(() => { filterFlow(); render(); }).listen();
+    gui.add(state, 'search').onChange((name) => { search(name); });
     gui.add(state, 'selected').onFinishChange((name) => {
         if (state.selectedNode) state.selectedNode.name = name;
-        render();
+        updateLayouts();
     }).listen();
     gui.add(state, 'download').onChange(() => {
         const ftree = ftreeFromNetwork(network);

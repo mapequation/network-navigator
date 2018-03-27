@@ -79,9 +79,13 @@ export function createLink(source, target, flow = 1) {
  */
 class Network {
     constructor() {
-        this.nodes = [];
+        this._nodes = new Map();
         this.links = [];
         this.largest = [];
+    }
+
+    get nodes() {
+        return Array.from(this._nodes.values());
     }
 }
 
@@ -94,7 +98,8 @@ export function createNetwork(id) {
     return Object.assign(new Network(), treeNode(id), hasFlow(), hasExitFlow, isRenderable);
 }
 
-export const findById = (xs, id) => xs.find(x => x.id === id);
+export const addNode = (parent, child) => parent._nodes.set(child.id, child);
+export const getNode = (parent, childId) => parent._nodes.get(childId);
 
 /**
  * Factory function for creating node search functions.
@@ -115,7 +120,7 @@ export function makeGetNodeByPath(root) {
         }
 
         return TreePath.toArray(path)
-            .reduce((parent, id) => findById(parent.nodes, id), root);
+            .reduce((parent, id) => getNode(parent, id), root);
     }
 }
 
@@ -162,7 +167,7 @@ export function connectLinks(root) {
     for (let node of traverseDepthFirst(root)) {
         if (node.links) {
             node.links = node.links.map(link =>
-                createLink(findById(node.nodes, link.source), findById(node.nodes, link.target), link.flow));
+                createLink(getNode(node, link.source), getNode(node, link.target), link.flow));
         }
     }
 }
