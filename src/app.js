@@ -52,7 +52,7 @@ function runApplication(network, file) {
     const getNodeByPath = makeGetNodeByPath(network);
 
     const ZOOM_EXTENT_MIN = 0.1;
-    const ZOOM_EXTENT_MAX = 200;
+    const ZOOM_EXTENT_MAX = 100000;
 
     const width = window.innerWidth;
     const height = window.innerHeight;
@@ -94,12 +94,12 @@ function runApplication(network, file) {
     zoomButtons(svg, [width - 50, height - 80])
         .onPlusClick(() =>
             svg.transition()
-                .duration(200)
-                .call(zoom.scaleBy, 1.4))
+                .duration(300)
+                .call(zoom.scaleBy, 1.5))
         .onMinusClick(() =>
             svg.transition()
-                .duration(200)
-                .call(zoom.scaleBy, 0.7));
+                .duration(300)
+                .call(zoom.scaleBy, 0.66));
 
     d3.select('body').on('keydown', () => {
         const translateDuration = 250;
@@ -108,7 +108,7 @@ function runApplication(network, file) {
         case 'Space':
         case ' ':
             svg.transition()
-                .duration(200)
+                .duration(300)
                 .call(zoom.transform, d3.zoomIdentity);
             break;
         case 'ArrowUp':
