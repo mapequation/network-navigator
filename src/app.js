@@ -11,6 +11,7 @@ import { halfLink, undirectedLink } from 'network-rendering';
 import NetworkLayout from 'network-layout';
 import Simulation from 'simulation';
 import makeRenderStyle from 'render-style';
+import zoomButtons from 'zoom-buttons';
 import {
     byFlow,
     sumFlow,
@@ -70,10 +71,10 @@ function runApplication(network, file) {
         .attr('height', height);
 
     const root = svg.append('g')
-        .attr('class', 'network');
+        .attr('id', 'network');
 
     const labels = svg.append('g')
-        .attr('class', 'network labels')
+        .attr('id', 'labelsContainer');
 
     let translateAmount = 100;
 
@@ -89,6 +90,16 @@ function runApplication(network, file) {
 
     svg.call(zoom)
         .on('dblclick.zoom', null);
+
+    zoomButtons(svg, [width - 50, height - 80])
+        .onPlusClick(() =>
+            svg.transition()
+                .duration(200)
+                .call(zoom.scaleBy, 1.4))
+        .onMinusClick(() =>
+            svg.transition()
+                .duration(200)
+                .call(zoom.scaleBy, 0.7));
 
     d3.select('body').on('keydown', () => {
         const translateDuration = 250;
@@ -163,7 +174,10 @@ function runApplication(network, file) {
     const rootLayout = NetworkLayout({
         linkRenderer,
         style: renderStyle,
-        renderTarget: { parent: root, labels },
+        renderTarget: {
+            parent: root.append('g').attr('class', 'network'),
+            labels: labels.append('g').attr('class', 'network labels'),
+        },
         localTransform: null,
         simulation: Simulation(screenCenter, state)
     });

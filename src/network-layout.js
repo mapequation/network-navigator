@@ -168,8 +168,8 @@ export default function NetworkLayout({
         const { circle, label, link } = elements;
         const { translate = [0, 0], scale = 1, parentScale = 1, parentTranslate = [0, 0] } = localTransform || {};
 
-        x += parentScale * translate[0] * k + parentTranslate[0] * k;
-        y += parentScale * translate[1] * k + parentTranslate[1] * k;
+        x += k * (parentScale * translate[0] + parentTranslate[0]);
+        y += k * (parentScale * translate[1] + parentTranslate[1]);
         k *= scale;
 
         label.accessors.x = n => x + k * n.x;
@@ -220,7 +220,7 @@ export default function NetworkLayout({
                     const childTranslate = [n.x * (1 - childScale), n.y * (1 - childScale)];
                     const parentElement = elements.parent.append('g')
                         .attr('transform', `translate(${childTranslate}), scale(${childScale})`);
-                    const labelsElement = d3.select('svg').append('g')
+                    const labelsElement = d3.select('#labelsContainer').append('g')
                         .attr('class', 'network labels');
 
                     const childTransform = {
