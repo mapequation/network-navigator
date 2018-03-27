@@ -109,7 +109,6 @@ export default function NetworkLayout({
         elements.circle.accessors = {
             r: style.nodeRadius,
             fill: style.nodeFillColor,
-            stroke: style.nodeBorderColor,
         };
 
         elements.searchMark = elements.node.append('circle')
@@ -146,7 +145,6 @@ export default function NetworkLayout({
 
         circle
             .style('fill', circle.accessors.fill)
-            .style('stroke', circle.accessors.stroke)
             .attr('r', circle.accessors.r)
             .attr('cx', n => n.x)
             .attr('cy', n => n.y);
@@ -211,6 +209,7 @@ export default function NetworkLayout({
 
         if (k > 2) {
             elements.node.on('.drag', null);
+            dispatch.on('mouseover', null);
             simulation.stop();
 
             nodes.filter(n => n.nodes && !n.visible)
@@ -241,6 +240,7 @@ export default function NetworkLayout({
                 });
         } else {
             elements.node.call(onDrag);
+            dispatch.on('mouseover', highlightNode);
             simulation.restart();
 
             nodes.filter(n => n.visible)
