@@ -182,7 +182,8 @@ export default function NetworkLayout({
             return n.visible && n.nodes ? '' : nodeName(node);
         };
         link.accessors.path = l =>
-            (k < 12 && link.accessors.lod(k)(l)) || !l.source.nodes ? linkRenderer(l) : null;
+            (k < 12 || !l.source.nodes) && link.accessors.lod(k)(l)
+            ? linkRenderer(l) : null;
 
         if (k > 1.5) {
             const zoomNormalized = d3.scaleLinear().domain([1.5, 6.5]).range([0, 1]).clamp(true);
