@@ -2,7 +2,6 @@ import * as d3 from 'd3';
 import * as _ from 'lodash';
 import { clickHandler, doubleClickHandler } from 'click-handler';
 import makeDragHandler from 'drag-handler';
-import { makeLinkLod, makeNodeLod } from 'render-style';
 import { highlightNode, restoreNode } from 'highlight-node';
 import { traverseDepthFirst } from 'network';
 
@@ -27,6 +26,17 @@ function isRenderTarget({ x, y, k }, nodeRadius) {
     const scaled = screenScale({ x, y, k });
     return node => radiusLargeEnough(nodeRadius(node) * k) && insideScreenBounds(scaled(node));
 }
+
+function makeLinkLod(links) {
+    const len = links.length || 1;
+    const visible = d3.scaleLinear().domain([0.3, 2]).range([1 / len, 1]).clamp(true);
+    return k => l => 1 - l.index / len <= visible(k);
+};
+
+function makeNodeLod(nodes) {
+    const visible = d3.scaleLinear().domain([0.5, 0.8]).range([1, nodes.length]).clamp(true);
+    return k => n => n.id <= visible(k);
+};
 
 export default function NetworkLayout({
         linkRenderer,
