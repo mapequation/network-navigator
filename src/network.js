@@ -1,8 +1,8 @@
 import TreePath from 'treepath';
 
-/************************************************
- * Common properties for Network, Node and Link *
- ************************************************/
+/******************************************
+ * Common properties for Network and Node *
+ ******************************************/
 const hasFlow = (flow = 0) => ({
     flow,
 });
@@ -50,25 +50,15 @@ export function createNode(id, name, flow, physicalId) {
 /**
  * A link in a network
  *
- * Internal use only, @see createLink
+ * Internal use only.
  */
 class Link {
-    constructor(source, target) {
+    constructor(source, target, flow) {
         this.source = source;
         this.target = target;
+        this.flow = flow;
+        this.shouldRender = true;
     }
-}
-
-/**
- * Create a Link
- *
- * @param {Node} source the source
- * @param {Node} target the target
- * @param {number} [flow=1] the flow
- * @return {Link} the link
- */
-export function createLink(source, target, flow = 1) {
-    return Object.assign(new Link(source, target), hasFlow(flow), isRenderable);
 }
 
 /**
@@ -85,7 +75,10 @@ class Network {
     }
 
     get nodes() {
-        return Array.from(this._nodes.values());
+        if (!this._nodesArray) {
+            this._nodesArray = Array.from(this._nodes.values());
+        }
+        return this._nodesArray;
     }
 }
 
@@ -167,7 +160,7 @@ export function connectLinks(root) {
     for (let node of traverseDepthFirst(root)) {
         if (node.links) {
             node.links = node.links.map(link =>
-                createLink(getNode(node, link.source), getNode(node, link.target), link.flow));
+                new Link(getNode(node, link.source), getNode(node, link.target), link.flow));
         }
     }
 }
