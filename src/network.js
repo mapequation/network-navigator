@@ -13,7 +13,6 @@ const hasExitFlow = {
 
 const isRenderable = {
     shouldRender: true,
-    visible: false,
 };
 
 const treeNode = (id) => ({
@@ -82,6 +81,7 @@ class Network {
         this._nodes = new Map();
         this.links = [];
         this.largest = [];
+        this.visible = false;
     }
 
     get nodes() {

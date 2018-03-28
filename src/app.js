@@ -27,8 +27,8 @@ function runApplication(network, file) {
         nodeFlow: 1,
         linkFlow: 0.8,
         path: 'root',
-        linkDistance: 300,
-        charge: 500,
+        linkDistance: 200,
+        charge: 300,
         search: '',
         selectedNode: null,
         selected: '',
@@ -181,7 +181,7 @@ function runApplication(network, file) {
     layouts.set(state.path, rootLayout);
     const updateLayouts = () => layouts.forEach(l => l.update());
 
-    dispatch.on('zoom', transform => layouts.forEach(s => s.applyTransform(transform)));
+    dispatch.on('zoom', transform => layouts.forEach(l => l.applyTransform(transform)));
 
     const render = () => {
         const branch = getNodeByPath(state.path);
@@ -239,8 +239,6 @@ function runApplication(network, file) {
 
     const gui = new dat.GUI();
     gui.add(state, 'filename');
-    gui.add(state, 'linkDistance', 50, 500).step(25).onFinishChange(() => { render(); });
-    gui.add(state, 'charge', 0, 2000).step(100).onFinishChange(() => { render(); });
     gui.add(state, 'nodeFlow', 0, 1).step(0.01).onFinishChange(() => { filterFlow(); render(); }).listen();
     gui.add(state, 'linkFlow', 0, 1).step(0.01).onFinishChange(() => { filterFlow(); render(); }).listen();
     gui.add(state, 'search').onChange((name) => { search(name); });

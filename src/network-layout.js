@@ -31,12 +31,12 @@ function makeLinkLod(links) {
     const len = links.length || 1;
     const visible = d3.scaleLinear().domain([0.3, 2]).range([1 / len, 1]).clamp(true);
     return k => l => 1 - l.index / len <= visible(k);
-};
+}
 
 function makeNodeLod(nodes) {
     const visible = d3.scaleLinear().domain([0.5, 0.8]).range([1, nodes.length]).clamp(true);
     return k => n => n.id <= visible(k);
-};
+}
 
 export default function NetworkLayout({
         linkRenderer,
@@ -91,7 +91,7 @@ export default function NetworkLayout({
             .style('fill', style.linkFillColor);
 
         elements.link.accessors = {
-            path: linkRenderer,
+            path: l => makeLinkLod(links)(1)(l) ? linkRenderer(l) : null,
             lod: makeLinkLod(links),
         };
 
@@ -182,15 +182,12 @@ export default function NetworkLayout({
         label.accessors.y = n => y + k * n.y;
         label.accessors.dx = (n) => {
             const r = 1.1 * style.nodeRadius(n);
-            const dx = k * r + (k > 1 ? 2 * (1 - k) * r : 0);
+            const dx = k * r + (k > 1 ? 1.8 * (1 - k) * r : 0);
             return Math.max(dx, 0);
         };
         label.accessors.visibility = n =>
             label.accessors.lod(k)(n) ? 'visible' : 'hidden'
-        label.accessors.text = (n) => {
-            const node = k < 0.15 && n.id === 1 && n.parent ? n.parent : n;
-            return n.visible && n.nodes ? '' : nodeName(node);
-        };
+        label.accessors.text = (n) => n.visible && n.nodes ? '' : nodeName(n);
         link.accessors.path = l =>
             (k < 12 || !l.source.nodes) && link.accessors.lod(k)(l)
             ? linkRenderer(l) : null;
@@ -200,18 +197,19 @@ export default function NetworkLayout({
             const c = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
             const scaled = screenScale({ x, y, k });
             const distanceFromCenter = n => distance(scaled(n), c);
-            const distanceNormalized = d3.scaleLinear().domain([600, 0]).range([0, 1]).clamp(true);
+            const distanceNormalized = d3.scalePow().exponent(2).domain([800, 0]).range([0, 1]).clamp(true);
 
             circle.accessors.fill = (n) => {
                 if (!n.nodes) return style.nodeFillColor(n);
                 const d = n => (k < 5 ? distanceNormalized(distanceFromCenter(n)) : 1);
-                return d3.interpolateRgb(style.nodeFillColor(n), '#ffffff')
-                    (zoomNormalized(k) * d(n));
+                const fill = d3.interpolateRgb(style.nodeFillColor(n), '#ffffff');
+                return fill(zoomNormalized(k) * d(n));
             };
             circle.accessors.r = (n) => {
                 if (!n.nodes) return style.nodeRadius(n);
-                return d3.interpolateNumber(style.nodeRadius(n), 150)
-                    (zoomNormalized(k) * distanceNormalized(distanceFromCenter(n)));
+                const d = n => distanceNormalized(distanceFromCenter(n));
+                const r = d3.interpolateNumber(style.nodeRadius(n), 70);
+                return r(zoomNormalized(k) * d(n));
             };
         }
 

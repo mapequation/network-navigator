@@ -9,7 +9,7 @@ import {
 
 export default function Simulation({ x, y }, { charge, linkDistance }) {
     const simulation = forceSimulation()
-        .force('collide', forceCollide(20))
+        .force('collide', forceCollide(70))
         .force('link', forceLink()
             .distance(linkDistance))
         .force('charge', forceManyBody()
