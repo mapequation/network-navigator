@@ -28,9 +28,11 @@ function isRenderTarget({ x, y, k }, nodeRadius) {
 }
 
 function makeLinkLod(links) {
+    const n_always_show = 5;
     const len = links.length || 1;
+    if (len < n_always_show) return k => l => true;
     const visible = d3.scaleLinear().domain([0.3, 2]).range([1 / len, 1]).clamp(true);
-    return k => l => 1 - l.index / len <= visible(k);
+    return k => l => 1 - l.index / len - n_always_show / len <= visible(k);
 }
 
 function makeNodeLod(nodes) {
