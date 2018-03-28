@@ -206,7 +206,6 @@ export default function NetworkLayout({
 
         if (k > 2) {
             elements.node.on('.drag', null);
-            dispatch.on('mouseover', null);
             simulation.stop();
             stopped = true;
 
@@ -240,7 +239,6 @@ export default function NetworkLayout({
                 });
         } else if (stopped) {
             elements.node.call(onDrag);
-            dispatch.on('mouseover', highlightNode);
             simulation.restart();
             stopped = false;
 

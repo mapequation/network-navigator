@@ -1,6 +1,8 @@
 import { select, selectAll } from 'd3-selection';
 
 export function highlightNode(node) {
+    if (node.visible) return;
+
     select(this).select('circle')
         .style('stroke', '#F48074');
     const links = select(this.parentElement.parentElement).select('.links')
