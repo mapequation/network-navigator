@@ -13,7 +13,7 @@ export default function makeDragHandler(simulation) {
     };
 
     const onDragEnd = (node) => {
-        if (event.active) simulation.alphaTarget(0);
+        simulation.alphaTarget(0);
         node.fx = null;
         node.fy = null;
     };
