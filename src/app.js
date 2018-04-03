@@ -7,7 +7,7 @@ import parseFile from 'parse-file';
 import parseFTree from 'file-formats/ftree';
 import networkFromFTree from 'file-formats/network-from-ftree';
 import ftreeFromNetwork from 'file-formats/ftree-from-network';
-import { traverseDepthFirst, makeGetNodeByPath } from 'network';
+import { traverseDepthFirst, makeGetNodeByPath, searchName } from 'network';
 import { halfLink, undirectedLink } from 'network-rendering';
 import NetworkLayout from 'network-layout';
 import Simulation from 'simulation';
@@ -219,29 +219,14 @@ function runApplication(network, file) {
         layout.init(branch);
     };
 
-    const search = (name) => {
-        try {
-            const re = new RegExp(name, 'i');
-
-            for (let node of traverseDepthFirst(network)) {
-                if (!node.nodes) {
-                    node.marked = name.length
-                        ? re.test(node.name)
-                        : false;
-                }
-            }
-
-            updateLayouts();
-        } catch (e) {
-            // No-op
-        }
-    };
-
     const gui = new dat.GUI();
     gui.add(state, 'filename');
     gui.add(state, 'nodeFlow', 0, 1).step(0.01).onFinishChange(() => { filterFlow(); render(); }).listen();
     gui.add(state, 'linkFlow', 0, 1).step(0.01).onFinishChange(() => { filterFlow(); render(); }).listen();
-    gui.add(state, 'search').onChange((name) => { search(name); });
+    gui.add(state, 'search').onChange((name) => {
+        searchName(network, name);
+        updateLayouts();
+    });
     gui.add(state, 'selected').onFinishChange((name) => {
         if (state.selectedNode) state.selectedNode.name = name;
         updateLayouts();

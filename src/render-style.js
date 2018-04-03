@@ -40,6 +40,6 @@ export default function makeRenderStyle(maxNodeFlow, maxLinkFlow) {
         nodeBorderWidth: node => nodeBorderWidth(node.exitFlow),
         linkFillColor: link => linkFillColor(link.flow),
         linkWidth: link => linkWidth(link.flow),
-        searchMarkRadius,
+        searchMarkRadius: node => node.visible ? 0 : searchMarkRadius(node.searchHits || 0),
     };
 }

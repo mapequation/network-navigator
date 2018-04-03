@@ -30,7 +30,6 @@ class Node {
     constructor(name, physicalId) {
         this.name = name;
         this.physicalId = physicalId;
-        this.marked = false;
     }
 }
 
@@ -162,5 +161,40 @@ export function connectLinks(root) {
             node.links = node.links.map(link =>
                 new Link(getNode(node, link.source), getNode(node, link.target), link.flow));
         }
+    }
+}
+
+/**
+ * Search Network name fields for string matching `name`.
+ *
+ * @param {Network} root the root of the network
+ * @param {string} name the name to search for
+ */
+export function searchName(root, name) {
+    const entireNetwork = Array.from(traverseDepthFirst(root));
+
+    entireNetwork.forEach(node => node.searchHits = 0);
+
+    if (!name.length) return;
+
+    try {
+        const re = new RegExp(name, 'i');
+
+        entireNetwork
+            .filter(node => !node.nodes)
+            .forEach((node) => {
+                node.searchHits = +re.test(node.name);
+
+                if (node.searchHits > 0) {
+                    let parent = node.parent;
+                    while (parent) {
+                        parent.searchHits += node.searchHits;
+                        parent = parent.parent;
+                    }
+                }
+            });
+
+    } catch (e) {
+        // Do nothing
     }
 }

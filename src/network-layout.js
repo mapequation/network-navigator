@@ -9,9 +9,6 @@ const { innerWidth, innerHeight } = window;
 
 const ellipsis = (text, len = 25) => (text.length > len ? `${text.substr(0, len - 3)}...` : text);
 const nodeName = node => startCase(lowerCase(ellipsis(node.name || node.largest.map(childNode => childNode.name).join(', '))));
-const numberOfHits = n => !n.visible
-    ? +n.marked || Array.from(traverseDepthFirst(n)).filter(child => child.marked).length
-    : 0;
 
 const screenScale = ({ x, y, k }) => point => ({ x: point.x * k + x, y: point.y * k + y });
 
@@ -122,7 +119,7 @@ export default function NetworkLayout({
         };
 
         elements.searchMark = elements.node.append('circle')
-            .attr('r', n => style.searchMarkRadius(numberOfHits(n)))
+            .attr('r', style.searchMarkRadius)
             .style('fill', '#F48074');
 
         elements.label = labels.selectAll('.label')
@@ -159,7 +156,7 @@ export default function NetworkLayout({
             .attr('cx', n => n.x)
             .attr('cy', n => n.y);
         searchMark
-            .attr('r', n => style.searchMarkRadius(numberOfHits(n)))
+            .attr('r', style.searchMarkRadius)
             .attr('cx', n => n.x)
             .attr('cy', n => n.y);
         label
