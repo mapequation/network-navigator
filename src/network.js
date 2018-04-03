@@ -1,4 +1,4 @@
-import TreePath from 'treepath';
+import TreePath from './treepath';
 
 /******************************************
  * Common properties for Network and Node *

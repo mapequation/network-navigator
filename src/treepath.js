@@ -16,7 +16,7 @@ export default class TreePath {
     /**
      * Construct a new TreePath
      *
-     * @param {number[]} path
+     * @param {string[]|number[]} path
      */
     static fromArray(path) {
         return new TreePath(path.join(':'));

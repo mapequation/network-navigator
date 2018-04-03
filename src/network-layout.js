@@ -1,9 +1,9 @@
 import * as d3 from 'd3';
 import { startCase, lowerCase } from 'lodash';
-import { clickHandler, doubleClickHandler } from 'click-handler';
-import makeDragHandler from 'drag-handler';
-import { highlightNode, restoreNode } from 'highlight-node';
-import Point from 'point';
+import { clickHandler, doubleClickHandler } from './click-handler';
+import makeDragHandler from './drag-handler';
+import { highlightNode, restoreNode } from './highlight-node';
+import Point from './point';
 
 const { innerWidth, innerHeight } = window;
 

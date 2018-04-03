@@ -3,24 +3,23 @@ import { maxBy, flatMap } from 'lodash';
 import dat from 'dat.gui';
 import Dropzone from 'dropzone';
 import FileSaver from 'file-saver';
-import parseFile from 'parse-file';
-import parseFTree from 'file-formats/ftree';
-import networkFromFTree from 'file-formats/network-from-ftree';
-import ftreeFromNetwork from 'file-formats/ftree-from-network';
-import { traverseDepthFirst, makeGetNodeByPath, searchName } from 'network';
 import { halfLink, undirectedLink } from 'network-rendering';
-import NetworkLayout from 'network-layout';
-import Simulation from 'simulation';
-import makeRenderStyle from 'render-style';
-import zoomButtons from 'zoom-buttons';
-import Point from 'point';
+import parseFile from './parse-file';
+import parseFTree from './file-formats/ftree';
+import networkFromFTree from './file-formats/network-from-ftree';
+import ftreeFromNetwork from './file-formats/ftree-from-network';
+import { traverseDepthFirst, makeGetNodeByPath, searchName } from './network';
+import NetworkLayout from './network-layout';
+import Simulation from './simulation';
+import makeRenderStyle from './render-style';
+import zoomButtons from './zoom-buttons';
+import Point from './point';
 import {
-    byFlow,
     sumFlow,
     takeLargest,
     accumulateLargest,
     connectedLinks,
-} from 'filter';
+} from './filter';
 
 function runApplication(network, file) {
     const state = {

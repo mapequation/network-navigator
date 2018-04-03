@@ -6,16 +6,24 @@
  * @author Christopher Blöcker
  */
 
-import { Network, Node } from 'network';
+import * as Network from '../network';
+import TreePath from '../treepath';
 
-export default function networkFromPajek({ nodes, links }) {
-    const root = new Network();
+export default function networkFromPajek(pajek) {
+    const root = Network.createNetwork('root');
+    root.directed = pajek.meta.linkType === 'directed';
+    const { nodes, links } = pajek.data;
 
-    nodes.forEach(node => root.addNode(new Node(node.id, node.label, node.flow)));
+    nodes.forEach((node) => {
+        const childNode = Network.createNode(node.id, node.label, node.flow, node.id);
+        childNode.parent = root;
+        childNode.path = new TreePath(node.id);
+        Network.addNode(root, childNode);
+    });
 
     root.links = links;
 
-    root.connect();
+    Network.connectLinks(root);
 
     return root;
 }

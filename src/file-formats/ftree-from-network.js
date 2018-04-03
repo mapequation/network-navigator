@@ -12,7 +12,7 @@
  * @author Anton Eriksson
  */
 
-import { traverseBreadthFirst, traverseDepthFirst } from 'network';
+import { traverseBreadthFirst, traverseDepthFirst } from '../network';
 import { byFlow } from '../filter';
 
 export function flowFormat(flow) {

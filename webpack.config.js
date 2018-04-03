@@ -15,11 +15,7 @@ module.exports = {
     resolve: {
         alias: {
             d3: 'd3/dist/d3.js',
-        },
-        modules: [
-            path.resolve('./src'),
-            path.resolve('./node_modules'),
-        ],
+        }
     },
     module: {
         rules: [

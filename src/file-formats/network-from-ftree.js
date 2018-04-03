@@ -9,8 +9,8 @@
  */
 
 import * as Network from '../network';
-import TreePath from 'treepath';
-import { byFlow } from 'filter';
+import TreePath from '../treepath';
+import { byFlow } from '../filter';
 
 
 /**
