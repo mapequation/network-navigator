@@ -101,7 +101,7 @@ function runApplication(network, file) {
                 .duration(300)
                 .call(zoom.scaleBy, 0.5));
 
-    d3.select('body').on('keydown', () => {
+    const onKeydown = () => {
         const translateDuration = 250;
         const key = d3.event.key || d3.event.keyCode;
         switch (key) {
@@ -134,7 +134,9 @@ function runApplication(network, file) {
         default:
             break;
         }
-    });
+    };
+
+    d3.select('body').on('keydown', onKeydown);
 
     const cullLargest = () => {
         let { nodes, links } = getNodeByPath(state.path);
@@ -179,7 +181,6 @@ function runApplication(network, file) {
 
     const layouts = new Map();
     layouts.set(state.path, rootLayout);
-    const updateLayouts = () => layouts.forEach(l => l.update());
 
     dispatch.on('zoom', transform => layouts.forEach(l => l.applyTransform(transform)));
 
@@ -223,14 +224,20 @@ function runApplication(network, file) {
     gui.add(state, 'filename');
     gui.add(state, 'nodeFlow', 0, 1).step(0.01).onFinishChange(() => { filterFlow(); render(); }).listen();
     gui.add(state, 'linkFlow', 0, 1).step(0.01).onFinishChange(() => { filterFlow(); render(); }).listen();
-    gui.add(state, 'search').onChange((name) => {
-        searchName(network, name);
-        updateLayouts();
-    });
-    gui.add(state, 'selected').onFinishChange((name) => {
-        if (state.selectedNode) state.selectedNode.name = name;
-        updateLayouts();
-    }).listen();
+    gui.add(state, 'search')
+        .onChange((name) => {
+            d3.select('body').on('keydown', null);
+            searchName(network, name);
+            layouts.forEach(l => l.update());
+        })
+        .onFinishChange(() => d3.select('body').on('keydown', onKeydown));
+    gui.add(state, 'selected')
+        .onChange(() => d3.select('body').on('keydown', null))
+        .onFinishChange((name) => {
+            if (state.selectedNode) state.selectedNode.name = name;
+            layouts.forEach(l => l.update());
+            d3.select('body').on('keydown', onKeydown);
+        }).listen();
     gui.add(state, 'download').onChange(() => {
         const ftree = ftreeFromNetwork(network);
         const blob = new Blob([ftree], { type: 'text/plain;charset=utf-8;' });
