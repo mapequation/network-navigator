@@ -1,5 +1,5 @@
 import * as d3 from 'd3';
-import * as _ from 'lodash';
+import { startCase, lowerCase } from 'lodash';
 import { clickHandler, doubleClickHandler } from 'click-handler';
 import makeDragHandler from 'drag-handler';
 import { highlightNode, restoreNode } from 'highlight-node';
@@ -8,7 +8,7 @@ import { traverseDepthFirst } from 'network';
 const { innerWidth, innerHeight } = window;
 
 const ellipsis = (text, len = 25) => (text.length > len ? `${text.substr(0, len - 3)}...` : text);
-const nodeName = node => _.startCase(_.lowerCase(ellipsis(node.name || node.largest.map(childNode => childNode.name).join(', '))));
+const nodeName = node => startCase(lowerCase(ellipsis(node.name || node.largest.map(childNode => childNode.name).join(', '))));
 const numberOfHits = n => !n.visible
     ? +n.marked || Array.from(traverseDepthFirst(n)).filter(child => child.marked).length
     : 0;
@@ -189,7 +189,7 @@ export default function NetworkLayout({
         };
         label.accessors.visibility = n =>
             label.accessors.lod(k)(n) ? 'visible' : 'hidden'
-        label.accessors.text = (n) => n.visible && n.nodes ? '' : nodeName(n);
+        label.accessors.text = n => n.visible ? '' : nodeName(n);
         link.accessors.path = l =>
             (k < 12 || !l.source.nodes) && link.accessors.lod(k)(l)
             ? linkRenderer(l) : null;

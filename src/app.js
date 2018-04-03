@@ -1,5 +1,5 @@
 import * as d3 from 'd3';
-import * as _ from 'lodash';
+import { maxBy, flatMap } from 'lodash';
 import dat from 'dat.gui';
 import Dropzone from 'dropzone';
 import FileSaver from 'file-saver';
@@ -35,15 +35,15 @@ function runApplication(network, file) {
         download: false,
     };
 
-    const maxNodeFlow = Array.from(traverseDepthFirst(network))
-        .map(node => node.flow)
-        .reduce((max, curr) => Math.max(max, curr), -Infinity);
+    const { maxNodeFlow, maxLinkFlow } = (() => {
+        const entireNetwork = Array.from(traverseDepthFirst(network));
 
-    const maxLinkFlow = _.maxBy(
-        _.flatMap(
-            Array.from(traverseDepthFirst(network)),
-            node => node.links || []
-        ), link => link.flow).flow
+        return {
+            maxNodeFlow: maxBy(entireNetwork, node => node.flow).flow,
+            maxLinkFlow: maxBy(flatMap(entireNetwork, node => node.links || []),
+                link => link.flow).flow,
+        };
+    })();
 
     const renderStyle = makeRenderStyle(maxNodeFlow, maxLinkFlow);
     const linkRenderer = (network.directed ? halfLink : undirectedLink)()
