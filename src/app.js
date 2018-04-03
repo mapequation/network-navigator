@@ -32,7 +32,8 @@ function runApplication(network, file) {
         search: '',
         selectedNode: null,
         selected: '',
-        download: false,
+        downloadData: false,
+        downloadSvg: false,
     };
 
     const { maxNodeFlow, maxLinkFlow } = (() => {
@@ -64,7 +65,8 @@ function runApplication(network, file) {
     svg.append('rect')
         .attr('class', 'background')
         .attr('width', width)
-        .attr('height', height);
+        .attr('height', height)
+        .attr('fill', '#fff');
 
     const root = svg.append('g')
         .attr('id', 'network');
@@ -232,11 +234,20 @@ function runApplication(network, file) {
             layouts.forEach(l => l.update());
             d3.select('body').on('keydown', onKeydown);
         }).listen();
-    gui.add(state, 'download').onChange(() => {
+    gui.add(state, 'downloadData').onChange(() => {
         const ftree = ftreeFromNetwork(network);
         const blob = new Blob([ftree], { type: 'text/plain;charset=utf-8;' });
         FileSaver.saveAs(blob, state.filename);
-        setTimeout(() => { state.download = false; }, 100);
+        setTimeout(() => { state.downloadData = false; }, 100);
+    }).listen();
+    gui.add(state, 'downloadSvg').onChange(() => {
+        const svgContent = d3.select('svg')
+            .attr('version', '1.1')
+            .attr('xmlns', 'http://www.w3.org/2000/svg')
+            .node().outerHTML;
+        const blob = new Blob([svgContent], { type: 'image/svg+xml' });
+        FileSaver.saveAs(blob, `${state.filename}.svg`);
+        setTimeout(() => { state.downloadSvg = false; }, 100);
     }).listen();
 
     cullLargest();
