@@ -3,16 +3,14 @@ import { startCase, lowerCase } from 'lodash';
 import { clickHandler, doubleClickHandler } from 'click-handler';
 import makeDragHandler from 'drag-handler';
 import { highlightNode, restoreNode } from 'highlight-node';
-import { traverseDepthFirst } from 'network';
+import Point from 'point';
 
 const { innerWidth, innerHeight } = window;
 
 const ellipsis = (text, len = 25) => (text.length > len ? `${text.substr(0, len - 3)}...` : text);
 const nodeName = node => startCase(lowerCase(ellipsis(node.name || node.largest.map(childNode => childNode.name).join(', '))));
 
-const screenScale = ({ x, y, k }) => point => ({ x: point.x * k + x, y: point.y * k + y });
-
-const distance = (p1, p2) => Math.sqrt((p1.x - p2.x)**2 + (p1.y - p2.y)**2)
+const screenScale = ({ x, y, k }) => point => new Point(point.x * k + x, point.y * k + y)
 
 const insideScreenBounds = point =>
     0 < point.x && point.x < innerWidth && 0 < point.y && point.y < innerHeight
@@ -29,12 +27,12 @@ function makeLinkLod(links) {
     const len = links.length || 1;
     if (len < n_always_show) return k => l => true;
     const visible = d3.scaleLinear().domain([0.3, 2]).range([1 / len, 1]).clamp(true);
-    return k => l => 1 - l.index / len - n_always_show / len <= visible(k);
+    return (k = 1) => l => 1 - l.index / len - n_always_show / len <= visible(k);
 }
 
 function makeNodeLod(nodes) {
     const visible = d3.scaleLinear().domain([0.5, 0.8]).range([1, nodes.length]).clamp(true);
-    return k => n => n.id <= visible(k);
+    return (k = 1) => n => n.id <= visible(k);
 }
 
 export default function NetworkLayout({
@@ -45,7 +43,7 @@ export default function NetworkLayout({
         simulation
     }) {
 
-    const dispatch = d3.dispatch('click', 'dblclick', 'mouseover', 'mouseout', 'render', 'destroy');
+    const dispatch = d3.dispatch('click', 'dblclick', 'render', 'destroy');
 
     const elements = {
         parent: renderTarget.parent,
@@ -69,9 +67,6 @@ export default function NetworkLayout({
 
         simulation.init({ nodes, links });
         simulation.on('tick', update);
-
-        dispatch.on('mouseover', highlightNode);
-        dispatch.on('mouseout', restoreNode(style));
     }
 
     function createElements() {
@@ -90,7 +85,7 @@ export default function NetworkLayout({
             .style('fill', style.linkFillColor);
 
         elements.link.accessors = {
-            path: l => makeLinkLod(links)(1)(l) ? linkRenderer(l) : null,
+            path: l => makeLinkLod(links)()(l) ? linkRenderer(l) : null,
             lod: makeLinkLod(links),
         };
 
@@ -103,8 +98,8 @@ export default function NetworkLayout({
             .attr('id', n => n.path.toId())
             .on('click', clickHandler(function (n) { dispatch.call('click', this, n) }))
             .on('dblclick', doubleClickHandler(function (n) { dispatch.call('dblclick', this, n) }))
-            .on('mouseover', function (n) { dispatch.call('mouseover', this, n) })
-            .on('mouseout', function (n) { dispatch.call('mouseout', this, n) })
+            .on('mouseover', highlightNode)
+            .on('mouseout', restoreNode(style))
             .call(onDrag);
 
         elements.circle = elements.node.append('circle')
@@ -171,10 +166,10 @@ export default function NetworkLayout({
 
     function applyTransform({ x, y, k }) {
         const { circle, label, link } = elements;
-        const { translate = [0, 0], scale = 1, parentScale = 1, parentTranslate = [0, 0] } = localTransform || {};
+        const { translate = Point.origin, scale = 1, parentTranslate = Point.origin, parentScale = 1 } = localTransform || {};
 
-        x += k * (parentScale * translate[0] + parentTranslate[0]);
-        y += k * (parentScale * translate[1] + parentTranslate[1]);
+        x += k * (parentScale * translate.x + parentTranslate.x);
+        y += k * (parentScale * translate.y + parentTranslate.y);
         k *= scale;
 
         label.accessors.x = n => x + k * n.x;
@@ -193,9 +188,9 @@ export default function NetworkLayout({
 
         if (k > 1.5) {
             const zoomNormalized = d3.scaleLinear().domain([1.5, 6.5]).range([0, 1]).clamp(true);
-            const c = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+            const center = new Point(window.innerWidth / 2, window.innerHeight / 2);
             const scaled = screenScale({ x, y, k });
-            const distanceFromCenter = n => distance(scaled(n), c);
+            const distanceFromCenter = n => Point.distance(scaled(n), center);
             const distanceNormalized = d3.scalePow().exponent(2).domain([800, 0]).range([0, 1]).clamp(true);
 
             circle.accessors.fill = (n) => {
@@ -223,14 +218,14 @@ export default function NetworkLayout({
                 .filter(renderTarget)
                 .forEach((n) => {
                     const childScale = 0.15;
-                    const childTranslate = [n.x * (1 - childScale), n.y * (1 - childScale)];
+                    const childTranslate = Point.from(n).mul(1 - childScale);
                     const parentElement = elements.parent.append('g')
-                        .attr('transform', `translate(${childTranslate}), scale(${childScale})`);
+                        .attr('transform', `translate(${childTranslate.toArray()}), scale(${childScale})`);
                     const labelsElement = d3.select('#labelsContainer').append('g')
                         .attr('class', 'network labels');
 
                     const childTransform = {
-                        parentTranslate: [translate[0] + parentTranslate[0], translate[1] + parentTranslate[1]],
+                        parentTranslate: Point.add(translate, parentTranslate),
                         translate: childTranslate,
                         parentScale: scale * parentScale,
                         scale: childScale * scale,
@@ -253,8 +248,6 @@ export default function NetworkLayout({
             nodes.filter(n => n.visible)
                 .forEach(n => dispatch.call('destroy', null, n.path));
         }
-
-        update();
     }
 
     function destroy() {

@@ -13,6 +13,7 @@ import NetworkLayout from 'network-layout';
 import Simulation from 'simulation';
 import makeRenderStyle from 'render-style';
 import zoomButtons from 'zoom-buttons';
+import Point from 'point';
 import {
     byFlow,
     sumFlow,
@@ -56,10 +57,6 @@ function runApplication(network, file) {
 
     const width = window.innerWidth;
     const height = window.innerHeight;
-    const screenCenter = {
-        x: width / 2,
-        y: height / 2,
-    };
 
     const svg = d3.select('svg')
         .attr('width', width)
@@ -78,13 +75,16 @@ function runApplication(network, file) {
 
     let translateAmount = 100;
 
-    const dispatch = d3.dispatch('zoom');
+    const layouts = new Map();
 
     const zoom = d3.zoom()
         .scaleExtent([ZOOM_EXTENT_MIN, ZOOM_EXTENT_MAX])
         .on('zoom', () => {
             translateAmount = 100 / d3.event.transform.k;
-            dispatch.call('zoom', null, d3.event.transform);
+            layouts.forEach(l => {
+                l.applyTransform(d3.event.transform);
+                l.update();
+            });
             root.attr('transform', d3.event.transform);
         });
 
@@ -168,7 +168,7 @@ function runApplication(network, file) {
         links.forEach(link => link.shouldRender = true);
     };
 
-    const rootLayout = NetworkLayout({
+    layouts.set(state.path, NetworkLayout({
         linkRenderer,
         style: renderStyle,
         renderTarget: {
@@ -176,13 +176,8 @@ function runApplication(network, file) {
             labels: labels.append('g').attr('class', 'network labels'),
         },
         localTransform: null,
-        simulation: Simulation(screenCenter, state)
-    });
-
-    const layouts = new Map();
-    layouts.set(state.path, rootLayout);
-
-    dispatch.on('zoom', transform => layouts.forEach(l => l.applyTransform(transform)));
+        simulation: Simulation(new Point(width / 2, height / 2), state)
+    }));
 
     const render = () => {
         const branch = getNodeByPath(state.path);
@@ -202,7 +197,7 @@ function runApplication(network, file) {
                 style: renderStyle,
                 localTransform,
                 renderTarget,
-                simulation: Simulation({ x: network.x, y: network.y }, state),
+                simulation: Simulation(Point.from(network), state),
             }));
 
             cullLargest();
