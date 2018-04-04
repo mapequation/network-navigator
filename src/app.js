@@ -262,9 +262,9 @@ function acceptFile(file) {
         .attr('id', 'loading')
         .attr('transform', `translate(${window.innerWidth / 2}, ${window.innerHeight / 2}) rotate(-45)`)
         .append('path')
-        .attr('class', 'move')
-        .attr('d', 'M0,-25A25,25 0 0,1 25,0L20,0A20,20 0 0,0 0,-20Z')
-        .style('fill', '#555555');
+        .attr('d', 'M0-25A25 25 0 0 1 25 0h-5A20 20 0 0 0 0-20z')
+        .style('animation', 'spinning 1.5s ease-in-out infinite')
+        .style('fill', '#555');
 
     parseFile(file)
         .then((parsed) => {

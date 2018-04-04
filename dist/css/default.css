@@ -1,17 +1,10 @@
 body {
-    font: 10px sans-serif;
-}
-
-.background {
-    fill: none;
+    font: 10px Lato, "Lucida Sans Unicode", "Lucida Grande", Garuda, sans-serif;
+    color: #666;
 }
 
 svg text {
     pointer-events: none;
-}
-
-.move {
-    animation: spinning 1.5s ease-in-out infinite;
 }
 
 @keyframes spinning {
