@@ -60,7 +60,8 @@ function runApplication(network, file) {
 
     const svg = d3.select('svg')
         .attr('width', width)
-        .attr('height', height);
+        .attr('height', height)
+        .attr('xmlns', 'http://www.w3.org/2000/svg');
 
     svg.append('rect')
         .attr('class', 'background')
@@ -242,8 +243,6 @@ function runApplication(network, file) {
     }).listen();
     gui.add(state, 'downloadSvg').onChange(() => {
         const svgContent = d3.select('svg')
-            .attr('version', '1.1')
-            .attr('xmlns', 'http://www.w3.org/2000/svg')
             .node().outerHTML;
         const blob = new Blob([svgContent], { type: 'image/svg+xml' });
         FileSaver.saveAs(blob, `${state.filename}.svg`);

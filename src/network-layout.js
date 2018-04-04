@@ -85,7 +85,7 @@ export default function NetworkLayout({
             .style('fill', style.linkFillColor);
 
         elements.link.accessors = {
-            path: l => makeLinkLod(links)()(l) ? linkRenderer(l) : null,
+            path: l => makeLinkLod(links)()(l) ? linkRenderer(l) : '',
             lod: makeLinkLod(links),
         };
 
@@ -123,7 +123,7 @@ export default function NetworkLayout({
             .append('text')
             .attr('class', 'label')
             .text(nodeName)
-            .attr('text-anchor', 'left')
+            .attr('text-anchor', 'start')
             .style('fill', 'black')
             .style('font-size', 12)
             .style('paint-order', 'stroke')
@@ -184,7 +184,7 @@ export default function NetworkLayout({
         label.accessors.text = n => n.visible ? '' : nodeName(n);
         link.accessors.path = l =>
             (k < 12 || !l.source.nodes) && link.accessors.lod(k)(l)
-            ? linkRenderer(l) : null;
+            ? linkRenderer(l) : '';
 
         if (k > 1.5) {
             const zoomNormalized = d3.scaleLinear().domain([1.5, 6.5]).range([0, 1]).clamp(true);
