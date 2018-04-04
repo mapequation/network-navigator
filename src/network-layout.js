@@ -22,6 +22,11 @@ function isRenderTarget({ x, y, k }, nodeRadius) {
     return node => radiusLargeEnough(nodeRadius(node) * k) && insideScreenBounds(scaled(node));
 }
 
+// [k 0 x
+//  0 k y
+//  0 0 1]
+const transformToMatrix = ({ x, y, k }) => [k, 0, 0, k, x, y];
+
 function makeLinkLod(links) {
     const n_always_show = 5;
     const len = links.length || 1;
@@ -219,8 +224,13 @@ export default function NetworkLayout({
                 .forEach((n) => {
                     const childScale = 0.15;
                     const childTranslate = Point.from(n).mul(1 - childScale);
+                    const transformMatrix = transformToMatrix({
+                        x: childTranslate.x,
+                        y: childTranslate.y,
+                        k: childScale,
+                    });
                     const parentElement = elements.parent.append('g')
-                        .attr('transform', `translate(${childTranslate.toArray()}), scale(${childScale})`);
+                        .attr('transform', `matrix(${transformMatrix})`);
                     const labelsElement = d3.select('#labelsContainer').append('g')
                         .attr('class', 'network labels');
 
