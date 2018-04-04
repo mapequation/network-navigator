@@ -1,6 +1,5 @@
 import * as d3 from 'd3';
 import { startCase, lowerCase } from 'lodash';
-import { clickHandler, doubleClickHandler } from './click-handler';
 import makeDragHandler from './drag-handler';
 import { highlightNode, restoreNode } from './highlight-node';
 import Point from './point';
@@ -48,7 +47,7 @@ export default function NetworkLayout({
         simulation
     }) {
 
-    const dispatch = d3.dispatch('click', 'dblclick', 'render', 'destroy');
+    const dispatch = d3.dispatch('click', 'render', 'destroy');
 
     const elements = {
         parent: renderTarget.parent,
@@ -101,8 +100,7 @@ export default function NetworkLayout({
             .enter()
             .append('g')
             .attr('id', n => n.path.toId())
-            .on('click', clickHandler(function (n) { dispatch.call('click', this, n) }))
-            .on('dblclick', doubleClickHandler(function (n) { dispatch.call('dblclick', this, n) }))
+            .on('click', function (n) { dispatch.call('click', this, n) })
             .on('mouseover', highlightNode)
             .on('mouseout', restoreNode(style))
             .call(onDrag);
