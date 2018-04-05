@@ -81,10 +81,8 @@ function runApplication(network, file) {
         .scaleExtent([ZOOM_EXTENT_MIN, ZOOM_EXTENT_MAX])
         .on('zoom', () => {
             translateAmount = 100 / d3.event.transform.k;
-            layouts.forEach(l => {
-                l.applyTransform(d3.event.transform);
-                l.update();
-            });
+            layouts.forEach(layout =>
+                layout.applyTransform(d3.event.transform).updateAttributes());
             root.attr('transform', d3.event.transform);
         });
 
@@ -168,13 +166,11 @@ function runApplication(network, file) {
 
         const layout = layouts.get(state.path);
 
-        layout.on('click', function (node) {
+        layout.on('click', (node) => {
             console.log(node);
             state.selectedNode = node;
             state.selected = node ? node.name || node.largest.map(n => n.name).join(', ') : '';
-        });
-
-        layout.on('render', ({ network, localTransform, renderTarget }) => {
+        }).on('render', ({ network, localTransform, renderTarget }) => {
             state.path = network.path;
 
             layouts.set(state.path, NetworkLayout({
@@ -186,17 +182,13 @@ function runApplication(network, file) {
             }));
 
             render();
-        });
-
-        layout.on('destroy', (path) => {
+        }).on('destroy', (path) => {
             const oldLayout = layouts.get(path);
             if (oldLayout) {
                 oldLayout.destroy();
                 layouts.delete(path);
             }
-        });
-
-        layout.init(branch);
+        }).init(branch);
     };
 
     const gui = new dat.GUI();

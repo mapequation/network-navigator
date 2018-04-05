@@ -47,6 +47,8 @@ export default function NetworkLayout({
         simulation
     }) {
 
+    let layout;
+
     const dispatch = d3.dispatch('click', 'render', 'destroy');
 
     const elements = {
@@ -70,7 +72,7 @@ export default function NetworkLayout({
         createElements();
 
         simulation.init({ nodes, links });
-        simulation.on('tick', update);
+        simulation.on('tick', updateAttributes);
     }
 
     function createElements() {
@@ -145,8 +147,8 @@ export default function NetworkLayout({
         };
     }
 
-    function update() {
-        const { circle, searchMark, label, link } = elements;
+    function updateAttributes() {
+        const { circle, searchMark, label, link } = elements;
 
         circle
             .style('fill', circle.accessors.fill)
@@ -165,6 +167,8 @@ export default function NetworkLayout({
             .attr('visibility', label.accessors.visibility);
         link
             .attr('d', link.accessors.path);
+
+        return layout;
     }
 
     function applyTransform({ x, y, k }) {
@@ -256,6 +260,8 @@ export default function NetworkLayout({
             nodes.filter(n => n.visible)
                 .forEach(n => dispatch.call('destroy', null, n.path));
         }
+
+        return layout;
     }
 
     function destroy() {
@@ -270,11 +276,11 @@ export default function NetworkLayout({
         elements.labels.remove();
     }
 
-    return {
+    return layout = {
         init,
-        update,
+        updateAttributes,
         applyTransform,
         destroy,
-        on: (name, callback) => callback ? dispatch.on(name, callback) : dispatch.on(name),
+        on: (name, callback) => callback ? (dispatch.on(name, callback), layout) : (dispatch.on(name), layout),
     };
 }
