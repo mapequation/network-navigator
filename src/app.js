@@ -17,7 +17,6 @@ import Point from './point';
 import {
     sumFlow,
     takeLargest,
-    accumulateLargest,
     connectedLinks,
 } from './filter';
 
@@ -140,36 +139,6 @@ function runApplication(network, file) {
 
     d3.select('body').on('keydown', onKeydown);
 
-    const cullLargest = () => {
-        let { nodes, links } = getNodeByPath(state.path);
-        const nodeFlow = sumFlow(nodes);
-
-        nodes.forEach(node => node.shouldRender = false);
-        links.forEach(link => link.shouldRender = false);
-
-        nodes = takeLargest(nodes, 20);
-        links = connectedLinks({ nodes, links });
-
-        nodes.forEach(node => node.shouldRender = true);
-        links.forEach(link => link.shouldRender = true);
-
-        state.nodeFlow = nodeFlow ? sumFlow(nodes) / nodeFlow : 1;
-    };
-
-    const filterFlow = () => {
-        let { nodes, links } = getNodeByPath(state.path);
-
-        nodes.forEach(node => node.shouldRender = false);
-        links.forEach(link => link.shouldRender = false);
-
-        nodes = accumulateLargest(nodes, state.nodeFlow);
-        links = accumulateLargest(links, state.linkFlow);
-        links = connectedLinks({ nodes, links });
-
-        nodes.forEach(node => node.shouldRender = true);
-        links.forEach(link => link.shouldRender = true);
-    };
-
     layouts.set(state.path, NetworkLayout({
         linkRenderer,
         style: renderStyle,
@@ -183,6 +152,21 @@ function runApplication(network, file) {
 
     const render = () => {
         const branch = getNodeByPath(state.path);
+        let { nodes, links } = branch;
+
+        const nodeFlow = sumFlow(nodes);
+
+        nodes.forEach(node => node.shouldRender = false);
+        links.forEach(link => link.shouldRender = false);
+
+        nodes = takeLargest(nodes, 20);
+        links = connectedLinks({ nodes, links });
+
+        nodes.forEach(node => node.shouldRender = true);
+        links.forEach(link => link.shouldRender = true);
+
+        state.nodeFlow = nodeFlow ? sumFlow(nodes) / nodeFlow : 1;
+
         const layout = layouts.get(state.path);
 
         layout.on('click', function (node) {
@@ -202,7 +186,6 @@ function runApplication(network, file) {
                 simulation: Simulation(Point.from(network), state),
             }));
 
-            cullLargest();
             render();
         });
 
@@ -219,8 +202,7 @@ function runApplication(network, file) {
 
     const gui = new dat.GUI();
     gui.add(state, 'filename');
-    gui.add(state, 'nodeFlow', 0, 1).step(0.01).onFinishChange(() => { filterFlow(); render(); }).listen();
-    gui.add(state, 'linkFlow', 0, 1).step(0.01).onFinishChange(() => { filterFlow(); render(); }).listen();
+    gui.add(state, 'nodeFlow', 0, 1).step(0.01).listen();
     gui.add(state, 'search')
         .onChange((name) => {
             d3.select('body').on('keydown', null);
@@ -249,7 +231,6 @@ function runApplication(network, file) {
         setTimeout(() => { state.downloadSvg = false; }, 100);
     }).listen();
 
-    cullLargest();
     render();
 }
 
