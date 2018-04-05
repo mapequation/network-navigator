@@ -23,14 +23,13 @@ import {
 function runApplication(network, file) {
     const state = {
         filename: file.name,
-        nodeFlow: 1,
-        linkFlow: 0.8,
+        nodeFlowFactor: 1,
         path: 'root',
         linkDistance: 200,
         charge: 300,
         search: '',
-        selectedNode: null,
-        selected: '',
+        selected: null,
+        name: '',
         downloadData: false,
         downloadSvg: false,
     };
@@ -154,7 +153,7 @@ function runApplication(network, file) {
         const branch = getNodeByPath(state.path);
         let { nodes, links } = branch;
 
-        const nodeFlow = sumFlow(nodes);
+        const initialFlow = sumFlow(nodes);
 
         nodes.forEach(node => node.shouldRender = false);
         links.forEach(link => link.shouldRender = false);
@@ -165,7 +164,7 @@ function runApplication(network, file) {
         nodes.forEach(node => node.shouldRender = true);
         links.forEach(link => link.shouldRender = true);
 
-        state.nodeFlow = nodeFlow ? sumFlow(nodes) / nodeFlow : 1;
+        state.nodeFlowFactor = initialFlow ? sumFlow(nodes) / initialFlow : 1;
 
         const layout = layouts.get(state.path);
 
@@ -202,7 +201,7 @@ function runApplication(network, file) {
 
     const gui = new dat.GUI();
     gui.add(state, 'filename');
-    gui.add(state, 'nodeFlow', 0, 1).step(0.01).listen();
+    gui.add(state, 'nodeFlowFactor', 0, 1).step(0.01).listen();
     gui.add(state, 'search')
         .onChange((name) => {
             d3.select('body').on('keydown', null);
@@ -210,10 +209,10 @@ function runApplication(network, file) {
             layouts.forEach(l => l.update());
         })
         .onFinishChange(() => d3.select('body').on('keydown', onKeydown));
-    gui.add(state, 'selected')
+    gui.add(state, 'name')
         .onChange(() => d3.select('body').on('keydown', null))
         .onFinishChange((name) => {
-            if (state.selectedNode) state.selectedNode.name = name;
+            if (state.selected) state.selected.name = name;
             layouts.forEach(l => l.update());
             d3.select('body').on('keydown', onKeydown);
         }).listen();
