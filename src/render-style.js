@@ -29,7 +29,7 @@ export default function makeRenderStyle(maxNodeFlow, maxLinkFlow) {
     const nodeBorderWidth = scaleSqrt().domain([0, maxNodeFlow]).range([1, 10]);
 
     const linkFillColor = scaleLinear().domain([0, maxLinkFlow]).range(['#C0D3DF', '#064575']);
-    const linkWidth = scaleLinear().domain([0, maxLinkFlow]).range([1, 10]);
+    const linkWidth = scaleSqrt().domain([0, maxLinkFlow]).range([1, 8]);
 
     const searchMarkRadius = scaleSqrt().domain([0, 10]).range([0, 10]).clamp(true);
 
