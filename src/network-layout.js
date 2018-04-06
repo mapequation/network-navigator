@@ -63,6 +63,8 @@ export default function NetworkLayout({
     let nodes = [];
     let links = [];
 
+    let updateDisabled = false;
+
     const onDrag = makeDragHandler(simulation);
 
     function init(network) {
@@ -74,7 +76,11 @@ export default function NetworkLayout({
         createElements();
 
         simulation.init({ nodes, links });
-        simulation.on('tick', updateAttributes);
+        simulation.on('tick', () => {
+            updateDisabled = true;
+            updateAttributes(true);
+        });
+        simulation.on('end', () => updateDisabled = false);
     }
 
     function createElements() {
@@ -149,7 +155,9 @@ export default function NetworkLayout({
         };
     }
 
-    function updateAttributes() {
+    function updateAttributes(simulationRunning = false) {
+        if (updateDisabled && !simulationRunning) return;
+
         const { circle, searchMark, label, link } = elements;
 
         linkRenderer.nodeRadius(circle.accessors.r);
@@ -216,6 +224,7 @@ export default function NetworkLayout({
         if (k > 2) {
             elements.node.on('.drag', null);
             simulation.stop();
+            updateDisabled = false;
             stopped = true;
 
             const targets = nodes.filter(n => n.nodes && !n.visible && renderTarget(n));
