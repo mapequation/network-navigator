@@ -3,7 +3,7 @@ import { maxBy, flatMap } from 'lodash';
 import dat from 'dat.gui';
 import Dropzone from 'dropzone';
 import FileSaver from 'file-saver';
-import { halfLink, undirectedLink } from 'network-rendering';
+import { halfLink, undirectedLink } from './link-renderer';
 import parseFile from './parse-file';
 import parseFTree from './file-formats/ftree';
 import networkFromFTree from './file-formats/network-from-ftree';
@@ -21,6 +21,7 @@ import {
 } from './filter';
 
 function runApplication(network, file) {
+    console.log(network) // TODO remove
     const state = {
         filename: file.name,
         nodeFlowFactor: 1,
@@ -254,3 +255,25 @@ Dropzone.options.myDropzone = {
     acceptedFiles: '.ftree,.net',
     accept: acceptFile,
 };
+
+// *************
+//   DELETE ME
+// *************
+
+d3.select('#my-dropzone').remove();
+
+const filename =
+//    'data/science2001.ftree';
+//  'data/stockholm.ftree';
+    'data/data_merged_1_compressed_12958_no_modulenames_expanded.ftree';
+//    'data/targeted_mean_network_095.ftree';
+
+fetch(filename)
+    .then(res => res.text())
+    .then(parseFile)
+    .then((parsed) => {
+        const ftree = parseFTree(parsed.data);
+        const network = networkFromFTree(ftree);
+        runApplication(network, { name: filename });
+    })
+    .catch(err => console.error(err));
