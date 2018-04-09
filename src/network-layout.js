@@ -1,5 +1,5 @@
 import * as d3 from 'd3';
-import { startCase, lowerCase } from 'lodash';
+import { startCase, lowerCase, minBy } from 'lodash';
 import makeDragHandler from './drag-handler';
 import { highlightNode, restoreNode } from './highlight-node';
 import Point from './point';
@@ -200,22 +200,39 @@ export default function NetworkLayout({
         };
         label.accessors.visibility = n => label.accessors.lod(k)(n) ? 'visible' : 'hidden'
         label.accessors.text = n => n.visible ? '' : nodeName(n);
-        link.accessors.path = l => (l.flow > 1e-5 || !l.source.nodes) && link.accessors.lod(k)(l) ? linkRenderer(l) : '';
+        link.accessors.path = l => l.flow > 5e-6 && (k < 15 || !l.source.nodes) && link.accessors.lod(k)(l)
+            ? linkRenderer(l) : '';
 
         if (k > 1.5) {
             const zoomNormalized = d3.scaleLinear().domain([1.5, 6.5]).range([0, 1]).clamp(true);
+
+            const closest = (() => {
+                if (k < 9) return null;
+                const center = Point.from({ x: innerWidth / 2, y: innerHeight / 2 });
+                const scaled = screenScale({ x, y, k });
+                const distanceToCenter = n => Point.distance(scaled(n), center);
+                return minBy(nodes, distanceToCenter);
+            })();
 
             circle.accessors.fill = (n) => {
                 if (!n.nodes) return style.nodeFillColor(n);
                 const fill = d3.interpolateRgb(style.nodeFillColor(n), '#ffffff');
                 return fill(zoomNormalized(k));
             };
+
             circle.accessors.r = (n) => {
                 const targetRadius = 60;
                 const initialRadius = style.nodeRadius(n);
-                if (!n.nodes || initialRadius > targetRadius) return initialRadius;
-                const r = d3.interpolateNumber(initialRadius, targetRadius);
-                return r(zoomNormalized(k));
+                if (!n.nodes) return initialRadius;
+                if (k >= 9 && n === closest) {
+                    const r = d3.interpolateNumber(Math.max(targetRadius,  initialRadius), 200);
+                    const fillScreen = d3.scalePow().exponent(2).domain([9, 15]).range([0, 1]).clamp(true);
+                    return r(fillScreen(k));
+                } else {
+                    if (initialRadius > targetRadius) return initialRadius;
+                    const r = d3.interpolateNumber(initialRadius, targetRadius);
+                    return r(zoomNormalized(k));
+                }
             };
         }
 

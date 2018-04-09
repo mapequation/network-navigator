@@ -18,6 +18,10 @@ export default function Simulation({ x, y }, { charge, linkDistance }) {
         .force('center', forceCenter(x, y))
         .stop();
 
+    const nIterations = 100;
+
+    simulation.alphaDecay(1 - Math.pow(0.001, 1/nIterations));
+
     simulation.init = ({ nodes, links }) => {
         simulation
             .nodes(nodes)
@@ -30,10 +34,8 @@ export default function Simulation({ x, y }, { charge, linkDistance }) {
             simulation.alpha(0.8);
         }
 
-        if (alpha === 1) {
-            for (let i = 0; i < 30; i++) {
-                simulation.tick();
-            }
+        for (let i = 0; i < 80; i++) {
+            simulation.tick();
         }
 
         simulation.restart();
