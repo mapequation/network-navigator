@@ -183,15 +183,15 @@ export default function parseFTree(rows) {
 
         // 3b. Parse link data
         } else {
-            if (row.length < 2) {
-                result.errors.push(`Malformed ftree link data: expected at least 2 fields, found ${row.length}.`);
+            if (row.length !== 3) {
+                result.errors.push(`Malformed ftree link data: expected 3 fields, found ${row.length}.`);
                 continue;
             }
 
             link.links.push({
                 source: row[0],
                 target: row[1],
-                flow: row[2] || DEFAULT_FLOW,
+                flow: row[2],
             });
         }
     }
