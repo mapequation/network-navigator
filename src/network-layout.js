@@ -96,7 +96,9 @@ export default function NetworkLayout({
             .enter()
             .append('path')
             .attr('class', 'link')
-            .style('fill', style.linkFillColor);
+            .style('fill', style.linkFillColor)
+            .style('stroke', style.linkBorderColor)
+            .style('stroke-width', '0.10');
 
         elements.link.accessors = {
             path: l => makeLinkLod(links)()(l) ? linkRenderer(l) : '',
