@@ -1,6 +1,34 @@
+html {
+    height: 100%;
+}
+
 body {
     font: 10px Lato, "Lucida Sans Unicode", "Lucida Grande", Garuda, sans-serif;
     color: #666;
+    line-height: 1.5em;
+    height: 100%;
+    overflow: hidden;
+    margin: 0;
+    display: flex;
+    box-sizing: border-box;
+}
+
+#content {
+    flex-grow: 1;
+}
+
+#sidebar {
+    width: 200px;
+    flex-shrink: 0;
+    overflow-y: auto;
+    padding: 50px;
+    box-shadow: inset 18px 0px 11px -19px rgba(0,0,0,0.75);
+}
+
+.column {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
 }
 
 svg text {

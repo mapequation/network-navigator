@@ -13,12 +13,22 @@ import NetworkLayout from './network-layout';
 import Simulation from './simulation';
 import makeRenderStyle from './render-style';
 import zoomButtons from './zoom-buttons';
+import loadingSpinner from './loading-spinner';
 import Point from './point';
 import {
     sumFlow,
     takeLargest,
     connectedLinks,
 } from './filter';
+
+const parentElement = document.getElementById("content");
+const width = parentElement.clientWidth;
+const height = parentElement.clientHeight;
+
+const svg = d3.select('svg')
+    .attr('width', width)
+    .attr('height', height)
+    .attr('xmlns', 'http://www.w3.org/2000/svg');
 
 function runApplication(network, file) {
     const state = {
@@ -34,15 +44,10 @@ function runApplication(network, file) {
         downloadSvg: false,
     };
 
-    const { maxNodeFlow, maxLinkFlow } = (() => {
-        const entireNetwork = Array.from(traverseDepthFirst(network));
-
-        return {
-            maxNodeFlow: maxBy(entireNetwork, node => node.flow).flow,
-            maxLinkFlow: maxBy(flatMap(entireNetwork, node => node.links || []),
-                link => link.flow).flow,
-        };
-    })();
+    const entireNetwork = Array.from(traverseDepthFirst(network));
+    const maxNodeFlow = maxBy(entireNetwork, node => node.flow).flow;
+    const maxLinkFlow = maxBy(flatMap(entireNetwork, node => node.links || []),
+                link => link.flow).flow;
 
     const renderStyle = makeRenderStyle(maxNodeFlow, maxLinkFlow);
     const linkRenderer = (network.directed ? halfLink : undirectedLink)()
@@ -52,14 +57,6 @@ function runApplication(network, file) {
 
     const ZOOM_EXTENT_MIN = 0.1;
     const ZOOM_EXTENT_MAX = 100000;
-
-    const width = window.innerWidth;
-    const height = window.innerHeight;
-
-    const svg = d3.select('svg')
-        .attr('width', width)
-        .attr('height', height)
-        .attr('xmlns', 'http://www.w3.org/2000/svg');
 
     svg.append('rect')
         .attr('class', 'background')
@@ -157,6 +154,7 @@ function runApplication(network, file) {
         links.forEach(link => link.shouldRender = false);
 
         nodes = takeLargest(nodes, 20);
+        links = links.filter(link => link.flow > 0);
         links = connectedLinks({ nodes, links });
 
         nodes.forEach(node => node.shouldRender = true);
@@ -225,25 +223,17 @@ function runApplication(network, file) {
     render();
 }
 
-const svg = d3.select('svg')
-    .attr('width', window.innerWidth)
-    .attr('height', window.innerHeight);
-
 function acceptFile(file) {
-    svg.append('g')
-        .attr('id', 'loading')
-        .attr('transform', `translate(${window.innerWidth / 2}, ${window.innerHeight / 2}) rotate(-45)`)
-        .append('path')
-        .attr('d', 'M0-25A25 25 0 0 1 25 0h-5A20 20 0 0 0 0-20z')
-        .style('animation', 'spinning 1.5s ease-in-out infinite')
-        .style('fill', '#555');
+    svg.selectAll('*').remove();
+
+    const spinner = loadingSpinner(svg, new Point(width / 2, height / 2));
 
     parseFile(file)
         .then((parsed) => {
             const ftree = parseFTree(parsed.data);
             const network = networkFromFTree(ftree);
             d3.select('#my-dropzone').remove();
-            d3.select('#loading').remove();
+            spinner.remove();
             runApplication(network, file);
         })
         .catch(err => console.error(err));

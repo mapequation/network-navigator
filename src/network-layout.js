@@ -4,7 +4,9 @@ import makeDragHandler from './drag-handler';
 import { highlightNode, restoreNode } from './highlight-node';
 import Point from './point';
 
-const { innerWidth, innerHeight } = window;
+const parentElement = document.getElementById("content");
+const width = parentElement.clientWidth;
+const height = parentElement.clientHeight;
 
 const ellipsis = (text, len = 25) => (text.length > len ? `${text.substr(0, len - 3)}...` : text);
 const nodeName = node => startCase(lowerCase(ellipsis(node.name || node.largest.map(childNode => childNode.name).join(', '))));
@@ -12,9 +14,9 @@ const nodeName = node => startCase(lowerCase(ellipsis(node.name || node.largest.
 const screenScale = ({ x, y, k }) => point => new Point(point.x * k + x, point.y * k + y)
 
 const insideScreenBounds = point =>
-    0 < point.x && point.x < innerWidth && 0 < point.y && point.y < innerHeight
+    0 < point.x && point.x < width && 0 < point.y && point.y < height
 
-const radiusLargeEnough = radius => radius > Math.min(innerWidth, innerHeight) / 4;
+const radiusLargeEnough = radius => radius > Math.min(width, height) / 4;
 
 function isRenderTarget({ x, y, k }, nodeRadius) {
     const scaled = screenScale({ x, y, k });
@@ -210,7 +212,7 @@ export default function NetworkLayout({
 
             const closest = (() => {
                 if (k < 9) return null;
-                const center = Point.from({ x: innerWidth / 2, y: innerHeight / 2 });
+                const center = Point.from({ x: width / 2, y: height / 2 });
                 const scaled = screenScale({ x, y, k });
                 const distanceToCenter = n => Point.distance(scaled(n), center);
                 return minBy(nodes, distanceToCenter);
