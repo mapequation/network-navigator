@@ -168,8 +168,8 @@ function runApplication(network, file) {
 
         layout.on('click', (node) => {
             console.log(node);
-            state.selectedNode = node;
-            state.selected = node ? node.name || node.largest.map(n => n.name).join(', ') : '';
+            state.selected = node;
+            state.name = node ? node.name || node.largest.map(n => n.name).join(', ') : '';
         }).on('render', ({ network, localTransform, renderTarget }) => {
             state.path = network.path;
 
@@ -198,14 +198,14 @@ function runApplication(network, file) {
         .onChange((name) => {
             d3.select('body').on('keydown', null);
             searchName(network, name);
-            layouts.forEach(l => l.update());
+            layouts.forEach(l => l.updateAttributes());
         })
         .onFinishChange(() => d3.select('body').on('keydown', onKeydown));
     gui.add(state, 'name')
         .onChange(() => d3.select('body').on('keydown', null))
         .onFinishChange((name) => {
             if (state.selected) state.selected.name = name;
-            layouts.forEach(l => l.update());
+            layouts.forEach(l => l.updateAttributes());
             d3.select('body').on('keydown', onKeydown);
         }).listen();
     gui.add(state, 'downloadData').onChange(() => {
