@@ -63,4 +63,8 @@ export default class Point {
     get size() {
         return this.length;
     }
+
+    get normalize() {
+        return this.div(this.length);
+    }
 }

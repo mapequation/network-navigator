@@ -7,21 +7,26 @@ import Point from './point';
 const parentElement = document.getElementById("content");
 const width = parentElement.clientWidth;
 const height = parentElement.clientHeight;
+const center = new Point(width / 2, height / 2);
 
 const ellipsis = (text, len = 25) => (text.length > len ? `${text.substr(0, len - 3)}...` : text);
-const nodeName = node => startCase(lowerCase(ellipsis(node.name || node.largest.map(childNode => childNode.name).join(', '))));
+const nodeName = node =>
+    startCase(lowerCase(ellipsis(node.name || node.largest.map(childNode => childNode.name).join(', '))));
 
-const screenScale = ({ x, y, k }) => point => new Point(point.x * k + x, point.y * k + y)
+const screenScale = ({ x, y, k }) => point => new Point(point.x * k + x, point.y * k + y);
+
+const distanceFromCenter = point => Point.distance(point, center);
 
 const insideScreenBounds = point =>
-    0 < point.x && point.x < width && 0 < point.y && point.y < height
+    0 < point.x && point.x < width && 0 < point.y && point.y < height;
 
 const radiusLargeEnough = radius => radius > Math.min(width, height) / 4;
 
-function isRenderTarget({ x, y, k }, nodeRadius) {
+const isRenderTarget = ({ x, y, k }, nodeRadius) => node => {
     const scaled = screenScale({ x, y, k });
-    return node => radiusLargeEnough(nodeRadius(node) * k) && insideScreenBounds(scaled(node));
-}
+    const radius = nodeRadius(node) * k;
+    return radiusLargeEnough(radius) && insideScreenBounds(scaled(node));
+};
 
 // [k 0 x
 //  0 k y
@@ -29,13 +34,13 @@ function isRenderTarget({ x, y, k }, nodeRadius) {
 const transformToMatrix = ({ x, y, k }) => [k, 0, 0, k, x, y];
 
 function makeLinkLod(links) {
-    const n_always_show = 5;
+    const nAlwaysShow = 5;
     const len = links.length || 1;
     const visible = d3.scaleLinear().domain([0.65, 1.7]).range([1 / len, 1]).clamp(true);
-    if (len < n_always_show) {
+    if (len < nAlwaysShow) {
         return k => l => true;
     }
-    return (k = 1) => l => 1 - l.index / len - n_always_show / len <= visible(k);
+    return (k = 1) => l => 1 - l.index / len - nAlwaysShow / len <= visible(k);
 }
 
 function makeNodeLod(nodes) {
@@ -187,10 +192,16 @@ export default function NetworkLayout({
         return layout;
     }
 
-    function applyTransform({ x, y, k }) {
+    function applyTransform(transform) {
         const { circle, label, link } = elements;
-        const { translate = Point.origin, scale = 1, parentTranslate = Point.origin, parentScale = 1 } = localTransform || {};
+        const {
+            translate = Point.origin,
+            scale = 1,
+            parentTranslate = Point.origin,
+            parentScale = 1,
+        } = localTransform || {};
 
+        let { x, y, k } = transform;
         x += k * (parentScale * translate.x + parentTranslate.x);
         y += k * (parentScale * translate.y + parentTranslate.y);
         k *= scale;
@@ -202,7 +213,7 @@ export default function NetworkLayout({
             const dx = k * r + (k > 1 ? 1.4 * (1 - k) * r : 0);
             return Math.max(dx, 0);
         };
-        label.accessors.visibility = n => label.accessors.lod(k)(n) ? 'visible' : 'hidden'
+        label.accessors.visibility = n => label.accessors.lod(k)(n) ? 'visible' : 'hidden';
         label.accessors.text = n => n.visible ? '' : nodeName(n);
         link.accessors.path = l => l.flow > 5e-6 && (k < 15 || !l.source.nodes) && link.accessors.lod(k)(l)
             ? linkRenderer(l) : '';
@@ -212,10 +223,8 @@ export default function NetworkLayout({
 
             const closest = (() => {
                 if (k < 9) return null;
-                const center = Point.from({ x: width / 2, y: height / 2 });
                 const scaled = screenScale({ x, y, k });
-                const distanceToCenter = n => Point.distance(scaled(n), center);
-                return minBy(nodes, distanceToCenter);
+                return minBy(nodes, n => distanceFromCenter(scaled(n)));
             })();
 
             circle.accessors.fill = (n) => {
@@ -285,7 +294,7 @@ export default function NetworkLayout({
             stopped = false;
         }
 
-        if (k < 4) {
+        if (k < 4) {
             nodes.filter(n => n.visible && !renderTarget(n))
                 .forEach(n => dispatch.call('destroy', null, n.path));
         }
