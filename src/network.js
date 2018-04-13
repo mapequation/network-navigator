@@ -5,11 +5,8 @@ import TreePath from './treepath';
  ******************************************/
 const hasFlow = (flow = 0) => ({
     flow,
-});
-
-const hasExitFlow = {
     exitFlow: 0,
-};
+});
 
 const isRenderable = {
     shouldRender: true,
@@ -19,6 +16,13 @@ const treeNode = (id) => ({
     id,
     path: new TreePath(id),
     parent: null,
+});
+
+const node = () => ({
+    kin: 0,
+    kout: 0,
+    inLinks: [],
+    outLinks: [],
 });
 
 /**
@@ -43,7 +47,7 @@ class Node {
  * @return {Node} the node
  */
 export function createNode(id, name, flow, physicalId) {
-    return Object.assign(new Node(name, physicalId), treeNode(id), hasFlow(flow), hasExitFlow, isRenderable);
+    return Object.assign(new Node(name, physicalId), treeNode(id), node(),  hasFlow(flow), isRenderable);
 }
 
 /**
@@ -87,7 +91,7 @@ class Network {
  * @param {number|string} id the id
  */
 export function createNetwork(id) {
-    return Object.assign(new Network(), treeNode(id), hasFlow(), hasExitFlow, isRenderable);
+    return Object.assign(new Network(), treeNode(id), node(),  hasFlow(), isRenderable);
 }
 
 export const addNode = (parent, child) => parent._nodes.set(child.id, child);
@@ -159,10 +163,19 @@ export function connectLinks(root) {
     for (let node of traverseDepthFirst(root)) {
         if (node.links) {
             node.links = node.links.map(link =>
-                new Link(getNode(node, link.source), getNode(node, link.target), link.flow));
+                addNodeDegree(new Link(getNode(node, link.source), getNode(node, link.target), link.flow)))
         }
     }
 }
+
+function addNodeDegree(link) {
+    link.source.outLinks.push(link);
+    link.target.inLinks.push(link);
+    link.source.kout++;
+    link.target.kin++;
+    return link;
+}
+
 
 /**
  * Search Network name fields for string matching `name`.

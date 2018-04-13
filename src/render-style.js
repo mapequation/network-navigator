@@ -23,13 +23,13 @@ import { scaleLinear, scaleSqrt, hsl } from 'd3';
  * @return {Object} an object with render style accessors
  */
 export default function makeRenderStyle(maxNodeFlow, maxLinkFlow) {
-    const nodeRadius = scaleSqrt().domain([0, maxNodeFlow]).range([10, 70]);
+    const nodeRadius = scaleSqrt().domain([0, maxNodeFlow]).range([5, 70]);
     const nodeFillColor = scaleLinear().domain([0, maxNodeFlow]).range(['#DFF1C1', '#C5D7A8']);
     const nodeBorderColor = scaleLinear().domain([0, maxNodeFlow]).range(['#ABD65B', '#95C056']);
     const nodeBorderWidth = scaleSqrt().domain([0, maxNodeFlow]).range([1, 10]);
 
     const linkFillColor = scaleLinear().domain([0, maxLinkFlow]).range(['#C0D3DF', '#064575']);
-    const linkWidth = scaleSqrt().domain([0, maxLinkFlow]).range([1, 8]);
+    const linkWidth = scaleSqrt().domain([0, maxLinkFlow]).range([0, 8]);
     const linkBorderColor = (l) => {
         const borderColor = hsl(linkFillColor(l));
         borderColor.l -= 0.2;

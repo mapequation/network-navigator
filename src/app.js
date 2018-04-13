@@ -153,6 +153,11 @@ function runApplication(network, file) {
         nodes.forEach(node => node.shouldRender = false);
         links.forEach(link => link.shouldRender = false);
 
+        nodes.forEach((node) => {
+            const s = node.outLinks.reduce((total, link) => total + link.flow, 0) || 1;
+            node.outLinks.forEach(link => link.flowNormalized = link.flow / s);
+        });
+        
         nodes = takeLargest(nodes, 20);
         links = links.filter(link => link.flow > 0);
         links = connectedLinks({ nodes, links });

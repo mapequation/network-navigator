@@ -2,6 +2,7 @@ import * as d3 from 'd3';
 import { startCase, lowerCase, minBy } from 'lodash';
 import makeDragHandler from './drag-handler';
 import { highlightNode, restoreNode } from './highlight-node';
+import * as LOD from './level-of-detail';
 import Point from './point';
 
 const parentElement = document.getElementById("content");
@@ -32,21 +33,6 @@ const isRenderTarget = ({ x, y, k }, nodeRadius) => node => {
 //  0 k y
 //  0 0 1]
 const transformToMatrix = ({ x, y, k }) => [k, 0, 0, k, x, y];
-
-function makeLinkLod(links) {
-    const nAlwaysShow = 5;
-    const len = links.length || 1;
-    const visible = d3.scaleLinear().domain([0.65, 1.7]).range([1 / len, 1]).clamp(true);
-    if (len < nAlwaysShow) {
-        return k => l => true;
-    }
-    return (k = 1) => l => 1 - l.index / len - nAlwaysShow / len <= visible(k);
-}
-
-function makeNodeLod(nodes) {
-    const visible = d3.scaleLinear().domain([0.65, 1]).range([1, nodes.length]).clamp(true);
-    return (k = 1) => n => n.id <= visible(k);
-}
 
 export default function NetworkLayout({
         linkRenderer,
@@ -108,8 +94,8 @@ export default function NetworkLayout({
             .style('stroke-width', '0.10');
 
         elements.link.accessors = {
-            path: l => makeLinkLod(links)()(l) ? linkRenderer(l) : '',
-            lod: makeLinkLod(links),
+            path: l => LOD.backbone(links)()(l) ? linkRenderer(l) : '',
+            lod: LOD.backbone(links),
         };
 
         elements.node = parent.append('g')
@@ -158,7 +144,7 @@ export default function NetworkLayout({
             x: n => n.x,
             y: n => n.y,
             dx: n => 1.1 * style.nodeRadius(n),
-            lod: makeNodeLod(nodes),
+            lod: LOD.nodeByIndex(nodes),
             visibility: n => 'visible',
             text: nodeName,
         };
@@ -215,7 +201,7 @@ export default function NetworkLayout({
         };
         label.accessors.visibility = n => label.accessors.lod(k)(n) ? 'visible' : 'hidden';
         label.accessors.text = n => n.visible ? '' : nodeName(n);
-        link.accessors.path = l => l.flow > 5e-6 && (k < 15 || !l.source.nodes) && link.accessors.lod(k)(l)
+        link.accessors.path = l => (k < 15 || !l.source.nodes) && link.accessors.lod(k)(l)
             ? linkRenderer(l) : '';
 
         if (k > 1.5) {
