@@ -11,8 +11,7 @@ const height = parentElement.clientHeight;
 const center = new Point(width / 2, height / 2);
 
 const ellipsis = (text, len = 25) => (text.length > len ? `${text.substr(0, len - 3)}...` : text);
-const nodeName = node =>
-    startCase(lowerCase(ellipsis(node.name || node.largest.map(childNode => childNode.name).join(', '))));
+const nodeName = node => startCase(lowerCase(ellipsis(node.name)));
 
 const screenScale = ({ x, y, k }) => point => new Point(point.x * k + x, point.y * k + y);
 
@@ -94,8 +93,8 @@ export default function NetworkLayout({
             .style('stroke-width', '0.10');
 
         elements.link.accessors = {
-            path: l => LOD.backbone(links)()(l) ? linkRenderer(l) : '',
-            lod: LOD.backbone(links),
+            path: l => LOD.linkByIndex(links)()(l) ? linkRenderer(l) : '',
+            lod: LOD.linkByIndex(links),
         };
 
         elements.node = parent.append('g')

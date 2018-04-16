@@ -1,4 +1,5 @@
 import TreePath from './treepath';
+import { sumFlow } from './filter';
 
 /******************************************
  * Common properties for Network and Node *
@@ -35,20 +36,22 @@ class Node {
         this.name = name;
         this.physicalId = physicalId;
     }
+
+    /**
+     * Create a Node
+     *
+     * @param {number} id the id
+     * @param {string} name the name
+     * @param {number} flow the flow
+     * @param {number} physicalId the physical id
+     * @return {Node} the node
+     */
+    static create(id, name, flow, physicalId) {
+        return Object.assign(new Node(name, physicalId), treeNode(id), node(),  hasFlow(flow), isRenderable);
+    }
 }
 
-/**
- * Create a Node
- *
- * @param {number} id the id
- * @param {string} name the name
- * @param {number} flow the flow
- * @param {number} physicalId the physical id
- * @return {Node} the node
- */
-export function createNode(id, name, flow, physicalId) {
-    return Object.assign(new Node(name, physicalId), treeNode(id), node(),  hasFlow(flow), isRenderable);
-}
+export const createNode = Node.create;
 
 /**
  * A link in a network
@@ -60,6 +63,7 @@ class Link {
         this.source = source;
         this.target = target;
         this.flow = flow;
+        this.flowNormalized = flow;
         this.shouldRender = true;
     }
 }
@@ -71,10 +75,29 @@ class Link {
  */
 class Network {
     constructor() {
+        this._name = undefined;
         this._nodes = new Map();
         this.links = [];
         this.largest = [];
         this.visible = false;
+        this.connected = false;
+    }
+
+    /**
+     * Create a Network of nodes and links.
+     *
+     * @param {number|string} id the id
+     */
+    static create(id) {
+        return Object.assign(new Network(), treeNode(id), node(),  hasFlow(), isRenderable);
+    }
+    
+    addNode(child) {
+        this._nodes.set(child.id, child);
+    }
+
+    getNode(childId) {
+        return this._nodes.get(childId);
     }
 
     get nodes() {
@@ -83,19 +106,86 @@ class Network {
         }
         return this._nodesArray;
     }
+
+    get name() {
+        return this._name || this.largest.map(node => node.name).join(', ');
+    }
+
+    set name(name) {
+        this._name = name;
+    }
+    
+    /**
+     * Get the child node that matches the path.
+     *
+     * @param {string} path the path formatted like "1:2:3"
+     * @return {?(Network|Node)} the node
+     */
+    getNodeByPath(path) {
+        if (path.toString() === this.path.toString()) {
+            return this;
+        }
+
+        return TreePath.toArray(path)
+            .reduce((parent, id) => parent.getNode(id), this);
+    }
+    
+    connect() {
+        if (this.connected) return;
+        this.connected = true;
+
+        // Connect links
+        this.links = this.links.map(l => {
+            const source = this.getNode(l.source);
+            const target = this.getNode(l.target);
+            const link = new Link(source, target, l.flow);
+            source.outLinks.push(link);
+            target.inLinks.push(link);
+            source.kout++;
+            target.kin++;
+            return link;
+        });
+
+        // Compute the normalized link weights
+        this.nodes.forEach((node) => {
+            const sum = sumFlow(node.outLinks);
+            node.outLinks.forEach(link => link.flowNormalized = link.flow / (sum || 1))
+        });
+    }
+
+    search(name) {
+        const entireNetwork = Array.from(traverseDepthFirst(this));
+
+        entireNetwork.forEach(node => node.searchHits = 0);
+
+        if (!name.length) return;
+
+        try {
+            const re = new RegExp(name, 'i');
+
+            entireNetwork
+                .filter(node => !node.nodes)
+                .forEach((node) => {
+                    node.searchHits = +re.test(node.name);
+
+                    if (node.searchHits > 0) {
+                        let parent = node.parent;
+                        while (parent) {
+                            parent.searchHits += node.searchHits;
+                            parent = parent.parent;
+                        }
+                    }
+                });
+
+        } catch (e) {
+            // Do nothing
+        }
+    }
 }
 
-/**
- * Create a Network of nodes and links.
- *
- * @param {number|string} id the id
- */
-export function createNetwork(id) {
-    return Object.assign(new Network(), treeNode(id), node(),  hasFlow(), isRenderable);
-}
 
-export const addNode = (parent, child) => parent._nodes.set(child.id, child);
-export const getNode = (parent, childId) => parent._nodes.get(childId);
+export const createNetwork = Network.create;
+
 
 /**
  * Factory function for creating node search functions.
@@ -103,22 +193,8 @@ export const getNode = (parent, childId) => parent._nodes.get(childId);
  * @param {Network} root the root
  * @return {Function} getNodeByPath
  */
-export function makeGetNodeByPath(root) {
-    /**
-     * Get the child node that matches the path.
-     *
-     * @param {string} path the path formatted like "1:2:3"
-     * @return {?(Network|Node)} the node
-     */
-    return function getNodeByPath(path) {
-        if (path.toString() === root.path.toString()) {
-            return root;
-        }
+export const makeGetNodeByPath = root => root.getNodeByPath.bind(root);
 
-        return TreePath.toArray(path)
-            .reduce((parent, id) => getNode(parent, id), root);
-    }
-}
 
 /**
  * Pre-order traverse all nodes below.
@@ -162,18 +238,9 @@ export function* traverseBreadthFirst(root) {
 export function connectLinks(root) {
     for (let node of traverseDepthFirst(root)) {
         if (node.links) {
-            node.links = node.links.map(link =>
-                addNodeDegree(new Link(getNode(node, link.source), getNode(node, link.target), link.flow)))
+            node.connect();
         }
     }
-}
-
-function addNodeDegree(link) {
-    link.source.outLinks.push(link);
-    link.target.inLinks.push(link);
-    link.source.kout++;
-    link.target.kin++;
-    return link;
 }
 
 
@@ -183,31 +250,5 @@ function addNodeDegree(link) {
  * @param {Network} root the root of the network
  * @param {string} name the name to search for
  */
-export function searchName(root, name) {
-    const entireNetwork = Array.from(traverseDepthFirst(root));
+export const searchName = (root, name) => root.search(name);
 
-    entireNetwork.forEach(node => node.searchHits = 0);
-
-    if (!name.length) return;
-
-    try {
-        const re = new RegExp(name, 'i');
-
-        entireNetwork
-            .filter(node => !node.nodes)
-            .forEach((node) => {
-                node.searchHits = +re.test(node.name);
-
-                if (node.searchHits > 0) {
-                    let parent = node.parent;
-                    while (parent) {
-                        parent.searchHits += node.searchHits;
-                        parent = parent.parent;
-                    }
-                }
-            });
-
-    } catch (e) {
-        // Do nothing
-    }
-}
