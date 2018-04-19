@@ -16,6 +16,10 @@ export default class Point {
         return new Point(0, 0);
     }
 
+    static distanceFrom(point) {
+        return other => Point.distance(point, other);
+    }
+
     static distance(p1, p2) {
         return Point.sub(p1, p2).length;
     }

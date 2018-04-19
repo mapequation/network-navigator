@@ -15,7 +15,7 @@ const nodeName = node => startCase(lowerCase(ellipsis(node.name)));
 
 const screenScale = ({ x, y, k }) => point => new Point(point.x * k + x, point.y * k + y);
 
-const distanceFromCenter = point => Point.distance(point, center);
+const distanceFromCenter = Point.distanceFrom(center);
 
 const insideScreenBounds = point =>
     0 < point.x && point.x < width && 0 < point.y && point.y < height;

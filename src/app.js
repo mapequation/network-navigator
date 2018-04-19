@@ -126,6 +126,19 @@ function runApplication(network, file) {
                 .duration(translateDuration)
                 .call(zoom.translateBy, -translateAmount, 0);
             break;
+        case '1':
+        case '2':
+        case '3':
+        case '4':
+        case '5':
+        case '6':
+        case '7':
+        case '8':
+        case '9':
+            svg.transition()
+                .duration(200)
+                .call(zoom.scaleTo, +key / 10);
+            break;
         default:
             break;
         }

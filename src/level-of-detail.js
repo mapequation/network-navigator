@@ -8,7 +8,7 @@ export function linkByIndex(links) {
     const len = links.length || 1;
     const alwaysVisibleFraction = nAlwaysShow / len;
     const visibleIndices =
-        scaleLinear().domain([0.65, 1.7]).range([1 / len, 1]).clamp(true);
+        scaleLinear().domain([0.55, 1.7]).range([1 / len, 1]).clamp(true);
 
     if (len < nAlwaysShow) {
         return k => l => true;
