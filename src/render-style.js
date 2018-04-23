@@ -4,7 +4,11 @@
  * @author Anton Eriksson
  */
 
-import { scaleLinear, scaleSqrt, hsl } from 'd3';
+import {
+    scaleSqrt,
+    interpolateGreens,
+    interpolateBlues,
+} from 'd3';
 
 
 /**
@@ -23,12 +27,16 @@ import { scaleLinear, scaleSqrt, hsl } from 'd3';
  * @return {Object} an object with render style accessors
  */
 export default function makeRenderStyle(maxNodeFlow, maxLinkFlow) {
+    const nodeFill = [interpolateGreens(2/9), interpolateGreens(3/9)];
+    const nodeBorder = [interpolateGreens(3/9), interpolateGreens(6/9)];
+    const linkFill = [interpolateBlues(2/9), interpolateBlues(6/9)];
+
+    const nodeFillColor = scaleSqrt().domain([0, maxNodeFlow]).range(nodeFill);
+    const nodeBorderColor = scaleSqrt().domain([0, maxNodeFlow]).range(nodeBorder);
     const nodeRadius = scaleSqrt().domain([0, maxNodeFlow]).range([5, 70]);
-    const nodeFillColor = scaleLinear().domain([0, maxNodeFlow]).range(['#DFF1C1', '#C5D7A8']);
-    const nodeBorderColor = scaleLinear().domain([0, maxNodeFlow]).range(['#ABD65B', '#95C056']);
     const nodeBorderWidth = scaleSqrt().domain([0, maxNodeFlow]).range([1, 10]);
 
-    const linkFillColor = scaleLinear().domain([0, maxLinkFlow]).range(['#C0D3DF', '#064575']);
+    const linkFillColor = scaleSqrt().domain([0, maxLinkFlow]).range(linkFill);
     const linkWidth = scaleSqrt().domain([0, maxLinkFlow]).range([0, 8]);
 
     const searchMarkRadius = scaleSqrt().domain([0, 10]).range([0, 10]).clamp(true);

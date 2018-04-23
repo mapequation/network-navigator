@@ -1,23 +1,34 @@
-import { select } from 'd3';
+import {
+    select,
+    interpolateReds,
+} from 'd3';
 
 export function highlightNode(node) {
     if (node.visible) return;
 
+    const outColor = interpolateReds(0.65);
+    const inColor = interpolateReds(0.5);
+
     select(this).select('circle')
-        .style('stroke', '#F48074');
-    const links = select(this.parentElement.parentElement).select('.links')
-    links.selectAll('.link').filter(d => d.target === node)
+        .style('stroke', outColor);
+
+    const links = select(this.parentElement.parentElement)
+          .select('.links')
+          .selectAll('.link');
+
+    links.filter(d => d.target === node)
         .raise()
-        .style('fill', '#ba6157');
-    links.selectAll('.link').filter(d => d.source === node)
+        .style('fill', inColor);
+    links.filter(d => d.source === node)
         .raise()
-        .style('fill', '#F48074');
+        .style('fill', outColor);
 }
 
 export function restoreNode({ nodeBorderColor, linkFillColor }) {
     return function () {
         select(this).select('circle')
             .style('stroke', nodeBorderColor);
+
         select(this.parentElement.parentElement)
             .select('.links').selectAll('.link')
             .sort((a, b) => a.flow - b.flow)
