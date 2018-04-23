@@ -86,16 +86,6 @@ function runApplication(network, file) {
     svg.call(zoom)
         .on('dblclick.zoom', null);
 
-    zoomButtons(svg, [width - 50, height - 80])
-        .onPlusClick(() =>
-            svg.transition()
-                .duration(300)
-                .call(zoom.scaleBy, 2))
-        .onMinusClick(() =>
-            svg.transition()
-                .duration(300)
-                .call(zoom.scaleBy, 0.5));
-
     const onKeydown = () => {
         const translateDuration = 250;
         const key = d3.event.key || d3.event.keyCode;
