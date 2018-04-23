@@ -14,29 +14,7 @@
 
 import { traverseBreadthFirst, traverseDepthFirst } from '../network';
 import { byFlow } from '../filter';
-
-export function flowFormat(flow) {
-    if (flow < 1e-4 && flow > Number.EPSILON) {
-        let [significand, exponent] = flow
-            .toExponential()
-            .split('e');
-
-        const abs = Math.abs(Number(exponent));
-        if (abs < 10) {
-            const sign = Math.sign(Number(exponent)) < 0 ? '-' : '+';
-            exponent = `${sign}0${abs}`;
-        }
-
-        return [
-            significand.substr(0, Math.min(significand.length + 2, 7)),
-            exponent,
-        ].join('e');
-    } else if (flow < 10 && flow.toString().length > 11) {
-        return flow.toFixed(9);
-    }
-
-    return flow.toString();
-}
+import flowFormat from './flow-format';
 
 /**
  * Serialize Network to FTree string.
