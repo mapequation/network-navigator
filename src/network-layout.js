@@ -88,9 +88,7 @@ export default function NetworkLayout({
             .enter()
             .append('path')
             .attr('class', 'link')
-            .style('fill', style.linkFillColor)
-            .style('stroke', style.linkBorderColor)
-            .style('stroke-width', '0.10');
+            .style('fill', style.linkFillColor);
 
         elements.link.accessors = {
             path: l => LOD.linkByIndex(links)()(l) ? linkRenderer(l) : '',

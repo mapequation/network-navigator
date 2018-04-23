@@ -30,11 +30,6 @@ export default function makeRenderStyle(maxNodeFlow, maxLinkFlow) {
 
     const linkFillColor = scaleLinear().domain([0, maxLinkFlow]).range(['#C0D3DF', '#064575']);
     const linkWidth = scaleSqrt().domain([0, maxLinkFlow]).range([0, 8]);
-    const linkBorderColor = (l) => {
-        const borderColor = hsl(linkFillColor(l));
-        borderColor.l -= 0.2;
-        return borderColor.toString();
-    };
 
     const searchMarkRadius = scaleSqrt().domain([0, 10]).range([0, 10]).clamp(true);
 
@@ -45,7 +40,6 @@ export default function makeRenderStyle(maxNodeFlow, maxLinkFlow) {
         nodeBorderWidth: node => nodeBorderWidth(node.exitFlow),
         linkFillColor: link => linkFillColor(link.flow),
         linkWidth: link => linkWidth(link.flow),
-        linkBorderColor: link => linkBorderColor(link.flow),
         searchMarkRadius: node => node.visible ? 0 : searchMarkRadius(node.searchHits || 0),
     };
 }
