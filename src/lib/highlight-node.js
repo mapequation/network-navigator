@@ -1,13 +1,10 @@
-import {
-    select,
-    interpolateReds,
-} from 'd3';
+import { select } from 'd3';
 
 export function highlightNode(node) {
     if (node.visible) return;
 
-    const outColor = interpolateReds(0.65);
-    const inColor = interpolateReds(0.5);
+    const outColor = '#f48074';
+    const inColor = '#ba6157';
 
     select(this).select('circle')
         .style('stroke', outColor);
