@@ -1,3 +1,4 @@
+import escapeRegExp from 'lodash';
 import TreePath from './treepath';
 import { sumFlow } from './filter';
 
@@ -91,7 +92,7 @@ class Network {
     static create(id) {
         return Object.assign(new Network(), treeNode(id), node(),  hasFlow(), isRenderable);
     }
-    
+
     addNode(child) {
         this._nodes.set(child.id, child);
     }
@@ -114,7 +115,7 @@ class Network {
     set name(name) {
         this._name = name;
     }
-    
+
     /**
      * Get the child node that matches the path.
      *
@@ -129,7 +130,7 @@ class Network {
         return TreePath.toArray(path)
             .reduce((parent, id) => parent.getNode(id), this);
     }
-    
+
     connect() {
         if (this.connected) return;
         this.connected = true;
@@ -161,7 +162,7 @@ class Network {
         if (!name.length) return;
 
         try {
-            const re = new RegExp(name, 'i');
+            const re = new RegExp(escapeRegExp(name), 'i');
 
             entireNetwork
                 .filter(node => !node.nodes)

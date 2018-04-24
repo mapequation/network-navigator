@@ -78,8 +78,6 @@ export default function parseFTree(rows) {
         },
     };
 
-    const DEFAULT_FLOW = 1;
-
     const modules = new Map();
     const { tree, links } = result.data;
 

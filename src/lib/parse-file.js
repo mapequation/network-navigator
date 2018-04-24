@@ -23,5 +23,5 @@ export default function parseFile(file) {
     };
 
     return new Promise((complete, error) =>
-        Papa.parse(file, Object.assign(opts, { complete, error })));
+        Papa.parse(file, Object.assign(opts, { complete, error }))); // eslint-disable-line no-undef
 }

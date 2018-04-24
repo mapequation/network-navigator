@@ -5,9 +5,8 @@ import { highlightNode, restoreNode } from './highlight-node';
 import * as LOD from './level-of-detail';
 import Point from './point';
 
-const parentElement = document.getElementById("content");
-const width = parentElement.clientWidth;
-const height = parentElement.clientHeight;
+const width = window.innerWidth;
+const height = window.innerHeight;
 const center = new Point(width / 2, height / 2);
 
 const ellipsis = (text, len = 25) => (text.length > len ? `${text.substr(0, len - 3)}...` : text);
@@ -19,6 +18,15 @@ const distanceFromCenter = Point.distanceFrom(center);
 
 const insideScreenBounds = point =>
     0 < point.x && point.x < width && 0 < point.y && point.y < height;
+
+const closestPointOnBoundary = (point, radius) => {
+    const u = center.sub(point).normalize.mul(radius);
+    return u.add(point);
+};
+
+const visibleOnScreen = (point, radius) => {
+    return insideScreenBounds(point) || insideScreenBounds(closestPointOnBoundary(point, radius));
+};
 
 const radiusLargeEnough = radius => radius > Math.min(width, height) / 4;
 

@@ -247,3 +247,29 @@ Dropzone.options.myDropzone = {
     acceptedFiles: '.ftree,.net',
     accept: acceptFile,
 };
+
+// *************
+//   DELETE ME
+// *************
+
+d3.select('#my-dropzone').remove();
+
+const spinner = loadingSpinner(svg, new Point(width / 2, height / 2));
+
+const filename =
+//    'data/science2001.ftree';
+//    'data/stockholm.ftree';
+    'data/data_merged_1_compressed_12958_no_modulenames_expanded.ftree';
+//    'data/targeted_mean_network_095.ftree';
+//    'data/multiplex_mars.ftree';
+
+fetch(filename)
+    .then(res => res.text())
+    .then(parseFile)
+    .then((parsed) => {
+        const ftree = parseFTree(parsed.data);
+        const network = networkFromFTree(ftree);
+        spinner.remove();
+        runApplication(network, { name: filename });
+    })
+    .catch(err => console.error(err));

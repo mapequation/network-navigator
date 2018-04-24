@@ -53,7 +53,7 @@ export function halfLink() {
         // Bending
         const bendMagnitude = Math.abs(bend);
         const outerBendAddition = Math.pow(bendMagnitude / 10, 0.4);
-        const positiveCurvature = dir.x > 0 || (dir.x == 0 && dir.y < 0);
+        const positiveCurvature = dir.x > 0 || (dir.x === 0 && dir.y < 0);
         const curvatureSign = positiveCurvature ? 1 : -1;
         const bendSign = bend > 0 ? 1 : -1;
         const finalBendSign = curvatureSign * bendSign;
