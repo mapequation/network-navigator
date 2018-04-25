@@ -205,7 +205,6 @@ export default class MapVisualizer extends Component {
         render();
     }
 
-
     render() {
         const { width, height } = this.props;
 

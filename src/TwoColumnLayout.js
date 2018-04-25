@@ -1,7 +1,8 @@
 import React, { Component } from 'react';
-import { Sidebar, Segment, Button, Rail } from 'semantic-ui-react';
+import { Sidebar, Segment, Button, Rail, Menu, Icon, Input } from 'semantic-ui-react';
+import Help from './Help';
+import SelectedNode from './SelectedNode';
 import MapVisualizer from './MapVisualizer';
-import SidebarRight from './SidebarRight';
 
 export default class TwoColumnLayout extends Component {
     state = {
@@ -25,17 +26,44 @@ export default class TwoColumnLayout extends Component {
     render() {
         return (
             <Sidebar.Pushable as={Segment}>
-                <SidebarRight
-                    searchFunction={this.state.searchFunction}
-                    flowDistribution={this.state.flowDistribution}
-                    degreeDistribution={this.state.degreeDistribution}
-                    largest={this.state.largest}
-                    selectedNode={this.state.selectedNode}
+                <Sidebar
+                    style={{ overflow: 'scroll!important' }}
+                    as={Menu}
+                    animation='overlay'
+                    width='wide'
+                    direction='right'
                     visible={this.state.visible}
-                    toggleVisibility={this.toggleVisibility} />
+                    vertical>
+                    <Menu.Item onClick={this.toggleVisibility}>
+                        <Icon name='close' />Close menu
+                    </Menu.Item>
+                    <Menu.Item>
+                        <Input readonly label='File' labelPosition='right' value='aoeu' />
+                    </Menu.Item>
+                    <Menu.Item>
+                        <Input
+                            icon='search'
+                            placeholder='Search...'
+                            onChange={(event, data) => this.state.searchFunction(data.value)} />
+                    </Menu.Item>
+                    <SelectedNode
+                        node={this.state.selectedNode}
+                        flowDistribution={this.state.flowDistribution}
+                        degreeDistribution={this.state.degreeDistribution} />
+                    <Menu.Item>
+                        <Icon name='image' />Download SVG
+                    </Menu.Item>
+                    <Menu.Item>
+                        <Icon name='file outline' />Download data
+                    </Menu.Item>
+                    <Help />
+                    <Menu.Item as={'a'} href='https://github.com/mapequation/map-visualize'>
+                        <Icon name='github' />Source code
+                    </Menu.Item>
+                </Sidebar>
                 <Sidebar.Pusher>
                     <Segment basic loading={this.state.loading}>
-                        <Rail attached internal position="right" size="small">
+                        <Rail internal position="right" size="small">
                             <Button
                                 onClick={this.toggleVisibility}
                                 content="Show menu"
