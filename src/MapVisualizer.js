@@ -62,6 +62,7 @@ export default class MapVisualizer extends Component {
             link => link.flow).flow;
 
         const renderStyle = makeRenderStyle(maxNodeFlow, maxLinkFlow);
+
         const linkRenderer = (network.directed ? halfLink : undirectedLink)()
             .nodeRadius(renderStyle.nodeRadius)
             .width(renderStyle.linkWidth);

@@ -118,7 +118,8 @@ class GraphSlider extends Component {
                     <Range min={0}
                         max={this.props.data.length - 1}
                         value={this.state.range}
-                        onChange={this.onChange} />
+                        onChange={this.onChange}
+                        width={this.width - 15} />
                 }
             </div>
         );
