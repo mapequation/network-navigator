@@ -1,6 +1,5 @@
 import escapeRegExp from 'lodash';
 import TreePath from './treepath';
-import { sumFlow } from './filter';
 
 /******************************************
  * Common properties for Network and Node *
@@ -151,10 +150,11 @@ class Network {
 
         entireNetwork.forEach(node => node.searchHits = 0);
 
-        if (!name.length) return;
+        if (!name.length) return [];
 
         try {
             const re = new RegExp(escapeRegExp(name), 'i');
+            const hits = [];
 
             entireNetwork
                 .filter(node => !node.nodes)
@@ -162,6 +162,8 @@ class Network {
                     node.searchHits = +re.test(node.name);
 
                     if (node.searchHits > 0) {
+                        hits.push(node);
+
                         let parent = node.parent;
                         while (parent) {
                             parent.searchHits += node.searchHits;
@@ -170,8 +172,9 @@ class Network {
                     }
                 });
 
+            return hits;
         } catch (e) {
-            // Do nothing
+            return [];
         }
     }
 }

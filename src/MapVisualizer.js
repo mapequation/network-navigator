@@ -20,7 +20,8 @@ const ZOOM_EXTENT_MAX = 100000;
 
 export default class MapVisualizer extends Component {
     state = {
-        filename: 'data/science2001.ftree',
+        filename: 'data/data_merged_1_compressed_12958_no_modulenames_expanded.ftree',
+        //filename: 'data/science2001.ftree',
         nodeFlowFactor: 1,
         path: 'root',
         linkDistance: 250,
@@ -65,14 +66,11 @@ export default class MapVisualizer extends Component {
             .nodeRadius(renderStyle.nodeRadius)
             .width(renderStyle.linkWidth);
 
-        let translateAmount = 100;
-
         const layouts = new Map();
 
         const zoom = d3.zoom()
             .scaleExtent([ZOOM_EXTENT_MIN, ZOOM_EXTENT_MAX])
             .on('zoom', () => {
-                translateAmount = 100 / d3.event.transform.k;
                 layouts.forEach(layout =>
                     layout.applyTransform(d3.event.transform).updateAttributes());
                 root.attr('transform', d3.event.transform);
@@ -80,56 +78,6 @@ export default class MapVisualizer extends Component {
 
         svg.call(zoom)
             .on('dblclick.zoom', null);
-
-        const onKeydown = () => {
-            const translateDuration = 250;
-            const key = d3.event.key || d3.event.keyCode;
-            switch (key) {
-                case 'Space':
-                case ' ':
-                    svg.transition()
-                        .duration(300)
-                        .call(zoom.transform, d3.zoomIdentity);
-                    break;
-                case 'ArrowUp':
-                    svg.transition()
-                        .duration(translateDuration)
-                        .call(zoom.translateBy, 0, translateAmount);
-                    break;
-                case 'ArrowDown':
-                    svg.transition()
-                        .duration(translateDuration)
-                        .call(zoom.translateBy, 0, -translateAmount);
-                    break;
-                case 'ArrowLeft':
-                    svg.transition()
-                        .duration(translateDuration)
-                        .call(zoom.translateBy, translateAmount, 0);
-                    break;
-                case 'ArrowRight':
-                    svg.transition()
-                        .duration(translateDuration)
-                        .call(zoom.translateBy, -translateAmount, 0);
-                    break;
-                case '1':
-                case '2':
-                case '3':
-                case '4':
-                case '5':
-                case '6':
-                case '7':
-                case '8':
-                case '9':
-                    svg.transition()
-                        .duration(200)
-                        .call(zoom.scaleTo, +key / 10);
-                    break;
-                default:
-                    break;
-            }
-        };
-
-        d3.select('body').on('keydown', onKeydown);
 
         layouts.set(this.state.path, NetworkLayout({
             linkRenderer,
@@ -161,9 +109,6 @@ export default class MapVisualizer extends Component {
             layout.on('click', (node) => {
                 console.log(node);
                 this.props.selectedNode(node);
-                const children = node.nodes || [];
-                this.props.flowDistribution(children.map(n => n.flow));
-                this.props.degreeDistribution(children.map(n => n.kout).sort((a, b) => b - a));
                 //state.selected = node;
                 //state.name = node ? node.name || node.largest.map(n => n.name).join(', ') : '';
             }).on('render', ({ network, localTransform, renderTarget }) => {
@@ -189,13 +134,11 @@ export default class MapVisualizer extends Component {
 
         this.props.loadingComplete();
         this.props.searchFunction((name) => {
-            network.search(name);
+            const hits = network.search(name);
             layouts.forEach(l => l.updateAttributes());
+            return hits;
         });
         this.props.selectedNode(network);
-        this.props.flowDistribution(network.nodes.map(n => n.flow));
-        this.props.degreeDistribution(network.nodes.map(n => n.kout).sort((a, b) => b - a));
-        this.props.largest(network.largest);
 
         render();
     }
@@ -204,8 +147,7 @@ export default class MapVisualizer extends Component {
         const { width, height } = this.props;
 
         return (
-            <svg
-                ref={node => this.svgNode = node}
+            <svg ref={node => this.svgNode = node}
                 width={width}
                 height={height}
                 xmlns='http://www.w3.org/2000/svg'>

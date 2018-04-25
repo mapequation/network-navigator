@@ -2,24 +2,20 @@ import React, { Component } from 'react';
 import { Sidebar, Segment, Button, Rail, Menu, Icon, Input } from 'semantic-ui-react';
 import Help from './Help';
 import SelectedNode from './SelectedNode';
+import DownloadMenu from './DownloadMenu';
+import SearchNodes from './SearchNodes';
 import MapVisualizer from './MapVisualizer';
 
 export default class TwoColumnLayout extends Component {
     state = {
         visible: true,
         loading: true,
-        flowDistribution: [],
-        degreeDistribution: [],
-        largest: [],
         selectedNode: null,
-        searchFunction: () => null,
+        searchFunction: () => [],
     }
 
     toggleVisibility = () => this.setState({ visible: !this.state.visible });
     loadingComplete = () => this.setState({ loading: false });
-    setFlowDistribution = data => this.setState({ flowDistribution: data });
-    setDegreeDistribution = data => this.setState({ degreeDistribution: data });
-    setLargest = data => this.setState({ largest: data });
     setSelectedNode = node => this.setState({ selectedNode: node })
     setSearchFunction = f => this.setState({ searchFunction: f })
 
@@ -38,24 +34,13 @@ export default class TwoColumnLayout extends Component {
                         <Icon name='close' />Close menu
                     </Menu.Item>
                     <Menu.Item>
-                        <Input readonly label='File' labelPosition='right' value='aoeu' />
+                        <Input readOnly label='Filename' labelPosition='right' value='aoeu' />
                     </Menu.Item>
                     <Menu.Item>
-                        <Input
-                            icon='search'
-                            placeholder='Search...'
-                            onChange={(event, data) => this.state.searchFunction(data.value)} />
+                        <SearchNodes searchFunction={this.state.searchFunction} maxResults={15} />
                     </Menu.Item>
-                    <SelectedNode
-                        node={this.state.selectedNode}
-                        flowDistribution={this.state.flowDistribution}
-                        degreeDistribution={this.state.degreeDistribution} />
-                    <Menu.Item>
-                        <Icon name='image' />Download SVG
-                    </Menu.Item>
-                    <Menu.Item>
-                        <Icon name='file outline' />Download data
-                    </Menu.Item>
+                    <SelectedNode node={this.state.selectedNode} />
+                    <DownloadMenu />
                     <Help />
                     <Menu.Item as={'a'} href='https://github.com/mapequation/map-visualize'>
                         <Icon name='github' />Source code
@@ -70,13 +55,10 @@ export default class TwoColumnLayout extends Component {
                                 icon='sidebar' />
                         </Rail>
                         <MapVisualizer
-                            searchFunction={this.setSearchFunction}
-                            flowDistribution={this.setFlowDistribution}
-                            degreeDistribution={this.setDegreeDistribution}
-                            largest={this.setLargest}
-                            selectedNode={this.setSelectedNode}
                             width={window.innerWidth}
                             height={window.innerHeight}
+                            searchFunction={this.setSearchFunction}
+                            selectedNode={this.setSelectedNode}
                             loadingComplete={this.loadingComplete} />
                     </Segment>
                 </Sidebar.Pusher>
