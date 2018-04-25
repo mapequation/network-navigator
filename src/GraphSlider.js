@@ -1,5 +1,4 @@
 import React, { Component } from 'react';
-import './GraphSlider.css';
 import * as d3 from 'd3';
 import Range from './Range';
 

@@ -1,7 +1,4 @@
-import {
-    scaleLinear,
-    scaleSqrt
-} from 'd3';
+import { scaleLinear } from 'd3';
 
 export function linkByIndex(links) {
     const nAlwaysShow = 5;
@@ -15,18 +12,6 @@ export function linkByIndex(links) {
     }
 
     return (k = 1) => l => 1 - l.index / len - alwaysVisibleFraction <= visibleIndices(k);
-}
-
-export function backbone(links) {
-    const zoomScaleToPvalue =
-        scaleSqrt().domain([0.1, 1.5]).range([0.05, 1]).clamp(true);
-
-    return (k = 1) => l => {
-        const p = zoomScaleToPvalue(k);
-        const n = l.flowNormalized;
-        const kout = Math.max(l.source.kout, 2);
-        return 1 - n < Math.pow(p, 1/(kout - 1));
-    };
 }
 
 export function nodeByIndex(nodes) {

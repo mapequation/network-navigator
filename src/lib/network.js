@@ -64,7 +64,6 @@ class Link {
         this.source = source;
         this.target = target;
         this.flow = flow;
-        this.flowNormalized = flow;
         this.shouldRender = true;
     }
 }
@@ -135,7 +134,6 @@ class Network {
         if (this.connected) return;
         this.connected = true;
 
-        // Connect links
         this.links = this.links.map(l => {
             const source = this.getNode(l.source);
             const target = this.getNode(l.target);
@@ -145,12 +143,6 @@ class Network {
             source.kout++;
             target.kin++;
             return link;
-        });
-
-        // Compute the normalized link weights
-        this.nodes.forEach((node) => {
-            const sum = sumFlow(node.outLinks);
-            node.outLinks.forEach(link => link.flowNormalized = link.flow / (sum || 1))
         });
     }
 
