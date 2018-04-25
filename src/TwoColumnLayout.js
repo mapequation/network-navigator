@@ -5,6 +5,8 @@ import SelectedNode from './SelectedNode';
 import DownloadMenu from './DownloadMenu';
 import SearchNodes from './SearchNodes';
 import MapVisualizer from './MapVisualizer';
+import SimulationSettings from './SimulationSettings';
+import Filter from './Filter';
 
 export default class TwoColumnLayout extends Component {
     state = {
@@ -16,8 +18,8 @@ export default class TwoColumnLayout extends Component {
 
     toggleVisibility = () => this.setState({ visible: !this.state.visible });
     loadingComplete = () => this.setState({ loading: false });
-    setSelectedNode = node => this.setState({ selectedNode: node })
-    setSearchFunction = f => this.setState({ searchFunction: f })
+    setSelectedNode = node => this.setState({ selectedNode: node });
+    setSearchFunction = f => this.setState({ searchFunction: f });
 
     render() {
         return (
@@ -30,9 +32,7 @@ export default class TwoColumnLayout extends Component {
                     direction='right'
                     visible={this.state.visible}
                     vertical>
-                    <Menu.Item onClick={this.toggleVisibility}>
-                        <Icon name='close' />Close menu
-                    </Menu.Item>
+                    <Menu.Item onClick={this.toggleVisibility} icon='close' content='Close menu' />
                     <Menu.Item>
                         <Input readOnly label='Filename' labelPosition='right' value='aoeu' />
                     </Menu.Item>
@@ -40,6 +40,8 @@ export default class TwoColumnLayout extends Component {
                         <SearchNodes searchFunction={this.state.searchFunction} maxResults={15} />
                     </Menu.Item>
                     <SelectedNode node={this.state.selectedNode} />
+                    <Filter />
+                    <SimulationSettings />
                     <DownloadMenu />
                     <Help />
                     <Menu.Item as={'a'} href='https://github.com/mapequation/map-visualize'>
