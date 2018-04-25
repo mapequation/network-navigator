@@ -61,7 +61,6 @@ class GraphSlider extends Component {
             .attr('transform', 'translate(25 10)')
 
         group.append('g')
-            .attr('transform', 'translate(0 0)')
             .call(yAxis)
 
         group.append('g')
@@ -91,6 +90,16 @@ class GraphSlider extends Component {
             .attr('stroke', lineColor)
             .attr('stroke-width', 1)
             .attr('d', line(data))
+
+        if (data.length === 0) {
+            group.append('text')
+                .attr('transform', `translate(${figureWidth/2} ${figureHeight/2})`)
+                .attr('text-anchor', 'middle')
+                .style('font-size', 20)
+                .style('font-weight', 'bold')
+                .style('fill', '#ccc')
+                .text('No data');
+        }
     }
 
     onChange = (value) => {

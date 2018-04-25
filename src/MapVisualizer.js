@@ -160,15 +160,10 @@ export default class MapVisualizer extends Component {
 
             layout.on('click', (node) => {
                 console.log(node);
-                if (node.nodes) {
-                    const children = node.nodes;
-                    this.props.flowDistribution(children.map(n => n.flow));
-                    this.props.degreeDistribution(children.map(n => n.kout).sort((a, b) => b - a));
-                }
-                if (node.largest) {
-                    this.props.largest(node.largest);
-                }
                 this.props.selectedNode(node);
+                const children = node.nodes || [];
+                this.props.flowDistribution(children.map(n => n.flow));
+                this.props.degreeDistribution(children.map(n => n.kout).sort((a, b) => b - a));
                 //state.selected = node;
                 //state.name = node ? node.name || node.largest.map(n => n.name).join(', ') : '';
             }).on('render', ({ network, localTransform, renderTarget }) => {
