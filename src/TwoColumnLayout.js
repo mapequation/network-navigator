@@ -4,7 +4,6 @@ import Help from './Help';
 import SelectedNode from './SelectedNode';
 import DownloadMenu from './DownloadMenu';
 import SearchNodes from './SearchNodes';
-import MapVisualizer from './MapVisualizer';
 import FileDialog from './FileDialog';
 import parseFile from './lib/parse-file';
 import parseFTree from './lib/file-formats/ftree';
@@ -12,6 +11,7 @@ import networkFromFTree from './lib/file-formats/network-from-ftree';
 
 export default class TwoColumnLayout extends Component {
     state = {
+        MapVisualizer: null,
         filename: '',
         sidebarVisible: false,
         isLoading: false,
@@ -54,13 +54,16 @@ export default class TwoColumnLayout extends Component {
                 this.setState({
                     progressValue: 3,
                     progressLabel: 'Success',
+                    network,
                 });
-
+            })
+            .then(() => import('./MapVisualizer'))
+            .then((imported) => {
                 setTimeout(() =>
                     this.setState({
+                        MapVisualizer: imported.default,
                         isLoading: false,
                         loadingComplete: true,
-                        network,
                     }), 200);
             })
             .catch((err) => {
@@ -85,7 +88,7 @@ export default class TwoColumnLayout extends Component {
     render() {
         const mainContent = this.state.loadingComplete
             ? (
-            <MapVisualizer
+            <this.state.MapVisualizer
                 network={this.state.network}
                 width={window.innerWidth}
                 height={window.innerHeight}
