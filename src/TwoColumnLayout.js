@@ -5,8 +5,6 @@ import SelectedNode from './SelectedNode';
 import DownloadMenu from './DownloadMenu';
 import SearchNodes from './SearchNodes';
 import MapVisualizer from './MapVisualizer';
-import SimulationSettings from './SimulationSettings';
-import Filter from './Filter';
 
 export default class TwoColumnLayout extends Component {
     state = {
@@ -40,8 +38,6 @@ export default class TwoColumnLayout extends Component {
                         <SearchNodes searchFunction={this.state.searchFunction} maxResults={15} />
                     </Menu.Item>
                     <SelectedNode node={this.state.selectedNode} />
-                    <Filter />
-                    <SimulationSettings />
                     <DownloadMenu />
                     <Help />
                     <Menu.Item as={'a'} href='https://github.com/mapequation/map-visualize'>
