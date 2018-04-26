@@ -2,51 +2,22 @@ import React, { Component } from 'react';
 import * as d3 from 'd3';
 import { maxBy, flatMap } from 'lodash';
 import { halfLink, undirectedLink } from './lib/link-renderer';
-import parseFile from './lib/parse-file';
-import parseFTree from './lib/file-formats/ftree';
-import networkFromFTree from './lib/file-formats/network-from-ftree';
 import { traverseDepthFirst } from './lib/network';
 import NetworkLayout from './lib/network-layout';
 import Simulation from './lib/simulation';
 import makeRenderStyle from './lib/render-style';
 import Point from './lib/point';
-import {
-    takeLargest,
-    connectedLinks,
-} from './lib/filter';
-
-const ZOOM_EXTENT_MIN = 0.1;
-const ZOOM_EXTENT_MAX = 100000;
+        import { takeLargest, connectedLinks } from './lib/filter';
 
 export default class MapVisualizer extends Component {
     state = {
-        filename: 'data/data_merged_1_compressed_12958_no_modulenames_expanded.ftree',
-        //filename: 'data/science2001.ftree',
-        nodeFlowFactor: 1,
         path: 'root',
         linkDistance: 250,
         charge: 500,
-        search: '',
-        selected: null,
-        name: '',
     }
 
     componentDidMount() {
-        this.loadDefaultFile();
-    }
-
-    loadDefaultFile() {
-        const { filename } = this.state;
-
-        fetch(filename)
-            .then(res => res.text())
-            .then(parseFile)
-            .then((parsed) => {
-                const ftree = parseFTree(parsed.data);
-                const network = networkFromFTree(ftree);
-                this.run(network);
-            })
-            .catch(err => console.error(err));
+        this.run(this.props.network);
     }
 
     run(network) {
@@ -70,7 +41,7 @@ export default class MapVisualizer extends Component {
         const layouts = new Map();
 
         const zoom = d3.zoom()
-            .scaleExtent([ZOOM_EXTENT_MIN, ZOOM_EXTENT_MAX])
+            .scaleExtent([0.1, 100000])
             .on('zoom', () => {
                 layouts.forEach(layout =>
                     layout.applyTransform(d3.event.transform).updateAttributes());
@@ -110,8 +81,6 @@ export default class MapVisualizer extends Component {
             layout.on('click', (node) => {
                 console.log(node);
                 this.props.selectedNode(node);
-                //state.selected = node;
-                //state.name = node ? node.name || node.largest.map(n => n.name).join(', ') : '';
             }).on('render', ({ network, localTransform, renderTarget }) => {
                 this.setState({ path: network.path });
 
@@ -133,7 +102,6 @@ export default class MapVisualizer extends Component {
             }).init(branch);
         };
 
-        this.props.loadingComplete();
         this.props.searchFunction((name) => {
             const hits = network.search(name);
             layouts.forEach(l => l.updateAttributes());

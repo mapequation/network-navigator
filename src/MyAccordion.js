@@ -6,6 +6,12 @@ export default class MyAccordion extends Component {
         visible: false,
     }
 
+    componentDidMount() {
+        if (this.props.visible) {
+            this.setState({ visible: this.props.visible });
+        }
+    }
+
     toggleVisibility = () => this.setState({ visible: !this.state.visible });
 
     render() {

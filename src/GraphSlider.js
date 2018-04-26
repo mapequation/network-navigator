@@ -91,7 +91,7 @@ class GraphSlider extends Component {
             .attr('stroke-width', 1)
             .attr('d', line(data))
 
-        if (data.length === 0) {
+        if (data.length <= 1) {
             group.append('text')
                 .attr('transform', `translate(${figureWidth/2} ${figureHeight/2})`)
                 .attr('text-anchor', 'middle')

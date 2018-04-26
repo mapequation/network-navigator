@@ -13,7 +13,7 @@ const SelectedNode = (props) => {
     const figureHeight = 120;
 
     return (
-        <MyAccordion title='Selected node'>
+        <MyAccordion title='Selected node' visible>
             <InfoTable node={props.node} />
             <Menu.Menu>
                 <MyAccordion title='Flow distribution' popup='Flow of nodes within this module.'>
