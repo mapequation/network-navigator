@@ -5,19 +5,13 @@ import SelectedNode from './SelectedNode';
 import DownloadMenu from './DownloadMenu';
 import SearchNodes from './SearchNodes';
 import FileDialog from './FileDialog';
-import parseFile from './lib/parse-file';
-import parseFTree from './lib/file-formats/ftree';
-import networkFromFTree from './lib/file-formats/network-from-ftree';
+import MapVisualizer from './MapVisualizer';
 
 export default class TwoColumnLayout extends Component {
     state = {
-        MapVisualizer: null,
-        filename: '',
         sidebarVisible: false,
-        isLoading: false,
         loadingComplete: false,
-        progressLabel: '',
-        progressValue: 0,
+        filename: '',
         network: null,
         selectedNode: null,
         searchFunction: () => [],
@@ -26,88 +20,21 @@ export default class TwoColumnLayout extends Component {
     toggleSidebar = () => this.setState({ sidebarVisible: !this.state.sidebarVisible });
     setSelectedNode = node => this.setState({ selectedNode: node });
     setSearchFunction = f => this.setState({ searchFunction: f });
-
-    loadData = (file) => {
-        if (file.name) {
-            this.setState({ filename: file.name })
-        }
-
-        this.setState({
-            isLoading: true,
-            progressValue: 1,
-            progressLabel: 'Reading file',
-        });
-
-        const progressTimeout = setTimeout(() =>
-            this.setState({
-                progressValue: 2,
-                progressLabel: 'Parsing',
-            }), 400);
-
-        parseFile(file)
-            .then((parsed) => {
-                clearTimeout(progressTimeout);
-
-                const ftree = parseFTree(parsed.data);
-                const network = networkFromFTree(ftree);
-
-                this.setState({
-                    progressValue: 3,
-                    progressLabel: 'Success',
-                    network,
-                });
-            })
-            .then(() => import('./MapVisualizer'))
-            .then((imported) => {
-                setTimeout(() =>
-                    this.setState({
-                        MapVisualizer: imported.default,
-                        isLoading: false,
-                        loadingComplete: true,
-                    }), 200);
-            })
-            .catch((err) => {
-                this.setState({ isLoading: false });
-                console.log(err)
-            });
-    }
-
-    loadExampleData = () => {
-        const filename = 'citation_data.ftree';
-
-        this.setState({
-            filename,
-            isLoading: true,
-            progressValue: 1,
-            progressLabel: 'Reading file',
-        });
-
-        fetch(filename)
-            .then(res => res.text())
-            .then(this.loadData)
-            .catch((err) => {
-                this.setState({ isLoading: false });
-                console.log(err)
-            });
-    }
+    onFileLoaded = ({ network, filename }) => this.setState({
+        network,
+        filename,
+        loadingComplete: true,
+    });
 
     render() {
         const mainContent = this.state.loadingComplete
-            ? (
-            <this.state.MapVisualizer
+            ? <MapVisualizer
                 network={this.state.network}
                 width={window.innerWidth}
                 height={window.innerHeight}
                 searchFunction={this.setSearchFunction}
                 selectedNode={this.setSelectedNode} />
-            ) : (
-            <FileDialog
-                progressVisible={this.state.isLoading}
-                progressValue={this.state.progressValue}
-                progressLabel={this.state.progressLabel}
-                onLoadData={this.loadData}
-                onExampleClick={this.loadExampleData} />
-            );
+            : <FileDialog onFileLoaded={this.onFileLoaded} />
 
         return (
             <Sidebar.Pushable>
