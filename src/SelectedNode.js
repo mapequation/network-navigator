@@ -16,18 +16,17 @@ const SelectedNode = (props) => {
         <MyAccordion title='Selected node'>
             <InfoTable node={props.node} />
             <Menu.Menu>
-                <MyAccordion title='Flow distribution'>
+                <MyAccordion title='Flow distribution' popup='Flow of nodes within this module.'>
                     <GraphSlider
-                        rangeVisible
                         width={figureWidth} height={figureHeight}
                         data={flowDistribution} />
                 </MyAccordion>
-                <MyAccordion title='In degree distribution'>
+                <MyAccordion title='In degree distribution' popup='Number of incoming links to nodes within this module.'>
                     <GraphSlider
                         width={figureWidth} height={figureHeight}
                         data={inDegreeDistribution} />
                 </MyAccordion>
-                <MyAccordion title='Out degree distribution'>
+                <MyAccordion title='Out degree distribution' popup='Number of outgoing links from nodes within this module.'>
                     <GraphSlider
                         width={figureWidth} height={figureHeight}
                         data={outDegreeDistribution} />
