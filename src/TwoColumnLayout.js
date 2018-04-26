@@ -74,7 +74,13 @@ export default class TwoColumnLayout extends Component {
 
     loadExampleData = () => {
         const filename = 'citation_data.ftree';
-        this.setState({ filename })
+
+        this.setState({
+            filename,
+            isLoading: true,
+            progressValue: 1,
+            progressLabel: 'Reading file',
+        });
 
         fetch(filename)
             .then(res => res.text())
