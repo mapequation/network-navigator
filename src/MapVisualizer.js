@@ -35,14 +35,18 @@ export default class MapVisualizer extends Component {
 
         const entireNetwork = Array.from(traverseDepthFirst(network));
         const maxNodeFlow = maxBy(entireNetwork, node => node.flow).flow;
+        const maxNodeExitFlow = maxBy(entireNetwork, node => node.exitFlow).exitFlow;
         const maxLinkFlow = maxBy(flatMap(entireNetwork, node => node.links || []),
             link => link.flow).flow;
 
-        const renderStyle = makeRenderStyle(maxNodeFlow, maxLinkFlow);
+        const renderStyle = makeRenderStyle(maxNodeFlow, maxNodeExitFlow, maxLinkFlow);
+
+        const linkBend = d3.scaleLinear().domain([50, this.state.linkDistance]).range([0, 40]).clamp(true);
 
         const linkRenderer = (network.directed ? halfLink : undirectedLink)()
             .nodeRadius(renderStyle.nodeRadius)
-            .width(renderStyle.linkWidth);
+            .width(renderStyle.linkWidth)
+            .bend((link, distance) => linkBend(distance));
 
         const layouts = new Map();
 

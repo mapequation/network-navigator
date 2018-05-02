@@ -23,21 +23,22 @@ import {
  *      .style('stroke-width', style.nodeBorderWidth);
  *
  * @param {number} maxNodeFlow the max flow for nodes
+ * @param {number} maxNodeExitFlow the max exit flow for nodes
  * @param {number} maxLinkFlow the max flow for links
  * @return {Object} an object with render style accessors
  */
-export default function makeRenderStyle(maxNodeFlow, maxLinkFlow) {
+export default function makeRenderStyle(maxNodeFlow, maxNodeExitFlow, maxLinkFlow) {
     const nodeFill = [interpolateGreens(2/9), interpolateGreens(3/9)];
     const nodeBorder = [interpolateGreens(3/9), interpolateGreens(6/9)];
     const linkFill = [interpolateBlues(2/9), interpolateBlues(6/9)];
 
+    const nodeRadius = scaleSqrt().domain([0, maxNodeFlow]).range([10, 70]);
     const nodeFillColor = scaleSqrt().domain([0, maxNodeFlow]).range(nodeFill);
-    const nodeBorderColor = scaleSqrt().domain([0, maxNodeFlow]).range(nodeBorder);
-    const nodeRadius = scaleSqrt().domain([0, maxNodeFlow]).range([5, 70]);
-    const nodeBorderWidth = scaleSqrt().domain([0, maxNodeFlow]).range([1, 10]);
+    const nodeBorderWidth = scaleSqrt().domain([0, maxNodeExitFlow]).range([1, 5]);
+    const nodeBorderColor = scaleSqrt().domain([0, maxNodeExitFlow]).range(nodeBorder);
 
     const linkFillColor = scaleSqrt().domain([0, maxLinkFlow]).range(linkFill);
-    const linkWidth = scaleSqrt().domain([0, maxLinkFlow]).range([0, 8]);
+    const linkWidth = scaleSqrt().domain([0, maxLinkFlow]).range([2, 15]);
 
     const searchMarkRadius = scaleSqrt().domain([0, 10]).range([0, 10]).clamp(true);
 
