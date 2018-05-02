@@ -7,13 +7,19 @@ import NetworkLayout from './lib/network-layout';
 import Simulation from './lib/simulation';
 import makeRenderStyle from './lib/render-style';
 import Point from './lib/point';
-        import { takeLargest, connectedLinks } from './lib/filter';
+import { takeLargest, connectedLinks } from './lib/filter';
+import addBeforeUnloadEventListener from './lib/before-unload';
 
 export default class MapVisualizer extends Component {
     state = {
         path: 'root',
         linkDistance: 250,
         charge: 500,
+    }
+
+    constructor(props) {
+        super(props);
+        addBeforeUnloadEventListener('Are you sure you want to leave the page?');
     }
 
     componentDidMount() {
