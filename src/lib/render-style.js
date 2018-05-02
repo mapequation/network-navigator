@@ -49,6 +49,11 @@ export default function makeRenderStyle(maxNodeFlow, maxNodeExitFlow, maxLinkFlo
         nodeBorderWidth: node => nodeBorderWidth(node.exitFlow),
         linkFillColor: link => linkFillColor(link.flow),
         linkWidth: link => linkWidth(link.flow),
-        searchMarkRadius: node => node.visible ? 0 : searchMarkRadius(node.searchHits || 0),
+        searchMarkRadius: node =>
+            node.visible
+                ? 0  // render nothing if module content is visible
+                : node.physicalId && node.searchHits
+                    ? nodeRadius(node.flow) // a node should be completely filled
+                    : searchMarkRadius(node.searchHits || 0), // ... and a module has a marker of varying radius
     };
 }
