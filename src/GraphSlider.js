@@ -1,19 +1,29 @@
 import React, { Component } from 'react';
 import * as d3 from 'd3';
 import Range from './Range';
+import { Button } from 'semantic-ui-react';
 
 class GraphSlider extends Component {
     state = {
         range: 20,
+        logScale: false,
     };
 
     constructor(props) {
         super(props);
-        this.x = this.props.x || (d => this.props.data.indexOf(d));
+        this.x = this.props.x || (d => this.props.data.indexOf(d) + 1);
         this.y = this.props.y || (d => d);
         this.width = this.props.width || 250;
         this.height = this.props.height || 150;
-        this.state = { range: this.props.data.length - 1 };
+        this.xDescription = this.props.xDescription || '';
+        this.xLabel = this.props.xLabel || 'x';
+        this.yLabel = this.props.yLabel || 'y';
+        this.ySubscript = this.props.ySubscript || '';
+        this.yDescription = this.props.yDescription || '';
+        this.state = {
+            range: this.props.data.length,
+            logScale: this.props.logy,
+        };
     }
 
     componentDidMount() {
@@ -27,11 +37,13 @@ class GraphSlider extends Component {
     createChart() {
         const node = this.node;
         const data = this.props.data;
-        const figureWidth = this.width - 20;
-        const figureHeight = this.height - 30;
+        const figureWidth = this.width - 42;
+        const figureHeight = this.height - 35;
 
-        const x = d3.scaleLinear().domain([0, data.length - 1]).rangeRound([0, figureWidth]);
-        const y = d3.scaleLinear().domain([d3.max(this.y(data)), 0]).rangeRound([0, figureHeight]);
+        const x = d3.scaleLinear().domain([1, data.length]).rangeRound([0, figureWidth]);
+        const yScale = this.state.logScale ? d3.scaleLog : d3.scaleLinear;
+        const yMin = this.state.logScale ? Math.max(d3.min(this.y(data)), Number.EPSILON) : 0;
+        const y = yScale().domain([d3.max(this.y(data)), yMin]).rangeRound([0, figureHeight]).clamp(true);
 
         const line = d3.line()
             .x(d => x(this.x(d)))
@@ -58,7 +70,7 @@ class GraphSlider extends Component {
 
         const group = d3.select(node)
             .append('g')
-            .attr('transform', 'translate(25 10)')
+            .attr('transform', 'translate(38 10)')
 
         group.append('g')
             .call(yAxis)
@@ -74,6 +86,34 @@ class GraphSlider extends Component {
         group.selectAll('text')
             .attr('font-weight', 'lighter')
             .attr('font-size', 7.5)
+
+        const xLabel = group.append('text')
+            .attr('transform', `translate(${figureWidth / 2} ${figureHeight + 25})`)
+            .attr('font-size', 9)
+            .attr('font-weight', 'lighter');
+
+        xLabel.append('tspan')
+            .attr('text-anchor', 'middle')
+            .text(this.xDescription + '  ')
+            .append('tspan')
+            .attr('font-style', 'italic')
+            .text(this.xLabel);
+
+        const yLabel = group.append('text')
+            .attr('transform', `translate(${-30} ${figureHeight / 2}) rotate(-90)`)
+            .attr('font-size', 9)
+            .attr('font-weight', 'lighter')
+
+        yLabel.append('tspan')
+            .attr('text-anchor', 'middle')
+            .text((this.state.logScale ? 'Log ' : '') + this.yDescription + '  ')
+            .append('tspan')
+            .attr('font-style', 'italic')
+            .text(this.yLabel)
+            .append('tspan')
+            .attr('baseline-shift', 'sub')
+            .attr('font-size', 8)
+            .text(this.ySubscript);
 
         group.append('path')
             .attr('fill', unselectedFill)
@@ -93,7 +133,7 @@ class GraphSlider extends Component {
 
         if (data.length <= 1) {
             group.append('text')
-                .attr('transform', `translate(${figureWidth/2} ${figureHeight/2})`)
+                .attr('transform', `translate(${figureWidth / 2} ${figureHeight / 2})`)
                 .attr('text-anchor', 'middle')
                 .style('font-size', 20)
                 .style('font-weight', 'bold')
@@ -112,6 +152,12 @@ class GraphSlider extends Component {
     render() {
         return (
             <div className="GraphSlider" style={{ width: this.width }}>
+                <div style={{ textAlign: 'center' }}>
+                    <Button.Group compact size='mini'>
+                        <Button active={!this.state.logScale} onClick={() => this.setState({ logScale: false })}>Linear</Button>
+                        <Button active={this.state.logScale} onClick={() => this.setState({ logScale: true })}>Log</Button>
+                    </Button.Group>
+                </div>
                 <svg ref={node => this.node = node} width={this.width} height={this.height}></svg>
                 <br />
                 {this.props.rangeVisible === true &&
