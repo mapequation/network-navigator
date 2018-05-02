@@ -6,6 +6,8 @@ import DownloadMenu from './DownloadMenu';
 import SearchNodes from './SearchNodes';
 import FileDialog from './FileDialog';
 import MapVisualizer from './MapVisualizer';
+import Tree from './Tree';
+
 
 export default class TwoColumnLayout extends Component {
     state = {
@@ -54,6 +56,9 @@ export default class TwoColumnLayout extends Component {
                         <SearchNodes searchFunction={this.state.searchFunction} maxResults={15} />
                     </Menu.Item>
                     <SelectedNode node={this.state.selectedNode} />
+                    {this.state.network != null &&
+                        <Tree network={this.state.network} />
+                    }
                     {/*<DownloadMenu />*/}
                     <Help />
                     <Menu.Item as={'a'} href='https://github.com/mapequation/map-visualize'>
