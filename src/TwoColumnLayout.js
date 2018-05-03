@@ -66,7 +66,7 @@ export default class TwoColumnLayout extends Component {
                     </Menu.Item>
                 </Sidebar>
                 <Sidebar.Pusher as={Grid} padded>
-                    <Grid.Column align='center' style={{height: '100%'}}>
+                    <Grid.Column align='center' style={{ height: '100%' }}>
                         <Rail attached internal position='right'>
                             <Label
                                 attached='top right'

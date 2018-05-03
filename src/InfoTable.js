@@ -1,5 +1,6 @@
 import React from 'react';
-import { Table, Popup } from 'semantic-ui-react';
+import { Table, Popup, Input } from 'semantic-ui-react';
+
 
 const InfoTable = (props) => (
     <Table celled singleLine striped compact fixed>
@@ -9,7 +10,12 @@ const InfoTable = (props) => (
                     <Popup trigger={<Table.Cell width={5} content='Name' />}
                         size='tiny'
                         content='The node name, or the names of the largest nodes contained within.' />
-                    <Table.Cell content={props.node.name} />
+                    <Table.Cell selectable style={{ padding: '0 0 0 8px' }}>
+                        <Input
+                            transparent
+                            fluid
+                            value={props.node.name} />
+                    </Table.Cell>
                 </Table.Row>
                 <Table.Row>
                     <Popup trigger={<Table.Cell content='Tree path' />}
