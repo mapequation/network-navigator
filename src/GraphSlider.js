@@ -42,7 +42,7 @@ class GraphSlider extends Component {
 
         const x = d3.scaleLinear().domain([1, data.length]).rangeRound([0, figureWidth]);
         const yScale = this.state.logScale ? d3.scaleLog : d3.scaleLinear;
-        const yMin = this.state.logScale ? Math.max(d3.min(this.y(data)), Number.EPSILON) : 0;
+        const yMin = this.state.logScale ? d3.min(this.y(data).filter(d => d > 0)) : 0;
         const y = yScale().domain([d3.max(this.y(data)), yMin]).rangeRound([0, figureHeight]).clamp(true);
 
         const line = d3.line()
