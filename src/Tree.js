@@ -27,7 +27,7 @@ class Tree extends Component {
         const g = svg.append('g')
             .attr('transform', 'translate(50 0)');
 
-        const link = g.selectAll('.link')
+        g.selectAll('.link')
             .data(this.tree.links())
             .enter()
             .append('path')

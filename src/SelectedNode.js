@@ -11,12 +11,13 @@ const SelectedNode = (props) => {
     const outDegreeDistribution = children.map(n => n.kout).sort((a, b) => b - a);
     const figureWidth = 285;
     const figureHeight = 150;
+    const title = !props.node || (props.node && props.node.physicalId) ? 'Selected node' : 'Selected module';
 
     return (
-        <MyAccordion title='Selected node' visible>
+        <MyAccordion title={title} visible>
             <InfoTable node={props.node} />
             <Menu.Menu>
-                <MyAccordion title='Flow distribution' popup='Flow of nodes within this module.'>
+                <MyAccordion title='Module flow distribution' popup='Flow of nodes within this module.'>
                     <GraphSlider
                         xDescription='Node' xLabel='n'
                         yDescription='Flow' yLabel='f' logy

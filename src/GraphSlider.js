@@ -57,6 +57,7 @@ class GraphSlider extends Component {
         const yAxis = d3.axisLeft(y)
             .ticks(5)
             .tickSize(4)
+
         const xAxis = d3.axisBottom(x)
             .ticks(Math.min(data.length - 1, 10))
             .tickSize(4)
@@ -70,22 +71,38 @@ class GraphSlider extends Component {
 
         const group = d3.select(node)
             .append('g')
-            .attr('transform', 'translate(38 10)')
+            .attr('transform', 'translate(38 10)');
+
+        group.append('path')
+            .attr('fill', unselectedFill)
+            .attr('d', area(data));
+
+        if (this.props.rangeVisible) {
+            group.append('path')
+                .attr('fill', fillColor)
+                .attr('d', area(data.slice(0, this.state.range + 1)));
+        }
+
+        group.append('path')
+            .attr('fill', 'none')
+            .attr('stroke', lineColor)
+            .attr('stroke-width', 1)
+            .attr('d', line(data));
 
         group.append('g')
-            .call(yAxis)
+            .call(yAxis);
 
         group.append('g')
             .attr('transform', `translate(0 ${figureHeight})`)
-            .call(xAxis)
+            .call(xAxis);
 
         group.selectAll('line')
             .attr('stroke', '#666')
-            .attr('stroke-width', 0.5)
+            .attr('stroke-width', 0.5);
 
         group.selectAll('text')
             .attr('font-weight', 'lighter')
-            .attr('font-size', 7.5)
+            .attr('font-size', 7.5);
 
         const xLabel = group.append('text')
             .attr('transform', `translate(${figureWidth / 2} ${figureHeight + 25})`)
@@ -102,7 +119,7 @@ class GraphSlider extends Component {
         const yLabel = group.append('text')
             .attr('transform', `translate(${-30} ${figureHeight / 2}) rotate(-90)`)
             .attr('font-size', 9)
-            .attr('font-weight', 'lighter')
+            .attr('font-weight', 'lighter');
 
         yLabel.append('tspan')
             .attr('text-anchor', 'middle')
@@ -114,22 +131,6 @@ class GraphSlider extends Component {
             .attr('baseline-shift', 'sub')
             .attr('font-size', 8)
             .text(this.ySubscript);
-
-        group.append('path')
-            .attr('fill', unselectedFill)
-            .attr('d', area(data))
-
-        if (this.props.rangeVisible) {
-            group.append('path')
-                .attr('fill', fillColor)
-                .attr('d', area(data.slice(0, this.state.range + 1)))
-        }
-
-        group.append('path')
-            .attr('fill', 'none')
-            .attr('stroke', lineColor)
-            .attr('stroke-width', 1)
-            .attr('d', line(data))
 
         if (data.length <= 1) {
             group.append('text')
