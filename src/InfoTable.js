@@ -37,18 +37,30 @@ const InfoTable = (props) => (
                         <Table.Cell content={props.node.exitFlow} />
                     </Table.Row>
                 }
+                {props.directed &&
                 <Table.Row>
                     <Popup trigger={<Table.Cell content='In degree' />}
                         size='tiny'
                         content='The number of incoming links to this node.' />
                     <Table.Cell content={props.node.kin} />
                 </Table.Row>
-                <Table.Row>
+                }
+                {props.directed &&
+                    <Table.Row>
                     <Popup trigger={<Table.Cell content='Out degree' />}
                         size='tiny'
                         content='The number of outgoing links from this node.' />
                     <Table.Cell content={props.node.kout} />
                 </Table.Row>
+                }
+                {!props.directed &&
+                <Table.Row>
+                    <Popup trigger={<Table.Cell content='Degree' />}
+                        size='tiny'
+                        content='The number of links to this node.' />
+                    <Table.Cell content={props.node.kin + props.node.kout} />
+                </Table.Row>
+                }
                 {props.node.nodes &&
                     <Table.Row>
                         <Popup trigger={<Table.Cell content='Nodes' />}

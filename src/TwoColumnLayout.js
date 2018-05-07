@@ -55,7 +55,7 @@ export default class TwoColumnLayout extends Component {
                     <Menu.Item>
                         <SearchNodes searchFunction={this.state.searchFunction} maxResults={15} />
                     </Menu.Item>
-                    <SelectedNode node={this.state.selectedNode} />
+                    <SelectedNode node={this.state.selectedNode} directed={this.state.network ? this.state.network.directed : false} />
                     {this.state.network != null &&
                         <Tree network={this.state.network} />
                     }
