@@ -46,11 +46,16 @@ class Tree extends Component {
         node.append("circle")
             .attr("r", 2.5);
 
+        const name = (d) => {
+            if (d.depth > 3) return '';
+            return d.data.physicalId ? d.data.name : d.data.path.toString();
+        };
+
         node.append("text")
             .attr("dy", 3)
             .attr("x", d => d.children ? -8 : 8)
             .style("text-anchor", d => d.children ? "end" : "start")
-            .text(d => d.data.physicalId ? d.data.name : d.data.path.toString());
+            .text(name);
     }
 
     render() {
