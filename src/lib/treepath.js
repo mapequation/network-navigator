@@ -71,6 +71,16 @@ export default class TreePath {
     }
 
     /**
+     * Iterate over steps in path
+     *
+     * @return {iterator} an iterator
+     */
+    [Symbol.iterator]() {
+        if (this.toString() === 'root') return [this.toString()].values();
+        return this.toArray().values();
+    }
+
+    /**
      * Split a tree path string to array and parse to integer.
      *
      * @example
