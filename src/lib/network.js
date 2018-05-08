@@ -154,25 +154,23 @@ class Network {
 
         try {
             const re = new RegExp(escapeRegExp(name), 'i');
-            const hits = [];
 
-            entireNetwork
-                .filter(node => !node.nodes)
-                .forEach((node) => {
+            return entireNetwork
+                .filter((node) => {
+                    if (node.nodes) return false;
+
                     node.searchHits = +re.test(node.name);
 
                     if (node.searchHits > 0) {
-                        hits.push(node);
-
                         let parent = node.parent;
                         while (parent) {
-                            parent.searchHits += node.searchHits;
+                            parent.searchHits++;
                             parent = parent.parent;
                         }
                     }
-                });
 
-            return hits;
+                    return node.searchHits > 0;
+                });
         } catch (e) {
             return [];
         }
