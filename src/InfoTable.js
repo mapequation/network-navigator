@@ -3,8 +3,9 @@ import { Table, Popup, Input } from 'semantic-ui-react';
 
 
 const InfoTable = (props) => (
-    <Table celled singleLine striped compact fixed>
-        {props.node &&
+    <div>
+    {props.node &&
+        <Table celled singleLine striped compact fixed>
             <Table.Body>
                 <Table.Row>
                     <Popup trigger={<Table.Cell width={5} content='Name' />}
@@ -78,8 +79,9 @@ const InfoTable = (props) => (
                     </Table.Row>
                 }
             </Table.Body>
-        }
-    </Table>
+        </Table>
+    }
+    </div>
 );
 
 export default InfoTable;
