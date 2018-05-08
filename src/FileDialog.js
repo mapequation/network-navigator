@@ -15,6 +15,11 @@ class FileDialog extends Component {
     constructor(props) {
         super(props);
         this.input = null;
+        this.progressTimeout = null;
+    }
+
+    componentWillUnmount() {
+        clearTimeout(this.progressTimeout);
     }
 
     loadData = (file, name) => {
@@ -28,7 +33,7 @@ class FileDialog extends Component {
             progressLabel: 'Reading file',
         });
 
-        const progressTimeout = setTimeout(() =>
+        this.progressTimeout = setTimeout(() =>
             this.setState({
                 progressValue: 2,
                 progressLabel: 'Parsing',
@@ -36,7 +41,7 @@ class FileDialog extends Component {
 
         parseFile(file)
             .then((parsed) => {
-                clearTimeout(progressTimeout);
+                clearTimeout(this.progressTimeout);
 
                 const ftree = parseFTree(parsed.data);
                 const network = networkFromFTree(ftree);
@@ -46,7 +51,7 @@ class FileDialog extends Component {
                     progressLabel: 'Success',
                 });
 
-                setTimeout(() => {
+                this.progressTimeout = setTimeout(() => {
                     this.setState({ isLoading: false });
                     this.props.onFileLoaded({ network, filename: name })
                 }, 200);
