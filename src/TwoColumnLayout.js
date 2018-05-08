@@ -20,8 +20,8 @@ export default class TwoColumnLayout extends Component {
     }
 
     toggleSidebar = () => this.setState({ sidebarVisible: !this.state.sidebarVisible });
-    setSelectedNode = node => this.setState({ selectedNode: node });
-    setSearchFunction = f => this.setState({ searchFunction: f });
+    setSelectedNode = selectedNode => this.setState({ selectedNode });
+    setSearchFunction = searchFunction => this.setState({ searchFunction });
     onFileLoaded = ({ network, filename }) => this.setState({
         network,
         filename,
