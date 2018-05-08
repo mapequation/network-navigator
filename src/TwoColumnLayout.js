@@ -38,6 +38,8 @@ export default class TwoColumnLayout extends Component {
                 selectedNode={this.setSelectedNode} />
             : <FileDialog onFileLoaded={this.onFileLoaded} />
 
+        const helpTrigger = <Menu.Item><Icon name='help' />Help</Menu.Item>
+
         return (
             <Sidebar.Pushable>
                 <Sidebar
@@ -60,7 +62,7 @@ export default class TwoColumnLayout extends Component {
                         <Tree network={this.state.network} />
                     }
                     {/*<DownloadMenu />*/}
-                    <Help />
+                    <Help trigger={helpTrigger} />
                     <Menu.Item as={'a'} href='https://github.com/mapequation/map-visualize'>
                         <Icon name='github' />Source code
                     </Menu.Item>

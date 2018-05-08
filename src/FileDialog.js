@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
-import { Segment, Button, Divider, Icon, Progress } from 'semantic-ui-react';
+import { Segment, Button, Divider, Icon, Progress, Label } from 'semantic-ui-react';
+import Help from './Help';
 import parseFile from './lib/parse-file';
 import parseFTree from './lib/file-formats/ftree';
 import networkFromFTree from './lib/file-formats/network-from-ftree';
@@ -78,6 +79,7 @@ class FileDialog extends Component {
         return (
             <div>
                 <Segment padded='very' style={{ marginTop: '200px', width: '500px' }}>
+                    <Help trigger={<Label as='a' corner='right' icon='help' />} />
                     <label className='ui fluid primary button' htmlFor='fileUpload'>
                         <Icon name='upload' />Load data...
                     </label>
