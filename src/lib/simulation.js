@@ -25,7 +25,7 @@ export default function Simulation({ x, y }, { charge, linkDistance }) {
     simulation.init = ({ nodes, links }) => {
         const maxLinkFlow = links.reduce((max, link) => Math.max(max, link.flow), -Infinity);
         const minLinkFlow = links.reduce((min, link) => Math.min(min, link.flow), Infinity);
-        const minDistance = 50;
+        const minDistance = 100;
         const maxDistance = linkDistance;
 
         const distance = scaleLinear().domain([minLinkFlow, maxLinkFlow]).range([maxDistance, minDistance]);
