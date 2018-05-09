@@ -10,7 +10,7 @@ import Point from './lib/point';
 import { takeLargest, connectedLinks } from './lib/filter';
 import addBeforeUnloadEventListener from './lib/before-unload';
 
-export default class MapVisualizer extends Component {
+export default class NetworkNavigator extends Component {
     state = {
         path: 'root',
         linkDistance: 250,

@@ -69,7 +69,7 @@ class Tree extends Component {
         )
 
         return (
-            <Modal trigger={menuItem} onMount={() => setTimeout(() => this.createTree(), 100)} closeIcon>
+            <Modal trigger={menuItem} onMount={() => setTimeout(() => this.createTree(), 100)}  dimmer='inverted'>
                 <Modal.Header>Tree</Modal.Header>
                 <Modal.Content>
                     <Modal.Description>

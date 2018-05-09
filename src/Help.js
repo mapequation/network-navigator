@@ -2,7 +2,7 @@ import React from 'react'
 import { Header, Modal, List } from 'semantic-ui-react'
 
 const Help = ({ trigger }) => (
-    <Modal trigger={trigger} closeIcon>
+    <Modal trigger={trigger} dimmer='inverted'>
         <Modal.Header>Help</Modal.Header>
         <Modal.Content>
             <Modal.Description>

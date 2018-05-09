@@ -5,7 +5,7 @@ import SelectedNode from './SelectedNode';
 import DownloadMenu from './DownloadMenu';
 import SearchNodes from './SearchNodes';
 import FileDialog from './FileDialog';
-import MapVisualizer from './MapVisualizer';
+import NetworkNavigator from './NetworkNavigator';
 import Tree from './Tree';
 
 
@@ -30,7 +30,7 @@ export default class TwoColumnLayout extends Component {
 
     render() {
         const mainContent = this.state.loadingComplete
-            ? <MapVisualizer
+            ? <NetworkNavigator
                 network={this.state.network}
                 width={window.innerWidth}
                 height={window.innerHeight}
@@ -68,7 +68,7 @@ export default class TwoColumnLayout extends Component {
                     </Menu.Item>
                 </Sidebar>
                 <Sidebar.Pusher as={Grid} padded>
-                    <Grid.Column align='center' style={{ height: '100%' }}>
+                    <Grid.Column align='center' style={{ height: '100%', paddingTop: 0, paddingLeft: 0 }}>
                         <Rail attached internal position='right'>
                             <Label as='a'
                                 attached='top right'
