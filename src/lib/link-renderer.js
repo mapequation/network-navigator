@@ -44,11 +44,11 @@ export function halfLink() {
         const right = { x: -dir.y, y: dir.x };
 
         // Size of arrowhead
-        const tipLength = Math.min(lBetween / 3, 10 * Math.pow(width, 1 / 3));
+        const tipLength = Math.min(lBetween / 2, 10 * Math.pow(width, 1 / 3));
         const tipWidth = 2 * Math.pow(width, 1 / 2); // excluding the line width
 
         // Size of opposite arrowhead
-        const oppositeTipLength = Math.min(lBetween / 3, 10 * Math.pow(oppositeWidth, 1 / 3));
+        const oppositeTipLength = Math.min(lBetween / 2, 10 * Math.pow(oppositeWidth, 1 / 3));
 
         // Bending
         const bendMagnitude = Math.abs(bend);
