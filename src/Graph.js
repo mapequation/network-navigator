@@ -71,10 +71,12 @@ export default class Graph extends Component {
             .attr('transform', 'translate(38 10)');
 
         group.append('path')
+            .attr('transform', 'translate(1 0)')
             .attr('fill', fillColor)
             .attr('d', area(data));
 
         group.append('path')
+            .attr('transform', 'translate(1 0)')
             .attr('fill', 'none')
             .attr('stroke', lineColor)
             .attr('stroke-width', 1)
