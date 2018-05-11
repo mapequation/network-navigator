@@ -5,12 +5,15 @@ import parseFile from './lib/parse-file';
 import parseFTree from './lib/file-formats/ftree';
 import networkFromFTree from './lib/file-formats/network-from-ftree';
 
+const initialState = {
+    isLoading: false,
+    progressLabel: '',
+    progressValue: 0,
+    progressError: false,
+};
+
 class FileDialog extends Component {
-    state = {
-        isLoading: false,
-        progressLabel: '',
-        progressValue: 0,
-    }
+    state = initialState;
 
     constructor(props) {
         super(props);
@@ -31,6 +34,7 @@ class FileDialog extends Component {
             isLoading: true,
             progressValue: 1,
             progressLabel: 'Reading file',
+            progressError: false,
         });
 
         this.progressTimeout = setTimeout(() =>
@@ -44,6 +48,11 @@ class FileDialog extends Component {
                 clearTimeout(this.progressTimeout);
 
                 const ftree = parseFTree(parsed.data);
+
+                if (ftree.errors.length) {
+                    throw new Error(ftree.errors[0]);
+                }
+
                 const network = networkFromFTree(ftree);
 
                 this.setState({
@@ -57,8 +66,12 @@ class FileDialog extends Component {
                 }, 200);
             })
             .catch((err) => {
-                this.setState({ isLoading: false });
-                console.log(err)
+                clearTimeout(this.progressTimeout);
+                this.setState({
+                    progressError: true,
+                    progressLabel: err.toString(),
+                });
+                console.log(err);
             });
     }
 
@@ -69,14 +82,18 @@ class FileDialog extends Component {
             isLoading: true,
             progressValue: 1,
             progressLabel: 'Reading file',
+            progressError: false,
         });
 
         fetch(filename)
             .then(res => res.text())
             .then(file => this.loadData(file, filename))
             .catch((err) => {
-                this.setState({ isLoading: false });
-                console.log(err)
+                this.setState({
+                    progressError: true,
+                    progressLabel: err.toString(),
+                });
+                console.log(err);
             });
     }
 
@@ -106,6 +123,7 @@ class FileDialog extends Component {
                         <Progress
                             align='left'
                             indicating
+                            error={this.state.progressError}
                             label={this.state.progressLabel}
                             total={3}
                             value={this.state.progressValue} />
