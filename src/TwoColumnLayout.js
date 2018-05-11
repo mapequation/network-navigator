@@ -6,7 +6,7 @@ import Search from './Search';
 import FileDialog from './FileDialog';
 import NetworkNavigator from './NetworkNavigator';
 import Tree from './Tree';
-
+import Background from './Background.svg';
 
 export default class TwoColumnLayout extends Component {
     state = {
@@ -47,6 +47,16 @@ export default class TwoColumnLayout extends Component {
             </div>
             : <FileDialog onFileLoaded={this.onFileLoaded} />
 
+        const background = this.state.loadingComplete
+            ? {
+                backgroundColor: '#fff',
+            }
+            : {
+                background: `linear-gradient(hsla(0, 0%, 100%, 0.5), hsla(0, 0%, 100%, 0.5)), url(${Background}) no-repeat`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center top',
+            };
+
         return (
             <Sidebar.Pushable>
                 <Sidebar
@@ -74,7 +84,9 @@ export default class TwoColumnLayout extends Component {
                     </Menu.Item>
                 </Sidebar>
                 <Sidebar.Pusher as={Grid} padded>
-                    <Grid.Column align='center' style={{ height: '100%', paddingTop: 0, paddingLeft: 0 }}>
+                    <Grid.Column
+                        align='center'
+                        style={{ height: '100%', paddingTop: 0, paddingLeft: 0, ...background }}>
                         {mainContent}
                     </Grid.Column>
                 </Sidebar.Pusher>
