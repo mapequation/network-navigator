@@ -2,8 +2,7 @@ import React, { Component } from 'react';
 import { Sidebar, Rail, Menu, Icon, Input, Grid, Label } from 'semantic-ui-react';
 import Help from './Help';
 import SelectedNode from './SelectedNode';
-import DownloadMenu from './DownloadMenu';
-import SearchNodes from './SearchNodes';
+import Search from './Search';
 import FileDialog from './FileDialog';
 import NetworkNavigator from './NetworkNavigator';
 import Tree from './Tree';
@@ -48,8 +47,6 @@ export default class TwoColumnLayout extends Component {
             </div>
             : <FileDialog onFileLoaded={this.onFileLoaded} />
 
-        const helpTrigger = <Menu.Item><Icon name='help' />Help</Menu.Item>
-
         return (
             <Sidebar.Pushable>
                 <Sidebar
@@ -65,14 +62,13 @@ export default class TwoColumnLayout extends Component {
                         <Input readOnly label='Filename' value={this.state.filename} />
                     </Menu.Item>
                     <Menu.Item>
-                        <SearchNodes searchFunction={this.state.searchFunction} maxResults={15} />
+                        <Search searchFunction={this.state.searchFunction} maxResults={15} />
                     </Menu.Item>
                     <SelectedNode node={this.state.selectedNode} directed={this.state.network ? this.state.network.directed : false} />
                     {this.state.network != null &&
                         <Tree network={this.state.network} />
                     }
-                    {/*<DownloadMenu />*/}
-                    <Help trigger={helpTrigger} />
+                    <Help trigger={<Menu.Item><Icon name='help' />Help</Menu.Item>} />
                     <Menu.Item as={'a'} href='https://github.com/mapequation/map-visualize'>
                         <Icon name='github' />Source code
                     </Menu.Item>

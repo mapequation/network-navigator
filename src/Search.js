@@ -1,8 +1,8 @@
 import React, { Component } from 'react';
-import { Search } from 'semantic-ui-react';
+import { Search as SearchInput } from 'semantic-ui-react';
 import { byFlow } from './lib/filter';
 
-export default class SearchNodes extends Component {
+export default class Search extends Component {
     state = {
         isLoading: false,
         results: [],
@@ -24,7 +24,7 @@ export default class SearchNodes extends Component {
         const { results, isLoading } = this.state;
 
         return (
-            <Search
+            <SearchInput
                 fluid
                 input={{ fluid: true }}
                 placeholder='Search nodes...'

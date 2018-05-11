@@ -1,6 +1,6 @@
 import React from 'react';
 import { Menu, Icon } from 'semantic-ui-react';
-import MyAccordion from './MyAccordion';
+import MyAccordion from './helpers/MyAccordion';
 
 const DownloadMenu = () => (
     <MyAccordion title='Download'>

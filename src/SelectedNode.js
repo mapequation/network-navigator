@@ -1,6 +1,6 @@
 import React from 'react';
 import { Menu } from 'semantic-ui-react';
-import MyAccordion from './MyAccordion';
+import MyAccordion from './helpers/MyAccordion';
 import InfoTable from './InfoTable';
 import Graph from './Graph'
 import DegreeDistribution from './DegreeDistribution';

@@ -1,5 +1,5 @@
 import React from 'react';
-import MyAccordion from './MyAccordion';
+import MyAccordion from './helpers/MyAccordion';
 import Graph from './Graph'
 
 const DegreeDistribution = (props) => {

@@ -1,11 +1,9 @@
 import React, { Component } from 'react';
 import * as d3 from 'd3';
-import Range from './Range';
 import { Button } from 'semantic-ui-react';
 
-class GraphSlider extends Component {
+export default class Graph extends Component {
     state = {
-        range: 20,
         logScale: false,
     };
 
@@ -21,7 +19,6 @@ class GraphSlider extends Component {
         this.ySubscript = this.props.ySubscript || '';
         this.yDescription = this.props.yDescription || '';
         this.state = {
-            range: this.props.data.length,
             logScale: this.props.logy,
         };
     }
@@ -52,20 +49,20 @@ class GraphSlider extends Component {
         const area = d3.area()
             .x(d => x(this.x(d)))
             .y(d => y(this.y(d)))
-            .y1(d => y(0))
+            .y1(d => y(0));
 
         const yAxis = d3.axisLeft(y)
             .ticks(5)
-            .tickSize(4)
+            .tickSize(4);
 
         const xAxis = d3.axisBottom(x)
             .ticks(Math.min(data.length - 1, 10))
-            .tickSize(4)
+            .tickSize(4);
 
-        const [fillColor, lineColor] = d3.schemePaired;
-        const unselectedFill = d3.hsl(fillColor);
-        unselectedFill.s -= 0.1;
-        unselectedFill.l += 0.1;
+        const [areaColor, lineColor] = d3.schemePaired;
+        const fillColor = d3.hsl(areaColor);
+        fillColor.s -= 0.1;
+        fillColor.l += 0.1;
 
         d3.select(node).selectAll('*').remove();
 
@@ -74,14 +71,8 @@ class GraphSlider extends Component {
             .attr('transform', 'translate(38 10)');
 
         group.append('path')
-            .attr('fill', unselectedFill)
+            .attr('fill', fillColor)
             .attr('d', area(data));
-
-        if (this.props.rangeVisible) {
-            group.append('path')
-                .attr('fill', fillColor)
-                .attr('d', area(data.slice(0, this.state.range + 1)));
-        }
 
         group.append('path')
             .attr('fill', 'none')
@@ -143,16 +134,9 @@ class GraphSlider extends Component {
         }
     }
 
-    onChange = (value) => {
-        this.setState({ range: value });
-        if (this.props.onChange) {
-            this.props.onChange(value);
-        }
-    };
-
     render() {
         return (
-            <div className="GraphSlider" style={{ width: this.width }}>
+            <div style={{ width: this.width }}>
                 <div style={{ textAlign: 'center' }}>
                     <Button.Group compact size='mini'>
                         <Button active={!this.state.logScale} onClick={() => this.setState({ logScale: false })}>Linear</Button>
@@ -160,17 +144,7 @@ class GraphSlider extends Component {
                     </Button.Group>
                 </div>
                 <svg ref={node => this.node = node} width={this.width} height={this.height}></svg>
-                <br />
-                {this.props.rangeVisible === true &&
-                    <Range min={0}
-                        max={this.props.data.length - 1}
-                        value={this.state.range}
-                        onChange={this.onChange}
-                        width={this.width - 15} />
-                }
             </div>
         );
     }
 }
-
-export default GraphSlider;

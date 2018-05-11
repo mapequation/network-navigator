@@ -81,9 +81,14 @@ class FileDialog extends Component {
     }
 
     render() {
+        const width = {
+            maxWidth: '500px',
+            width: '80%',
+        };
+
         return (
             <div>
-                <Segment padded='very' style={{ marginTop: '200px', width: '500px' }}>
+                <Segment padded='very' style={{ marginTop: '200px', ...width }}>
                     <Help trigger={<Label as='a' corner='right' icon='help' />} />
                     <label className='ui fluid primary button' htmlFor='fileUpload'>
                         <Icon name='upload' />Load data...
@@ -97,7 +102,7 @@ class FileDialog extends Component {
                     <Button fluid secondary onClick={this.loadExampleData}>Load citation data</Button>
                 </Segment>
                 {this.state.isLoading &&
-                    <Segment padded='very' style={{ width: '500px' }} basic>
+                    <Segment padded='very' style={{ ...width }} basic>
                         <Progress
                             align='left'
                             indicating
