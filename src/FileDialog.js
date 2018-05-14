@@ -47,6 +47,10 @@ class FileDialog extends Component {
             .then((parsed) => {
                 clearTimeout(this.progressTimeout);
 
+                if (parsed.errors.length) {
+                    throw new Error(parsed.errors[0].message);
+                }
+
                 const ftree = parseFTree(parsed.data);
 
                 if (ftree.errors.length) {
