@@ -19,6 +19,7 @@ const distanceFromCenter = Point.distanceFrom(center);
 const insideScreenBounds = point =>
     0 < point.x && point.x < width && 0 < point.y && point.y < height;
 
+/*
 const closestPointOnBoundary = (point, radius) => {
     const u = center.sub(point).normalize.mul(radius);
     return u.add(point);
@@ -27,6 +28,7 @@ const closestPointOnBoundary = (point, radius) => {
 const visibleOnScreen = (point, radius) => {
     return insideScreenBounds(point) || insideScreenBounds(closestPointOnBoundary(point, radius));
 };
+*/
 
 const radiusLargeEnough = radius => radius > Math.min(width, height) / 4;
 
