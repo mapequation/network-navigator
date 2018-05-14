@@ -1,20 +1,21 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import { Menu } from 'semantic-ui-react';
 import MyAccordion from './helpers/MyAccordion';
 import InfoTable from './InfoTable';
 import Graph from './Graph'
 import DegreeDistribution from './DegreeDistribution';
 
-const SelectedNode = (props) => {
-    const children = props.node ? props.node.nodes || [] : [];
+const SelectedNode = ({ node, directed }) => {
+    const children = node ? node.nodes || [] : [];
     const flowDistribution = children.map(n => n.flow);
     const figureWidth = 285;
     const figureHeight = 150;
-    const title = !props.node || (props.node && props.node.physicalId) ? 'Selected node' : 'Selected module';
+    const title = !node || (node && node.physicalId) ? 'Selected node' : 'Selected module';
 
     return (
         <MyAccordion title={title} visible>
-            <InfoTable node={props.node} directed={props.directed} />
+            <InfoTable node={node} directed={directed} />
             <Menu.Menu>
                 <MyAccordion title='Module flow distribution' popup='Flow of nodes within this module.'>
                     <Graph
@@ -26,10 +27,28 @@ const SelectedNode = (props) => {
                 <DegreeDistribution
                     nodes={children}
                     figureWidth={figureWidth} figureHeight={figureHeight}
-                    directed={props.directed} />
+                    directed={directed} />
             </Menu.Menu>
         </MyAccordion>
     );
+};
+
+SelectedNode.propTypes = {
+    node: PropTypes.shape({
+        name: PropTypes.string,
+        path: PropTypes.object,
+        kin: PropTypes.number,
+        kout: PropTypes.number,
+        flow: PropTypes.number,
+        exitFlow: PropTypes.number,
+        nodes: PropTypes.array,
+        links: PropTypes.array,
+    }).isRequired,
+    directed: PropTypes.bool,
+};
+
+SelectedNode.defaultProps = {
+    directed: false,
 };
 
 export default SelectedNode;

@@ -1,4 +1,5 @@
 import React from 'react'
+import PropTypes from 'prop-types';
 import { Header, Modal, List } from 'semantic-ui-react'
 
 const Help = ({ trigger }) => (
@@ -94,5 +95,9 @@ const Help = ({ trigger }) => (
         </Modal.Content>
     </Modal>
 );
+
+Help.propTypes = {
+    trigger: PropTypes.element.isRequired,
+};
 
 export default Help

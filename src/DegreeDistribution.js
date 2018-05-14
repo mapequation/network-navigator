@@ -1,11 +1,10 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import MyAccordion from './helpers/MyAccordion';
 import Graph from './Graph'
 
-const DegreeDistribution = (props) => {
-    const { nodes, figureWidth, figureHeight } = props;
-
-    if (!props.directed) {
+const DegreeDistribution = ({ nodes, figureWidth, figureHeight, directed }) => {
+    if (!directed) {
         const degreeDistribution = nodes.map(n => n.kin + n.kout).sort((a, b) => b - a);
         return (
             <MyAccordion title='Degree distribution' popup='Number of links to nodes within this module.'>
@@ -39,5 +38,16 @@ const DegreeDistribution = (props) => {
         );
     }
 };
+
+DegreeDistribution.propTypes = {
+    nodes: PropTypes.array.isRequired,
+    figureWidth: PropTypes.number.isRequired,
+    figureHeight: PropTypes.number.isRequired,
+    directed: PropTypes.bool,
+}
+
+DegreeDistribution.defaultProps = {
+    directed: false,
+}
 
 export default DegreeDistribution;

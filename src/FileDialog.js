@@ -1,4 +1,5 @@
-import React, { Component } from 'react';
+import React from 'react';
+import PropTypes from 'prop-types';
 import { Segment, Button, Divider, Icon, Progress, Label } from 'semantic-ui-react';
 import Help from './Help';
 import parseFile from './lib/parse-file';
@@ -12,8 +13,12 @@ const initialState = {
     progressError: false,
 };
 
-class FileDialog extends Component {
+class FileDialog extends React.Component {
     state = initialState;
+
+    static propTypes = {
+        onFileLoaded: PropTypes.func.isRequired,
+    }
 
     constructor(props) {
         super(props);

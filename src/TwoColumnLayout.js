@@ -7,6 +7,7 @@ import FileDialog from './FileDialog';
 import NetworkNavigator from './NetworkNavigator';
 import Tree from './Tree';
 import Background from './Background.svg';
+import addBeforeUnloadEventListener from './lib/before-unload';
 
 export default class TwoColumnLayout extends Component {
     state = {
@@ -15,18 +16,20 @@ export default class TwoColumnLayout extends Component {
         filename: '',
         network: null,
         selectedNode: null,
-        searchFunction: () => [],
     }
 
     toggleSidebar = () => this.setState({ sidebarVisible: !this.state.sidebarVisible });
     setSelectedNode = selectedNode => this.setState({ selectedNode });
     setSearchFunction = searchFunction => this.setState({ searchFunction });
-    onFileLoaded = ({ network, filename }) => this.setState({
-        network,
-        filename,
-        sidebarVisible: true,
-        loadingComplete: true,
-    });
+    onFileLoaded = ({ network, filename }) => {
+        addBeforeUnloadEventListener('Are you sure you want to leave this page?');
+        this.setState({
+            network,
+            filename,
+            sidebarVisible: true,
+            loadingComplete: true,
+        });
+    };
 
     render() {
         const mainContent = this.state.loadingComplete
@@ -72,9 +75,11 @@ export default class TwoColumnLayout extends Component {
                         <Input readOnly label='Filename' value={this.state.filename} />
                     </Menu.Item>
                     <Menu.Item>
-                        <Search searchFunction={this.state.searchFunction} maxResults={15} />
+                        <Search searchFunction={this.state.searchFunction} />
                     </Menu.Item>
-                    <SelectedNode node={this.state.selectedNode} directed={this.state.network ? this.state.network.directed : false} />
+                    {this.state.selectedNode &&
+                        <SelectedNode node={this.state.selectedNode} directed={this.state.network ? this.state.network.directed : false} />
+                    }
                     {this.state.network != null &&
                         <Tree network={this.state.network} />
                     }

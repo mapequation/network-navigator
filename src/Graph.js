@@ -1,23 +1,36 @@
-import React, { Component } from 'react';
+import React from 'react';
+import PropTypes from 'prop-types';
 import * as d3 from 'd3';
 import { Button } from 'semantic-ui-react';
 
-export default class Graph extends Component {
-    state = {
-        logScale: false,
+export default class Graph extends React.Component {
+    static propTypes = {
+        data: PropTypes.array.isRequired,
+        width: PropTypes.number,
+        height: PropTypes.number,
+        xDescription: PropTypes.string,
+        xLabel: PropTypes.string,
+        yLabel: PropTypes.string,
+        ySubscript: PropTypes.string,
+        yDescription: PropTypes.string,
+        logy: PropTypes.bool,
+    };
+
+    static defaultProps = {
+        width: 250,
+        height: 150,
+        xDescription: '',
+        xLabel: 'x',
+        yLabel: 'y',
+        ySubscript: '',
+        yDescription: '',
+        logy: false,
     };
 
     constructor(props) {
         super(props);
         this.x = this.props.x || (d => this.props.data.indexOf(d) + 1);
         this.y = this.props.y || (d => d);
-        this.width = this.props.width || 250;
-        this.height = this.props.height || 150;
-        this.xDescription = this.props.xDescription || '';
-        this.xLabel = this.props.xLabel || 'x';
-        this.yLabel = this.props.yLabel || 'y';
-        this.ySubscript = this.props.ySubscript || '';
-        this.yDescription = this.props.yDescription || '';
         this.state = {
             logScale: this.props.logy,
         };
@@ -32,23 +45,33 @@ export default class Graph extends Component {
     }
 
     createChart() {
+        const {
+            data,
+            width,
+            height,
+            xDescription,
+            xLabel,
+            yLabel,
+            ySubscript,
+            yDescription,
+        } = this.props;
+
         const node = this.node;
-        const data = this.props.data;
-        const figureWidth = this.width - 42;
-        const figureHeight = this.height - 35;
+        const figureWidth = width - 42;
+        const figureHeight = height - 35;
 
         const x = d3.scaleLinear().domain([1, data.length]).rangeRound([0, figureWidth]);
         const yScale = this.state.logScale ? d3.scaleLog : d3.scaleLinear;
-        const yMin = this.state.logScale ? d3.min(this.y(data).filter(d => d > 0)) : 0;
-        const y = yScale().domain([d3.max(this.y(data)), yMin]).rangeRound([0, figureHeight]).clamp(true);
+        const yMin = this.state.logScale ? d3.min(data.filter(d => d > 0)) : 0;
+        const y = yScale().domain([d3.max(data), yMin]).rangeRound([0, figureHeight]).clamp(true);
 
         const line = d3.line()
             .x(d => x(this.x(d)))
-            .y(d => y(this.y(d)));
+            .y(d => y(d));
 
         const area = d3.area()
             .x(d => x(this.x(d)))
-            .y(d => y(this.y(d)))
+            .y(d => y(d))
             .y1(d => y(0));
 
         const yAxis = d3.axisLeft(y)
@@ -97,33 +120,33 @@ export default class Graph extends Component {
             .attr('font-weight', 'lighter')
             .attr('font-size', 7.5);
 
-        const xLabel = group.append('text')
+        // x label
+        group.append('text')
             .attr('transform', `translate(${figureWidth / 2} ${figureHeight + 25})`)
             .attr('font-size', 9)
-            .attr('font-weight', 'lighter');
-
-        xLabel.append('tspan')
+            .attr('font-weight', 'lighter')
+            .append('tspan')
             .attr('text-anchor', 'middle')
-            .text(this.xDescription + '  ')
+            .text(xDescription + '  ')
             .append('tspan')
             .attr('font-style', 'italic')
-            .text(this.xLabel);
+            .text(xLabel);
 
-        const yLabel = group.append('text')
+        // y label
+        group.append('text')
             .attr('transform', `translate(${-30} ${figureHeight / 2}) rotate(-90)`)
             .attr('font-size', 9)
-            .attr('font-weight', 'lighter');
-
-        yLabel.append('tspan')
+            .attr('font-weight', 'lighter')
+            .append('tspan')
             .attr('text-anchor', 'middle')
-            .text((this.state.logScale ? 'Log ' : '') + this.yDescription + '  ')
+            .text((this.state.logScale ? 'Log ' : '') + yDescription + '  ')
             .append('tspan')
             .attr('font-style', 'italic')
-            .text(this.yLabel)
+            .text(yLabel)
             .append('tspan')
             .attr('baseline-shift', 'sub')
             .attr('font-size', 8)
-            .text(this.ySubscript);
+            .text(ySubscript);
 
         if (data.length <= 1) {
             group.append('text')
@@ -137,15 +160,17 @@ export default class Graph extends Component {
     }
 
     render() {
+        const { width, height } = this.props;
+
         return (
-            <div style={{ width: this.width }}>
+            <div style={{ width }}>
                 <div style={{ textAlign: 'center' }}>
                     <Button.Group compact size='mini'>
                         <Button active={!this.state.logScale} onClick={() => this.setState({ logScale: false })}>Linear</Button>
                         <Button active={this.state.logScale} onClick={() => this.setState({ logScale: true })}>Log</Button>
                     </Button.Group>
                 </div>
-                <svg ref={node => this.node = node} width={this.width} height={this.height}></svg>
+                <svg ref={node => this.node = node} width={width} height={height}></svg>
             </div>
         );
     }

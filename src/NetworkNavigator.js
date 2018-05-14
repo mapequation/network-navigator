@@ -1,4 +1,5 @@
-import React, { Component } from 'react';
+import React from 'react';
+import PropTypes from 'prop-types';
 import * as d3 from 'd3';
 import { maxBy, flatMap } from 'lodash';
 import { halfLink, undirectedLink } from './lib/link-renderer';
@@ -8,26 +9,34 @@ import Simulation from './lib/simulation';
 import makeRenderStyle from './lib/render-style';
 import Point from './lib/point';
 import { takeLargest, connectedLinks } from './lib/filter';
-import addBeforeUnloadEventListener from './lib/before-unload';
 
-export default class NetworkNavigator extends Component {
+export default class NetworkNavigator extends React.Component {
     state = {
         path: 'root',
         linkDistance: 250,
         charge: 500,
     }
 
-    constructor(props) {
-        super(props);
-        addBeforeUnloadEventListener('Are you sure you want to leave the page?');
-    }
+    static propTypes = {
+        width: PropTypes.number,
+        height: PropTypes.number,
+        setSelectedNode: PropTypes.func,
+        setSearchFunction: PropTypes.func,
+    };
+
+    static defaultProps = {
+        width: window.innerWidth,
+        height: window.innerHeight,
+        setSelectedNode: () => null,
+        setSearchFunction: () => null,
+    };
 
     componentDidMount() {
         this.run(this.props.network);
     }
 
     run(network) {
-        const { width, height } = this.props;
+        const { width, height, setSelectedNode, setSearchFunction } = this.props;
 
         const svg = d3.select(this.svgNode);
         const root = d3.select('#network');
@@ -90,7 +99,7 @@ export default class NetworkNavigator extends Component {
 
             layout.on('click', (node) => {
                 console.log(node);
-                this.props.setSelectedNode(node);
+                setSelectedNode(node);
             }).on('render', ({ network, localTransform, renderTarget }) => {
                 this.setState({ path: network.path });
 
@@ -112,12 +121,12 @@ export default class NetworkNavigator extends Component {
             }).init(branch);
         };
 
-        this.props.setSearchFunction((name) => {
+        setSearchFunction((name) => {
             const hits = network.search(name);
             layouts.forEach(l => l.updateAttributes());
             return hits;
         });
-        this.props.setSelectedNode(network);
+        setSelectedNode(network);
 
         render();
     }
