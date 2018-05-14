@@ -42,8 +42,8 @@ export default class TwoColumnLayout extends Component {
                     network={this.state.network}
                     width={window.innerWidth}
                     height={window.innerHeight}
-                    searchFunction={this.setSearchFunction}
-                    selectedNode={this.setSelectedNode} />
+                    setSearchFunction={this.setSearchFunction}
+                    setSelectedNode={this.setSelectedNode} />
             </div>
             : <FileDialog onFileLoaded={this.onFileLoaded} />
 

@@ -90,7 +90,7 @@ export default class NetworkNavigator extends Component {
 
             layout.on('click', (node) => {
                 console.log(node);
-                this.props.selectedNode(node);
+                this.props.setSelectedNode(node);
             }).on('render', ({ network, localTransform, renderTarget }) => {
                 this.setState({ path: network.path });
 
@@ -112,12 +112,12 @@ export default class NetworkNavigator extends Component {
             }).init(branch);
         };
 
-        this.props.searchFunction((name) => {
+        this.props.setSearchFunction((name) => {
             const hits = network.search(name);
             layouts.forEach(l => l.updateAttributes());
             return hits;
         });
-        this.props.selectedNode(network);
+        this.props.setSelectedNode(network);
 
         render();
     }
