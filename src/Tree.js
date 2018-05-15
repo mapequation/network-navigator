@@ -48,7 +48,7 @@ class Tree extends Component {
 
         const name = (d) => {
             if (d.depth > 3) return '';
-            return d.data.physicalId ? d.data.name : d.data.path.toString();
+            return d.data.physicalId ? '' : d.data.path.toString();
         };
 
         node.append("text")
