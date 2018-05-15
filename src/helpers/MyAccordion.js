@@ -2,14 +2,11 @@ import React, { Component } from 'react';
 import { Menu, Accordion, Icon, Popup } from 'semantic-ui-react';
 
 export default class MyAccordion extends Component {
-    state = {
-        visible: false,
-    }
-
-    componentDidMount() {
-        if (this.props.visible) {
-            this.setState({ visible: this.props.visible });
-        }
+    constructor(props) {
+        super(props);
+        this.state = {
+            visible: this.props.visible || false,
+        };
     }
 
     toggleVisibility = () => this.setState({ visible: !this.state.visible });
