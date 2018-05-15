@@ -52,7 +52,7 @@ export default class TwoColumnLayout extends Component {
                     />
                 </Rail>
                 <NetworkNavigator
-                    network={this.state.network}
+                    root={this.state.network}
                     width={window.innerWidth}
                     height={window.innerHeight}
                     sizeBasedOn={this.state.size}
