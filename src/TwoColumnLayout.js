@@ -33,6 +33,14 @@ export default class TwoColumnLayout extends Component {
     };
 
     handleSizeChange = size => this.setState({ size });
+    handleNameChange = name => {
+        const { selectedNode } = this.state;
+        if (selectedNode) {
+            selectedNode.name = name;
+            this.forceUpdate();
+        }
+    }
+
     render() {
         const mainContent = this.state.loadingComplete
             ? <div>
@@ -82,7 +90,11 @@ export default class TwoColumnLayout extends Component {
                         <Search searchFunction={this.state.searchFunction} />
                     </Menu.Item>
                     {this.state.selectedNode &&
-                        <SelectedNode node={this.state.selectedNode} directed={this.state.network ? this.state.network.directed : false} />
+                        <SelectedNode
+                            node={this.state.selectedNode}
+                            directed={this.state.network ? this.state.network.directed : false}
+                            onNameChange={this.handleNameChange}
+                        />
                     }
                     <Settings
                         onSizeChange={this.handleSizeChange}

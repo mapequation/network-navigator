@@ -6,7 +6,7 @@ import InfoTable from './InfoTable';
 import Graph from './Graph'
 import DegreeDistribution from './DegreeDistribution';
 
-const SelectedNode = ({ node, directed }) => {
+const SelectedNode = ({ node, directed, onNameChange }) => {
     const children = node ? node.nodes || [] : [];
     const flowDistribution = children.map(n => n.flow);
     const figureWidth = 285;
@@ -15,7 +15,7 @@ const SelectedNode = ({ node, directed }) => {
 
     return (
         <MyAccordion title={title} visible>
-            <InfoTable node={node} directed={directed} />
+            <InfoTable node={node} directed={directed} onNameChange={onNameChange} />
             <Menu.Menu>
                 <MyAccordion title='Module flow distribution' popup='Flow of nodes within this module.'>
                     <Graph
@@ -44,10 +44,12 @@ SelectedNode.propTypes = {
         nodes: PropTypes.array,
         links: PropTypes.array,
     }).isRequired,
+    onNameChange: PropTypes.func,
     directed: PropTypes.bool,
 };
 
 SelectedNode.defaultProps = {
+    onNameChange: () => null,
     directed: false,
 };
 
