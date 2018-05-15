@@ -1,5 +1,5 @@
 import * as d3 from 'd3';
-import { startCase, lowerCase, minBy } from 'lodash';
+import { startCase, lowerCase, minBy, truncate } from 'lodash';
 import makeDragHandler from './drag-handler';
 import { highlightNode, restoreNode } from './highlight-node';
 import * as LOD from './level-of-detail';
@@ -9,8 +9,7 @@ const width = window.innerWidth;
 const height = window.innerHeight;
 const center = new Point(width / 2, height / 2);
 
-const ellipsis = (text, len = 25) => (text.length > len ? `${text.substr(0, len - 3)}...` : text);
-const nodeName = node => startCase(lowerCase(ellipsis(node.name)));
+const nodeName = node => startCase(lowerCase(truncate(node.name)));
 
 const screenScale = ({ x, y, k }) => point => new Point(point.x * k + x, point.y * k + y);
 
@@ -43,97 +42,98 @@ const isRenderTarget = ({ x, y, k }, nodeRadius) => node => {
 //  0 0 1]
 const transformToMatrix = ({ x, y, k }) => [k, 0, 0, k, x, y];
 
-export default function NetworkLayout({
-        linkRenderer,
-        style,
-        renderTarget,
-        localTransform,
-        simulation
-    }) {
+export default class NetworkLayout {
+    constructor({ linkRenderer, style, renderTarget, localTransform, simulation }) {
+        this.elements = renderTarget;
 
-    let layout;
+        this.localTransform = localTransform || {};
 
-    const dispatch = d3.dispatch('click', 'render', 'destroy');
+        this.linkRenderer = linkRenderer;
+        this.style = style;
 
-    const elements = {
-        parent: renderTarget.parent,
-        labels: renderTarget.labels,
-    };
+        this.simulation = simulation;
 
-    let stopped = false;
-    let thisNetwork = null;
-    let nodes = [];
-    let links = [];
+        this.updateDisabled = false;
+        this.stopped = false;
 
-    let updateDisabled = false;
+        this.network = null;
+        this.nodes = [];
+        this.links = [];
 
-    const onDrag = makeDragHandler(simulation);
+        this.onDrag = makeDragHandler(simulation);
 
-    function init(network) {
-        thisNetwork = network;
-        nodes = network.nodes.filter(node => node.shouldRender);
-        links = network.links.filter(link => link.shouldRender).reverse();
-        network.visible = true;
-
-        createElements();
-
-        simulation.init({ nodes, links });
-        simulation.on('tick', () => {
-            updateDisabled = true;
-            updateAttributes(true);
-        });
-        simulation.on('end', () => updateDisabled = false);
+        this.dispatch = d3.dispatch('click', 'render', 'destroy');
     }
 
-    function createElements() {
-        const { parent, labels } = elements;
+    init(network) {
+        this.network = network;
+        this.nodes = network.nodes.filter(node => node.shouldRender);
+        this.links = network.links.filter(link => link.shouldRender).reverse();
+        network.visible = true;
+
+        this.createElements();
+
+        this.simulation.init({ nodes: this.nodes, links: this.links });
+
+        this.simulation.on('tick', () => {
+            this.updateDisabled = true;
+            this.updateAttributes(true);
+        });
+
+        this.simulation.on('end', () => this.updateDisabled = false);
+
+        return this;
+    }
+
+    createElements() {
+        const { parent, labels } = this.elements;
 
         parent.selectAll('*').remove();
         labels.selectAll('*').remove();
 
-        elements.link = parent.append('g')
+        this.elements.link = parent.append('g')
             .attr('class', 'links')
             .selectAll('.link')
-            .data(links)
+            .data(this.links)
             .enter()
             .append('path')
             .attr('class', 'link')
-            .style('fill', style.linkFillColor);
+            .style('fill', this.style.linkFillColor);
 
-        elements.link.accessors = {
-            path: l => LOD.linkByIndex(links)()(l) ? linkRenderer(l) : '',
-            lod: LOD.linkByIndex(links),
+        this.elements.link.accessors = {
+            path: l => LOD.linkByIndex(this.links)()(l) ? this.linkRenderer(l) : '',
+            lod: LOD.linkByIndex(this.links),
         };
 
-        elements.node = parent.append('g')
+        this.elements.node = parent.append('g')
             .attr('class', 'nodes')
             .selectAll('.node')
-            .data(nodes)
+            .data(this.nodes)
             .enter()
             .append('g')
             .attr('id', n => n.path.toId())
-            .on('click', function (n) { dispatch.call('click', this, n) })
+            .on('click', n => this.dispatch.call('click', null, n))
             .on('mouseover', highlightNode)
-            .on('mouseout', restoreNode(style))
-            .call(onDrag);
+            .on('mouseout', restoreNode(this.style))
+            .call(this.onDrag);
 
-        elements.circle = elements.node.append('circle')
-            .attr('r', style.nodeRadius)
-            .style('fill', style.nodeFillColor)
-            .style('stroke', style.nodeBorderColor)
-            .style('stroke-width', style.nodeBorderWidth);
+        this.elements.circle = this.elements.node.append('circle')
+            .attr('r', this.style.nodeRadius)
+            .style('fill', this.style.nodeFillColor)
+            .style('stroke', this.style.nodeBorderColor)
+            .style('stroke-width', this.style.nodeBorderWidth);
 
-        elements.circle.accessors = {
-            r: style.nodeRadius,
-            fill: style.nodeFillColor,
+        this.elements.circle.accessors = {
+            r: n => this.style.nodeRadius(n),
+            fill: n => this.style.nodeFillColor(n),
         };
 
-        elements.searchMark = elements.node.append('circle')
-            .attr('r', style.searchMarkRadius)
+        this.elements.searchMark = this.elements.node.append('circle')
+            .attr('r', this.style.searchMarkRadius)
             .style('fill', '#F48074');
 
-        elements.label = labels.selectAll('.label')
-            .data(nodes)
+        this.elements.label = labels.selectAll('.label')
+            .data(this.nodes)
             .enter()
             .append('text')
             .attr('class', 'label')
@@ -147,22 +147,30 @@ export default function NetworkLayout({
             .style('stroke-linecap', 'square')
             .style('stroke-linejoin', 'round');
 
-        elements.label.accessors = {
+        this.elements.label.accessors = {
             x: n => n.x,
             y: n => n.y,
-            dx: n => 1.1 * style.nodeRadius(n),
-            lod: LOD.nodeByIndex(nodes),
+            dx: n => 1.1 * this.style.nodeRadius(n),
+            lod: LOD.nodeByIndex(this.nodes),
             visibility: n => 'visible',
             text: nodeName,
         };
     }
 
-    function updateAttributes(simulationRunning = false) {
-        if (updateDisabled && !simulationRunning) return;
+    get renderStyle() {
+        return this.style;
+    }
 
-        const { circle, searchMark, label, link } = elements;
+    set renderStyle(style) {
+        this.style = style;
+    }
 
-        linkRenderer.nodeRadius(circle.accessors.r);
+    updateAttributes(simulationRunning = false) {
+        if (this.updateDisabled && !simulationRunning) return;
+
+        const { circle, searchMark, label, link } = this.elements;
+
+        this.linkRenderer.nodeRadius(circle.accessors.r);
 
         circle
             .style('fill', circle.accessors.fill)
@@ -170,7 +178,7 @@ export default function NetworkLayout({
             .attr('cx', n => n.x)
             .attr('cy', n => n.y);
         searchMark
-            .attr('r', style.searchMarkRadius)
+            .attr('r', this.style.searchMarkRadius)
             .attr('cx', n => n.x)
             .attr('cy', n => n.y);
         label
@@ -182,17 +190,17 @@ export default function NetworkLayout({
         link
             .attr('d', link.accessors.path);
 
-        return layout;
+        return this;
     }
 
-    function applyTransform(transform) {
-        const { circle, label, link } = elements;
+    applyTransform(transform) {
+        const { circle, label, link } = this.elements;
         const {
             translate = Point.origin,
             scale = 1,
             parentTranslate = Point.origin,
             parentScale = 1,
-        } = localTransform || {};
+        } = this.localTransform;
 
         let { x, y, k } = transform;
         x += k * (parentScale * translate.x + parentTranslate.x);
@@ -202,14 +210,14 @@ export default function NetworkLayout({
         label.accessors.x = n => x + k * n.x;
         label.accessors.y = n => y + k * n.y;
         label.accessors.dx = (n) => {
-            const r = 1.1 * style.nodeRadius(n);
+            const r = 1.1 * this.style.nodeRadius(n);
             const dx = k * r + (k > 1 ? 1.4 * (1 - k) * r : 0);
             return Math.max(dx, 0);
         };
         label.accessors.visibility = n => label.accessors.lod(k)(n) ? 'visible' : 'hidden';
         label.accessors.text = n => n.visible ? '' : nodeName(n);
         link.accessors.path = l => (k < 15 || !l.source.nodes) && link.accessors.lod(k)(l)
-            ? linkRenderer(l) : '';
+            ? this.linkRenderer(l) : '';
 
         if (k > 1.5) {
             const zoomNormalized = d3.scaleLinear().domain([1.5, 6.5]).range([0, 1]).clamp(true);
@@ -217,18 +225,18 @@ export default function NetworkLayout({
             const closest = (() => {
                 if (k < 9) return null;
                 const scaled = screenScale({ x, y, k });
-                return minBy(nodes, n => distanceFromCenter(scaled(n)));
+                return minBy(this.nodes, n => distanceFromCenter(scaled(n)));
             })();
 
             circle.accessors.fill = (n) => {
-                if (!n.nodes) return style.nodeFillColor(n);
-                const fill = d3.interpolateRgb(style.nodeFillColor(n), '#ffffff');
+                if (!n.nodes) return this.style.nodeFillColor(n);
+                const fill = d3.interpolateRgb(this.style.nodeFillColor(n), '#ffffff');
                 return fill(zoomNormalized(k));
             };
 
             circle.accessors.r = (n) => {
                 const targetRadius = 60;
-                const initialRadius = style.nodeRadius(n);
+                const initialRadius = this.style.nodeRadius(n);
                 if (!n.nodes) return initialRadius;
                 if (k >= 9 && n === closest) {
                     const r = d3.interpolateNumber(Math.max(targetRadius,  initialRadius), 200);
@@ -245,12 +253,12 @@ export default function NetworkLayout({
         const renderTarget = isRenderTarget({ x, y, k }, circle.accessors.r);
 
         if (k > 2) {
-            elements.node.on('.drag', null);
-            simulation.stop();
-            updateDisabled = false;
-            stopped = true;
+            this.elements.node.on('.drag', null);
+            this.simulation.stop();
+            this.updateDisabled = false;
+            this.stopped = true;
 
-            const targets = nodes.filter(n => n.nodes && !n.visible && renderTarget(n));
+            const targets = this.nodes.filter(n => n.nodes && !n.visible && renderTarget(n));
 
             targets.forEach((n) => {
                     const childScale = 0.15;
@@ -260,7 +268,7 @@ export default function NetworkLayout({
                         y: childTranslate.y,
                         k: childScale,
                     });
-                    const parentElement = elements.parent.append('g')
+                    const parentElement = this.elements.parent.append('g')
                         .attr('transform', `matrix(${transformMatrix})`);
                     const labelsElement = d3.select('#labelsContainer').append('g')
                         .attr('class', 'network labels');
@@ -272,7 +280,7 @@ export default function NetworkLayout({
                         scale: childScale * scale,
                     };
 
-                    dispatch.call('render', null, {
+                    this.dispatch.call('render', null, {
                         network: n,
                         localTransform: childTransform,
                         renderTarget: {
@@ -281,37 +289,38 @@ export default function NetworkLayout({
                         },
                     });
                 });
-        } else if (stopped) {
-            elements.node.call(onDrag);
-            simulation.restart();
-            stopped = false;
+        } else if (this.stopped) {
+            this.elements.node.call(this.onDrag);
+            this.simulation.restart();
+            this.stopped = false;
         }
 
         if (k < 4) {
-            nodes.filter(n => n.visible && !renderTarget(n))
-                .forEach(n => dispatch.call('destroy', null, n.path));
+            this.nodes.filter(n => n.visible && !renderTarget(n))
+                .forEach(n => this.dispatch.call('destroy', null, n.path));
         }
 
-        return layout;
+        return this;
     }
 
-    function destroy() {
-        simulation.stop();
-        if (thisNetwork) {
-            thisNetwork.visible = false;
-            thisNetwork = null;
+    destroy() {
+        this.simulation.stop();
+        if (this.network) {
+            this.network.visible = false;
+            this.network = null;
         }
-        nodes = [];
-        links = [];
-        elements.parent.remove();
-        elements.labels.remove();
+        this.nodes = [];
+        this.links = [];
+        this.elements.parent.remove();
+        this.elements.labels.remove();
     }
 
-    return layout = {
-        init,
-        updateAttributes,
-        applyTransform,
-        destroy,
-        on: (name, callback) => callback ? (dispatch.on(name, callback), layout) : (dispatch.on(name), layout),
-    };
+    on(name, callback) {
+        if (callback) {
+            this.dispatch.on(name, callback)
+        } else {
+            this.dispatch.on(name);
+        }
+        return this;
+    }
 }

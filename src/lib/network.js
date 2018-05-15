@@ -1,4 +1,4 @@
-import escapeRegExp from 'lodash';
+import { escapeRegExp, maxBy, flatMap } from 'lodash';
 import TreePath from './treepath';
 
 /******************************************
@@ -112,6 +112,26 @@ class Network {
 
     set name(name) {
         this._name = name;
+    }
+
+    get maxNodeFlow() {
+        const children = Array.from(traverseDepthFirst(this));
+        return maxBy(children, node => node.flow).flow;
+    }
+
+    get maxNodeExitFlow() {
+        const children = Array.from(traverseDepthFirst(this));
+        return maxBy(children, node => node.exitFlow).exitFlow;
+    }
+
+    get maxLinkFlow() {
+        const children = Array.from(traverseDepthFirst(this));
+        return maxBy(flatMap(children, node => node.links || []), link => link.flow).flow;
+    }
+
+    get maxNodeCount() {
+        const children = Array.from(traverseDepthFirst(this));
+        return maxBy(children, node => (node.nodes || []).length).nodes.length;
     }
 
     /**

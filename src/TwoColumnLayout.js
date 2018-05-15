@@ -5,6 +5,7 @@ import SelectedNode from './SelectedNode';
 import Search from './Search';
 import FileDialog from './FileDialog';
 import NetworkNavigator from './NetworkNavigator';
+import Settings from './Settings';
 import Tree from './Tree';
 import Background from './Background.svg';
 import addBeforeUnloadEventListener from './lib/before-unload';
@@ -31,6 +32,7 @@ export default class TwoColumnLayout extends Component {
         });
     };
 
+    handleSizeChange = size => this.setState({ size });
     render() {
         const mainContent = this.state.loadingComplete
             ? <div>
@@ -39,12 +41,14 @@ export default class TwoColumnLayout extends Component {
                         attached='top right'
                         icon='sidebar'
                         content='Show sidebar'
-                        onClick={this.toggleSidebar} />
+                        onClick={this.toggleSidebar}
+                    />
                 </Rail>
                 <NetworkNavigator
                     network={this.state.network}
                     width={window.innerWidth}
                     height={window.innerHeight}
+                    sizeBasedOn={this.state.size}
                     setSearchFunction={this.setSearchFunction}
                     setSelectedNode={this.setSelectedNode} />
             </div>
@@ -80,6 +84,9 @@ export default class TwoColumnLayout extends Component {
                     {this.state.selectedNode &&
                         <SelectedNode node={this.state.selectedNode} directed={this.state.network ? this.state.network.directed : false} />
                     }
+                    <Settings
+                        onSizeChange={this.handleSizeChange}
+                    />
                     {this.state.network != null &&
                         <Tree network={this.state.network} />
                     }

@@ -1,9 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import * as d3 from 'd3';
-import { maxBy, flatMap } from 'lodash';
 import { halfLink, undirectedLink } from './lib/link-renderer';
-import { traverseDepthFirst } from './lib/network';
 import NetworkLayout from './lib/network-layout';
 import Simulation from './lib/simulation';
 import makeRenderStyle from './lib/render-style';
@@ -11,17 +9,12 @@ import Point from './lib/point';
 import { takeLargest, connectedLinks } from './lib/filter';
 
 export default class NetworkNavigator extends React.Component {
-    state = {
-        path: 'root',
-        linkDistance: 250,
-        charge: 500,
-    }
-
     static propTypes = {
         width: PropTypes.number,
         height: PropTypes.number,
         setSelectedNode: PropTypes.func,
         setSearchFunction: PropTypes.func,
+        sizeBasedOn: PropTypes.string,
     };
 
     static defaultProps = {
@@ -29,40 +22,110 @@ export default class NetworkNavigator extends React.Component {
         height: window.innerHeight,
         setSelectedNode: () => null,
         setSearchFunction: () => null,
+        sizeBasedOn: 'flow',
     };
 
-    componentDidMount() {
-        this.run(this.props.network);
+    constructor(props) {
+        super(props);
+        this.layouts = new Map();
+        this.linkDistance = 250;
+        this.charge = 500;
     }
 
-    run(network) {
-        const { width, height, setSelectedNode, setSearchFunction } = this.props;
+    componentDidUpdate(prevProps) {
+        const { network } = this.props;
+
+        if (this.props.sizeBasedOn !== prevProps.sizeBasedOn) {
+            if (this.props.sizeBasedOn === 'flow') {
+                const nodeRadius = d3.scaleSqrt().domain([0, network.maxNodeFlow]).range([10, 70]);
+                this.renderStyle.nodeRadius = node => nodeRadius(node.flow);
+            } else if (this.props.sizeBasedOn === 'nodes') {
+                const nodeRadius = d3.scaleSqrt().domain([0, network.maxNodeCount]).range([5, 70]);
+                this.renderStyle.nodeRadius = node => node.nodes ? nodeRadius(node.nodes.length) : nodeRadius(1);
+            }
+
+            this.layouts.forEach(layout => {
+                layout.renderStyle = this.renderStyle;
+            });
+        }
+
+        this.layouts.forEach(layout => layout.updateAttributes());
+    }
+
+    takeLargest = (network, amount) => {
+        let { nodes, links } = network;
+
+        nodes.forEach(node => node.shouldRender = false);
+        links.forEach(link => link.shouldRender = false);
+
+        nodes = takeLargest(nodes, amount);
+        links = links.filter(link => link.flow > 0);
+        links = connectedLinks({ nodes, links });
+
+        nodes.forEach(node => node.shouldRender = true);
+        links.forEach(link => link.shouldRender = true);
+    };
+
+    renderPath(currentPath) {
+        const { network } = this.props;
+
+        const treeNode = network.getNodeByPath(currentPath);
+
+        this.takeLargest(treeNode, 20);
+
+        const layout = this.layouts.get(currentPath);
+
+        layout.on('click', (node) => {
+            console.log(node);
+            this.props.setSelectedNode(node);
+        });
+
+        layout.on('render', ({ network, localTransform, renderTarget }) => {
+            this.layouts.set(network.path, new NetworkLayout({
+                linkRenderer: this.linkRenderer,
+                style: this.renderStyle,
+                localTransform,
+                renderTarget,
+                simulation: Simulation(
+                    Point.from(network),
+                    { charge: this.charge, linkDistance: this.linkDistance },
+                ),
+            }));
+
+            this.renderPath(network.path);
+        });
+
+        layout.on('destroy', (path) => {
+            const layoutToDelete = this.layouts.get(path);
+            if (layoutToDelete) {
+                layoutToDelete.destroy();
+                this.layouts.delete(path);
+            }
+        });
+
+        layout.init(treeNode);
+    }
+
+    componentDidMount() {
+        const { network, width, height, setSelectedNode, setSearchFunction } = this.props;
 
         const svg = d3.select(this.svgNode);
         const root = d3.select('#network');
         const labels = d3.select('#labelsContainer');
 
-        const entireNetwork = Array.from(traverseDepthFirst(network));
-        const maxNodeFlow = maxBy(entireNetwork, node => node.flow).flow;
-        const maxNodeExitFlow = maxBy(entireNetwork, node => node.exitFlow).exitFlow;
-        const maxLinkFlow = maxBy(flatMap(entireNetwork, node => node.links || []),
-            link => link.flow).flow;
+        this.renderStyle = makeRenderStyle(network.maxNodeFlow, network.maxNodeExitFlow, network.maxLinkFlow);
 
-        const renderStyle = makeRenderStyle(maxNodeFlow, maxNodeExitFlow, maxLinkFlow);
+        const linkBend = d3.scaleLinear().domain([50, this.linkDistance]).range([0, 40]).clamp(true);
 
-        const linkBend = d3.scaleLinear().domain([50, this.state.linkDistance]).range([0, 40]).clamp(true);
-
-        const linkRenderer = (network.directed ? halfLink : undirectedLink)()
-            .nodeRadius(renderStyle.nodeRadius)
-            .width(renderStyle.linkWidth)
+        this.linkRenderer = (network.directed || true ? halfLink : undirectedLink)()
+            .nodeRadius(node => this.renderStyle.nodeRadius(node))
+            .width(link => this.renderStyle.linkWidth(link))
             .bend((link, distance) => linkBend(distance));
-
-        const layouts = new Map();
 
         const zoom = d3.zoom()
             .scaleExtent([0.1, 100000])
             .on('zoom', () => {
-                layouts.forEach(layout =>
+                this.layouts.forEach(layout =>
                     layout.applyTransform(d3.event.transform).updateAttributes());
                 root.attr('transform', d3.event.transform);
             });
@@ -70,65 +133,35 @@ export default class NetworkNavigator extends React.Component {
         svg.call(zoom)
             .on('dblclick.zoom', null);
 
-        layouts.set(this.state.path, NetworkLayout({
-            linkRenderer,
-            style: renderStyle,
+        setSearchFunction((name) => {
+            const hits = network.search(name);
+            this.layouts.forEach(l => l.updateAttributes())
+            return hits;
+        });
+
+        svg.select('.background')
+            .on('click', () => {
+                console.log(network);
+                this.props.setSelectedNode(network);
+            });
+
+        setSelectedNode(network);
+
+        this.layouts.set('root', new NetworkLayout({
+            linkRenderer: this.linkRenderer,
+            style: this.renderStyle,
             renderTarget: {
                 parent: root.append('g').attr('class', 'network'),
                 labels: labels.append('g').attr('class', 'network labels'),
             },
             localTransform: null,
-            simulation: Simulation(new Point(width / 2, height / 2), this.state)
+            simulation: Simulation(
+                new Point(width / 2, height / 2),
+                { charge: this.charge, linkDistance: this.linkDistance },
+            ),
         }));
 
-        const render = () => {
-            const branch = network.getNodeByPath(this.state.path);
-            let { nodes, links } = branch;
-
-            nodes.forEach(node => node.shouldRender = false);
-            links.forEach(link => link.shouldRender = false);
-
-            nodes = takeLargest(nodes, 20);
-            links = links.filter(link => link.flow > 0);
-            links = connectedLinks({ nodes, links });
-
-            nodes.forEach(node => node.shouldRender = true);
-            links.forEach(link => link.shouldRender = true);
-
-            const layout = layouts.get(this.state.path);
-
-            layout.on('click', (node) => {
-                console.log(node);
-                setSelectedNode(node);
-            }).on('render', ({ network, localTransform, renderTarget }) => {
-                this.setState({ path: network.path });
-
-                layouts.set(network.path, NetworkLayout({
-                    linkRenderer,
-                    style: renderStyle,
-                    localTransform,
-                    renderTarget,
-                    simulation: Simulation(Point.from(network), this.state),
-                }));
-
-                render();
-            }).on('destroy', (path) => {
-                const oldLayout = layouts.get(path);
-                if (oldLayout) {
-                    oldLayout.destroy();
-                    layouts.delete(path);
-                }
-            }).init(branch);
-        };
-
-        setSearchFunction((name) => {
-            const hits = network.search(name);
-            layouts.forEach(l => l.updateAttributes());
-            return hits;
-        });
-        setSelectedNode(network);
-
-        render();
+        this.renderPath('root');
     }
 
     render() {
