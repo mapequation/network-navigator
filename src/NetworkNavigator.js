@@ -3,13 +3,13 @@ import PropTypes from 'prop-types';
 import * as d3 from 'd3';
 import { halfLink, undirectedLink } from './lib/link-renderer';
 import NetworkLayout from './lib/network-layout';
-import Simulation from './lib/simulation';
 import makeRenderStyle from './lib/render-style';
 import Point from './lib/point';
 import { takeLargest, connectedLinks } from './lib/filter';
 
 export default class NetworkNavigator extends React.Component {
     static propTypes = {
+        network: PropTypes.any.isRequired,
         width: PropTypes.number,
         height: PropTypes.number,
         setSelectedNode: PropTypes.func,
@@ -28,8 +28,21 @@ export default class NetworkNavigator extends React.Component {
     constructor(props) {
         super(props);
         this.layouts = new Map();
-        this.linkDistance = 250;
-        this.charge = 500;
+
+        const { network, setSearchFunction } = props;
+
+        setSearchFunction((name) => {
+            const hits = this.props.network.search(name);
+            this.layouts.forEach(l => l.updateAttributes())
+            return hits;
+        });
+
+        this.renderStyle = makeRenderStyle(network.maxNodeFlow, network.maxNodeExitFlow, network.maxLinkFlow);
+
+        this.linkRenderer = (network.directed ? halfLink : undirectedLink)()
+            .nodeRadius(node => this.renderStyle.nodeRadius(node))
+            .width(link => this.renderStyle.linkWidth(link))
+            .bend((link, distance) => this.renderStyle.linkBend(distance));
     }
 
     componentDidUpdate(prevProps) {
@@ -52,7 +65,7 @@ export default class NetworkNavigator extends React.Component {
         this.layouts.forEach(layout => layout.updateAttributes());
     }
 
-    takeLargest = (network, amount) => {
+    takeLargest(network, amount) {
         let { nodes, links } = network;
 
         nodes.forEach(node => node.shouldRender = false);
@@ -80,19 +93,9 @@ export default class NetworkNavigator extends React.Component {
             this.props.setSelectedNode(node);
         });
 
-        layout.on('render', ({ network, localTransform, renderTarget }) => {
-            this.layouts.set(network.path, new NetworkLayout({
-                linkRenderer: this.linkRenderer,
-                style: this.renderStyle,
-                localTransform,
-                renderTarget,
-                simulation: Simulation(
-                    Point.from(network),
-                    { charge: this.charge, linkDistance: this.linkDistance },
-                ),
-            }));
-
-            this.renderPath(network.path);
+        layout.on('render', ({ path, layout }) => {
+            this.layouts.set(path, layout);
+            this.renderPath(path);
         });
 
         layout.on('destroy', (path) => {
@@ -107,37 +110,21 @@ export default class NetworkNavigator extends React.Component {
     }
 
     componentDidMount() {
-        const { network, width, height, setSelectedNode, setSearchFunction } = this.props;
-
-        const svg = d3.select(this.svgNode);
-        const root = d3.select('#network');
-        const labels = d3.select('#labelsContainer');
-
-        this.renderStyle = makeRenderStyle(network.maxNodeFlow, network.maxNodeExitFlow, network.maxLinkFlow);
-
-        const linkBend = d3.scaleLinear().domain([50, this.linkDistance]).range([0, 40]).clamp(true);
-
-        this.linkRenderer = (network.directed || true ? halfLink : undirectedLink)()
-            .nodeRadius(node => this.renderStyle.nodeRadius(node))
-            .width(link => this.renderStyle.linkWidth(link))
-            .bend((link, distance) => linkBend(distance));
+        const { network, width, height } = this.props;
 
         const zoom = d3.zoom()
-            .scaleExtent([0.1, 100000])
-            .on('zoom', () => {
+            .scaleExtent([0.1, 100000]);
+
+        const svg = d3.select(this.svgNode)
+            .call(zoom);
+
+        const root = svg.select('#network');
+
+        zoom.on('zoom', () => {
                 this.layouts.forEach(layout =>
                     layout.applyTransform(d3.event.transform).updateAttributes());
                 root.attr('transform', d3.event.transform);
             });
-
-        svg.call(zoom)
-            .on('dblclick.zoom', null);
-
-        setSearchFunction((name) => {
-            const hits = network.search(name);
-            this.layouts.forEach(l => l.updateAttributes())
-            return hits;
-        });
 
         svg.select('.background')
             .on('click', () => {
@@ -145,23 +132,20 @@ export default class NetworkNavigator extends React.Component {
                 this.props.setSelectedNode(network);
             });
 
-        setSelectedNode(network);
+        const rootPath = network.path.toString();
 
-        this.layouts.set('root', new NetworkLayout({
+        this.layouts.set(rootPath, new NetworkLayout({
             linkRenderer: this.linkRenderer,
-            style: this.renderStyle,
+            renderStyle: this.renderStyle,
             renderTarget: {
                 parent: root.append('g').attr('class', 'network'),
-                labels: labels.append('g').attr('class', 'network labels'),
+                labels: svg.select('#labelsContainer').append('g')
+                    .attr('class', 'network labels'),
             },
-            localTransform: null,
-            simulation: Simulation(
-                new Point(width / 2, height / 2),
-                { charge: this.charge, linkDistance: this.linkDistance },
-            ),
+            position: new Point(width / 2, height / 2),
         }));
 
-        this.renderPath('root');
+        this.renderPath(rootPath);
     }
 
     render() {

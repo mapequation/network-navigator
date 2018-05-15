@@ -15,8 +15,6 @@ export default class TwoColumnLayout extends Component {
         sidebarVisible: false,
         loadingComplete: false,
         filename: '',
-        network: null,
-        selectedNode: null,
     }
 
     toggleSidebar = () => this.setState({ sidebarVisible: !this.state.sidebarVisible });
@@ -27,6 +25,7 @@ export default class TwoColumnLayout extends Component {
         this.setState({
             network,
             filename,
+            selectedNode: network,
             sidebarVisible: true,
             loadingComplete: true,
         });
@@ -99,7 +98,7 @@ export default class TwoColumnLayout extends Component {
                     <Settings
                         onSizeChange={this.handleSizeChange}
                     />
-                    {this.state.network != null &&
+                    {this.state.network &&
                         <Tree network={this.state.network} />
                     }
                     <Help trigger={<Menu.Item><Icon name='help' />Help</Menu.Item>} />

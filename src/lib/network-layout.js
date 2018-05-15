@@ -4,6 +4,7 @@ import makeDragHandler from './drag-handler';
 import { highlightNode, restoreNode } from './highlight-node';
 import * as LOD from './level-of-detail';
 import Point from './point';
+import Simulation from './simulation';
 
 const width = window.innerWidth;
 const height = window.innerHeight;
@@ -43,15 +44,12 @@ const isRenderTarget = ({ x, y, k }, nodeRadius) => node => {
 const transformToMatrix = ({ x, y, k }) => [k, 0, 0, k, x, y];
 
 export default class NetworkLayout {
-    constructor({ linkRenderer, style, renderTarget, localTransform, simulation }) {
-        this.elements = renderTarget;
-
-        this.localTransform = localTransform || {};
-
+    constructor({ linkRenderer, renderStyle, renderTarget, position, localTransform = {} }) {
         this.linkRenderer = linkRenderer;
-        this.style = style;
-
-        this.simulation = simulation;
+        this.style = renderStyle;
+        this.elements = renderTarget;
+        this.localTransform = localTransform;
+        this.simulation = Simulation(position);
 
         this.updateDisabled = false;
         this.stopped = false;
@@ -60,9 +58,18 @@ export default class NetworkLayout {
         this.nodes = [];
         this.links = [];
 
-        this.onDrag = makeDragHandler(simulation);
+        this.onDrag = makeDragHandler(this.simulation);
 
         this.dispatch = d3.dispatch('click', 'render', 'destroy');
+        this.on = this.dispatch.on.bind(this.dispatch);
+    }
+
+    get renderStyle() {
+        return this.style;
+    }
+
+    set renderStyle(style) {
+        this.style = style;
     }
 
     init(network) {
@@ -73,7 +80,7 @@ export default class NetworkLayout {
 
         this.createElements();
 
-        this.simulation.init({ nodes: this.nodes, links: this.links });
+        this.simulation.init(this);
 
         this.simulation.on('tick', () => {
             this.updateDisabled = true;
@@ -81,8 +88,6 @@ export default class NetworkLayout {
         });
 
         this.simulation.on('end', () => this.updateDisabled = false);
-
-        return this;
     }
 
     createElements() {
@@ -157,14 +162,6 @@ export default class NetworkLayout {
         };
     }
 
-    get renderStyle() {
-        return this.style;
-    }
-
-    set renderStyle(style) {
-        this.style = style;
-    }
-
     updateAttributes(simulationRunning = false) {
         if (this.updateDisabled && !simulationRunning) return;
 
@@ -194,7 +191,7 @@ export default class NetworkLayout {
     }
 
     applyTransform(transform) {
-        const { circle, label, link } = this.elements;
+        const { circle, label, link } = this.elements;
         const {
             translate = Point.origin,
             scale = 1,
@@ -202,7 +199,7 @@ export default class NetworkLayout {
             parentScale = 1,
         } = this.localTransform;
 
-        let { x, y, k } = transform;
+        let { x, y, k } = transform;
         x += k * (parentScale * translate.x + parentTranslate.x);
         y += k * (parentScale * translate.y + parentTranslate.y);
         k *= scale;
@@ -239,7 +236,7 @@ export default class NetworkLayout {
                 const initialRadius = this.style.nodeRadius(n);
                 if (!n.nodes) return initialRadius;
                 if (k >= 9 && n === closest) {
-                    const r = d3.interpolateNumber(Math.max(targetRadius,  initialRadius), 200);
+                    const r = d3.interpolateNumber(Math.max(targetRadius, initialRadius), 200);
                     const fillScreen = d3.scalePow().exponent(2).domain([9, 15]).range([0, 1]).clamp(true);
                     return r(fillScreen(k));
                 } else {
@@ -261,34 +258,38 @@ export default class NetworkLayout {
             const targets = this.nodes.filter(n => n.nodes && !n.visible && renderTarget(n));
 
             targets.forEach((n) => {
-                    const childScale = 0.15;
-                    const childTranslate = Point.from(n).mul(1 - childScale);
-                    const transformMatrix = transformToMatrix({
-                        x: childTranslate.x,
-                        y: childTranslate.y,
-                        k: childScale,
-                    });
-                    const parentElement = this.elements.parent.append('g')
-                        .attr('transform', `matrix(${transformMatrix})`);
-                    const labelsElement = d3.select('#labelsContainer').append('g')
-                        .attr('class', 'network labels');
-
-                    const childTransform = {
-                        parentTranslate: Point.add(translate, parentTranslate),
-                        translate: childTranslate,
-                        parentScale: scale * parentScale,
-                        scale: childScale * scale,
-                    };
-
-                    this.dispatch.call('render', null, {
-                        network: n,
-                        localTransform: childTransform,
-                        renderTarget: {
-                            parent: parentElement,
-                            labels: labelsElement
-                        },
-                    });
+                const childScale = 0.15;
+                const childTranslate = Point.from(n).mul(1 - childScale);
+                const transformMatrix = transformToMatrix({
+                    ...childTranslate,
+                    k: childScale,
                 });
+
+                const renderTarget = {
+                    parent: this.elements.parent.append('g')
+                        .attr('transform', `matrix(${transformMatrix})`),
+                    labels: d3.select('#labelsContainer').append('g')
+                        .attr('class', 'network labels'),
+                }
+
+                const childTransform = {
+                    parentTranslate: Point.add(translate, parentTranslate),
+                    translate: childTranslate,
+                    parentScale: scale * parentScale,
+                    scale: childScale * scale,
+                };
+
+                this.dispatch.call('render', null, {
+                    path: n.path,
+                    layout: new NetworkLayout({
+                        linkRenderer: this.linkRenderer,
+                        renderStyle: this.renderStyle,
+                        renderTarget,
+                        position: Point.from(n),
+                        localTransform: childTransform,
+                    }),
+                });
+            });
         } else if (this.stopped) {
             this.elements.node.call(this.onDrag);
             this.simulation.restart();
@@ -313,14 +314,5 @@ export default class NetworkLayout {
         this.links = [];
         this.elements.parent.remove();
         this.elements.labels.remove();
-    }
-
-    on(name, callback) {
-        if (callback) {
-            this.dispatch.on(name, callback)
-        } else {
-            this.dispatch.on(name);
-        }
-        return this;
     }
 }

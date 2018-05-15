@@ -8,7 +8,7 @@ import {
 } from 'd3';
 
 
-export default function Simulation({ x, y }, { charge, linkDistance }) {
+export default function Simulation({ x, y }, linkDistance = 250, charge = 500) {
     const simulation = forceSimulation()
         .force('collide', forceCollide(70))
         .force('link', forceLink())

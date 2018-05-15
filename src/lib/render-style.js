@@ -6,6 +6,7 @@
 
 import {
     scaleSqrt,
+    scaleLinear,
     interpolateGreens,
     interpolateBlues,
 } from 'd3';
@@ -42,6 +43,8 @@ export default function makeRenderStyle(maxNodeFlow, maxNodeExitFlow, maxLinkFlo
 
     const searchMarkRadius = scaleSqrt().domain([0, 10]).range([0, 10]).clamp(true);
 
+    const linkBend = scaleLinear().domain([50, 250]).range([0, 40]).clamp(true);
+
     return {
         nodeRadius: node => nodeRadius(node.flow),
         nodeFillColor: node => nodeFillColor(node.flow),
@@ -55,5 +58,6 @@ export default function makeRenderStyle(maxNodeFlow, maxNodeExitFlow, maxLinkFlo
                 : node.physicalId && node.searchHits
                     ? nodeRadius(node.flow) // a node should be completely filled
                     : searchMarkRadius(node.searchHits || 0), // ... and a module has a marker of varying radius
+        linkBend,
     };
 }
