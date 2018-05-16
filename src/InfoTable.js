@@ -119,6 +119,14 @@ export default class InfoTable extends React.Component {
                             <Table.Cell content={node.links.length} />
                         </Table.Row>
                     }
+                    {node.totalChildren &&
+                        <Table.Row>
+                            <Popup trigger={<Table.Cell content='Children' />}
+                                size='tiny'
+                                content='The total number of nodes contained within this module and its children.' />
+                            <Table.Cell content={node.totalChildren} />
+                        </Table.Row>
+                    }
                 </Table.Body>
             </Table>
         );

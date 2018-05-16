@@ -114,6 +114,17 @@ class Network {
         this._name = name;
     }
 
+    get totalChildren() {
+        if (this._totalChildren) {
+            return this._totalChildren;
+        }
+
+        this._totalChildren = this.nodes.reduce((total, node) =>
+            total += node.nodes ? node.totalChildren : 1, 0);
+
+        return this._totalChildren;
+    }
+
     get maxNodeFlow() {
         const children = Array.from(traverseDepthFirst(this));
         return maxBy(children, node => node.flow).flow;
