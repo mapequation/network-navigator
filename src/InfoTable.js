@@ -17,6 +17,8 @@ export default class InfoTable extends React.Component {
             exitFlow: PropTypes.number,
             nodes: PropTypes.array,
             links: PropTypes.array,
+            totalChildren: PropTypes.number,
+            occurrences: PropTypes.number,
         }).isRequired,
         onNameChange: PropTypes.func,
         directed: PropTypes.bool,
@@ -46,7 +48,7 @@ export default class InfoTable extends React.Component {
         const { node, directed } = this.props;
 
         return (
-            <Table celled singleLine striped compact fixed>
+            <Table celled singleLine striped compact>
                 <Table.Body>
                     <Table.Row>
                         <Popup trigger={<Table.Cell width={5} content='Name' />}
@@ -119,12 +121,20 @@ export default class InfoTable extends React.Component {
                             <Table.Cell content={node.links.length} />
                         </Table.Row>
                     }
-                    {node.totalChildren &&
+                    {node.totalChildren != null &&
                         <Table.Row>
                             <Popup trigger={<Table.Cell content='Children' />}
                                 size='tiny'
                                 content='The total number of nodes contained within this module and its children.' />
                             <Table.Cell content={node.totalChildren} />
+                        </Table.Row>
+                    }
+                    {node.occurrences != null &&
+                        <Table.Row>
+                            <Popup trigger={<Table.Cell content='Occurrences' />}
+                                size='tiny'
+                                content='The total number of occurrences contained within this module and its children.' />
+                            <Table.Cell content={node.occurrences} />
                         </Table.Row>
                     }
                 </Table.Body>

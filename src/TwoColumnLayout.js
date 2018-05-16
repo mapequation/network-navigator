@@ -20,8 +20,13 @@ export default class TwoColumnLayout extends Component {
     toggleSidebar = () => this.setState({ sidebarVisible: !this.state.sidebarVisible });
     setSelectedNode = selectedNode => this.setState({ selectedNode });
     setSearchFunction = searchFunction => this.setState({ searchFunction });
-    onFileLoaded = ({ network, filename }) => {
+    onFileLoaded = ({ network, filename, ...rest }) => {
         addBeforeUnloadEventListener('Are you sure you want to leave this page?');
+
+        if (rest.occurrences) {
+            this.setState({ occurrences: rest.occurrences });
+        }
+
         this.setState({
             network,
             filename,
@@ -53,6 +58,7 @@ export default class TwoColumnLayout extends Component {
                 </Rail>
                 <NetworkNavigator
                     root={this.state.network}
+                    occurrences={this.state.occurrences}
                     width={window.innerWidth}
                     height={window.innerHeight}
                     sizeBasedOn={this.state.size}

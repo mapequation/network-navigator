@@ -31,6 +31,10 @@ export default class NetworkNavigator extends React.Component {
 
         const { root, setSearchFunction } = props;
 
+        if (props.occurrences) {
+            root.markOccurrences(props.occurrences);
+        }
+
         setSearchFunction((name) => {
             const hits = this.props.root.search(name);
             this.layouts.forEach(l => l.updateAttributes())

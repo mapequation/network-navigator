@@ -193,10 +193,8 @@ class Network {
                     node.searchHits = +re.test(node.name);
 
                     if (node.searchHits > 0) {
-                        let parent = node.parent;
-                        while (parent) {
+                        for (let parent of ancestors(node)) {
                             parent.searchHits++;
-                            parent = parent.parent;
                         }
                     }
 
@@ -204,6 +202,26 @@ class Network {
                 });
         } catch (e) {
             return [];
+        }
+    }
+
+    markOccurrences(ids) {
+        const physicalIds = new Map();
+        ids.forEach(id => physicalIds.set(id, true));
+
+        for (let node of traverseDepthFirst(this)) {
+            if (node.nodes) {
+                node.occurrences = node.occurrences || 0;
+                continue;
+            }
+
+            if (physicalIds.has(node.physicalId)) {
+                node.occurred = true;
+
+                for (let parent of ancestors(node)) {
+                    parent.occurrences++;
+                }
+            }
         }
     }
 }
@@ -252,6 +270,15 @@ export function* traverseBreadthFirst(root) {
         if (node.nodes) {
             queue.push(...node.nodes);
         }
+    }
+}
+
+function *ancestors(treeNode) {
+    let parent = treeNode.parent;
+
+    while (parent) {
+        yield parent;
+        parent = parent.parent;
     }
 }
 

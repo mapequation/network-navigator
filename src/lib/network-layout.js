@@ -133,6 +133,24 @@ export default class NetworkLayout {
             fill: n => this.style.nodeFillColor(n),
         };
 
+        if (this.network.occurrences) {
+            const radius = (n) => {
+                if (!n.occurrences || n.visible) return 0;
+                const r = this.style.nodeRadius(n);
+                if (n.occurred) return r;
+                const fraction = n.occurrences / n.totalChildren;
+                return r * fraction;
+            };
+
+            this.elements.occurrences = this.elements.node.append('circle')
+                .attr('r', n => radius(n))
+                .style('fill', '#F48074');
+
+            this.elements.occurrences.accessors = {
+                radius,
+            };
+        }
+
         this.elements.searchMark = this.elements.node.append('circle')
             .attr('r', this.style.searchMarkRadius)
             .style('fill', '#F48074');
@@ -168,6 +186,13 @@ export default class NetworkLayout {
         const { circle, searchMark, label, link } = this.elements;
 
         this.linkRenderer.nodeRadius(circle.accessors.r);
+
+        if (this.elements.occurrences) {
+            this.elements.occurrences
+                .attr('r', this.elements.occurrences.accessors.radius)
+                .attr('cx', n => n.x)
+                .attr('cy', n => n.y);
+        }
 
         circle
             .style('fill', circle.accessors.fill)

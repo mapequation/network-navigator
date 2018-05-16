@@ -6,15 +6,14 @@ import parseFile from './lib/parse-file';
 import parseFTree from './lib/file-formats/ftree';
 import networkFromFTree from './lib/file-formats/network-from-ftree';
 
-const initialState = {
-    isLoading: false,
-    progressLabel: '',
-    progressValue: 0,
-    progressError: false,
-};
-
 class FileDialog extends React.Component {
-    state = initialState;
+    state = {
+        loadingComplete: false,
+        progressVisible: false,
+        progressLabel: '',
+        progressValue: 0,
+        progressError: false,
+    };
 
     static propTypes = {
         onFileLoaded: PropTypes.func.isRequired,
@@ -22,21 +21,27 @@ class FileDialog extends React.Component {
 
     constructor(props) {
         super(props);
-        this.input = null;
+        this.inputs = {};
         this.progressTimeout = null;
     }
+
+    errorState = err => ({
+        progressError: true,
+        progressLabel: err.toString(),
+    });
 
     componentWillUnmount() {
         clearTimeout(this.progressTimeout);
     }
 
-    loadData = (file, name) => {
+    loadNetwork = (file, name) => {
         if (!name && file.name) {
             name = file.name;
         }
 
         this.setState({
-            isLoading: true,
+            loadingComplete: false,
+            progressVisible: true,
             progressValue: 1,
             progressLabel: 'Reading file',
             progressError: false,
@@ -48,7 +53,7 @@ class FileDialog extends React.Component {
                 progressLabel: 'Parsing',
             }), 400);
 
-        parseFile(file)
+        return parseFile(file)
             .then((parsed) => {
                 clearTimeout(this.progressTimeout);
 
@@ -67,19 +72,14 @@ class FileDialog extends React.Component {
                 this.setState({
                     progressValue: 3,
                     progressLabel: 'Success',
+                    loadingComplete: true,
+                    network,
+                    filename: name,
                 });
-
-                this.progressTimeout = setTimeout(() => {
-                    this.setState({ isLoading: false });
-                    this.props.onFileLoaded({ network, filename: name })
-                }, 200);
             })
             .catch((err) => {
                 clearTimeout(this.progressTimeout);
-                this.setState({
-                    progressError: true,
-                    progressLabel: err.toString(),
-                });
+                this.setState(this.errorState(err));
                 console.log(err);
             });
     }
@@ -88,7 +88,8 @@ class FileDialog extends React.Component {
         const filename = 'citation_data.ftree';
 
         this.setState({
-            isLoading: true,
+            loadingComplete: false,
+            progressVisible: true,
             progressValue: 1,
             progressLabel: 'Reading file',
             progressError: false,
@@ -96,14 +97,68 @@ class FileDialog extends React.Component {
 
         fetch(filename)
             .then(res => res.text())
-            .then(file => this.loadData(file, filename))
+            .then(file => this.loadNetwork(file, filename))
+            .then(() => this.props.onFileLoaded({
+                network: this.state.network,
+                filename: this.state.filename,
+            }))
             .catch((err) => {
-                this.setState({
-                    progressError: true,
-                    progressLabel: err.toString(),
-                });
+                this.setState(this.errorState(err));
                 console.log(err);
             });
+    }
+
+    loadOccurences = (file) => {
+        this.setState({
+            progressVisible: true,
+            progressValue: 1,
+            progressLabel: 'Reading file',
+            progressError: false,
+        });
+
+        this.progressTimeout = setTimeout(() =>
+            this.setState({
+                progressValue: 2,
+                progressLabel: 'Parsing',
+            }), 400);
+
+        return parseFile(file)
+            .then((parsed) => {
+                clearTimeout(this.progressTimeout);
+
+                if (parsed.errors.length) {
+                    throw new Error(parsed.errors[0].message);
+                }
+
+                const occurrences = parsed.data.map(arr => arr[0]);
+
+                this.setState({
+                    progressValue: 3,
+                    progressLabel: 'Success',
+                    occurrences,
+                });
+            })
+            .catch((err) => {
+                clearTimeout(this.progressTimeout);
+                this.setState(this.errorState(err));
+                console.log(err);
+            });
+    }
+
+    handleRunButtonClicked = () => {
+        const network = {
+            network: this.state.network,
+            filename: this.state.filename,
+        }
+
+        const result = this.state.occurrences
+            ? {
+                ...network,
+                occurrences: this.state.occurrences,
+            }
+            : network;
+
+        this.props.onFileLoaded(result);
     }
 
     render() {
@@ -116,28 +171,49 @@ class FileDialog extends React.Component {
             <div>
                 <Segment padded='very' style={{ marginTop: '200px', ...width }}>
                     <Help trigger={<Label as='a' corner='right' icon='help' />} />
-                    <label className='ui fluid primary button' htmlFor='fileUpload'>
-                        <Icon name='upload' />Load data...
-                    </label>
+                    <Button.Group fluid>
+                        <label className='ui primary button' htmlFor='networkUpload'>
+                            <Icon name='upload' />Load network...
+                        </label>
+                        <label className='ui button' htmlFor='occurencesUpload'>
+                            <Icon name='map pin' />Load occurences...
+                        </label>
+                    </Button.Group>
                     <input style={{ display: 'none' }}
                         type='file'
-                        id='fileUpload'
-                        onChange={() => this.loadData(this.input.files[0])}
-                        ref={input => this.input = input} />
+                        id='networkUpload'
+                        onChange={() => this.loadNetwork(this.inputs.network.files[0])}
+                        ref={input => this.inputs.network = input}
+                    />
+                    <input style={{ display: 'none' }}
+                        type='file'
+                        id='occurencesUpload'
+                        onChange={() => this.loadOccurences(this.inputs.occurences.files[0])}
+                        ref={input => this.inputs.occurences = input}
+                    />
                     <Divider horizontal>or</Divider>
                     <Button fluid secondary onClick={this.loadExampleData}>Load citation data</Button>
                 </Segment>
-                {this.state.isLoading &&
-                    <Segment padded='very' style={{ ...width }} basic>
+                <Segment padded='very' style={{ ...width }} basic>
+                    {this.state.progressVisible &&
                         <Progress
                             align='left'
                             indicating
                             error={this.state.progressError}
                             label={this.state.progressLabel}
                             total={3}
-                            value={this.state.progressValue} />
-                    </Segment>
-                }
+                            value={this.state.progressValue}
+                        />
+                    }
+                    {this.state.loadingComplete &&
+                        <Button
+                            positive
+                            fluid
+                            content='Run'
+                            onClick={this.handleRunButtonClicked}
+                        />
+                    }
+                </Segment>
             </div>
         );
     }
