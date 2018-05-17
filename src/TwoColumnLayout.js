@@ -7,6 +7,7 @@ import FileDialog from './FileDialog';
 import NetworkNavigator from './NetworkNavigator';
 import Settings from './Settings';
 import Tree from './Tree';
+import OccurrencesTable from './OccurrencesTable';
 import Background from './Background.svg';
 import addBeforeUnloadEventListener from './lib/before-unload';
 
@@ -20,13 +21,8 @@ export default class TwoColumnLayout extends Component {
     toggleSidebar = () => this.setState({ sidebarVisible: !this.state.sidebarVisible });
     setSelectedNode = selectedNode => this.setState({ selectedNode });
     setSearchFunction = searchFunction => this.setState({ searchFunction });
-    onFileLoaded = ({ network, filename, ...rest }) => {
+    onFileLoaded = ({ network, filename }) => {
         addBeforeUnloadEventListener('Are you sure you want to leave this page?');
-
-        if (rest.occurrences) {
-            this.setState({ occurrences: rest.occurrences });
-        }
-
         this.setState({
             network,
             filename,
@@ -44,6 +40,8 @@ export default class TwoColumnLayout extends Component {
             this.forceUpdate();
         }
     }
+
+    handleOccurrencesChange = occurrences => this.setState({ occurrences });
 
     render() {
         const mainContent = this.state.loadingComplete
@@ -94,6 +92,7 @@ export default class TwoColumnLayout extends Component {
                     <Menu.Item>
                         <Search searchFunction={this.state.searchFunction} />
                     </Menu.Item>
+                    <OccurrencesTable onFilesChange={this.handleOccurrencesChange} />
                     {this.state.selectedNode &&
                         <SelectedNode
                             node={this.state.selectedNode}

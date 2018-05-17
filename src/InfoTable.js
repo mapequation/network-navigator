@@ -18,7 +18,6 @@ export default class InfoTable extends React.Component {
             nodes: PropTypes.array,
             links: PropTypes.array,
             totalChildren: PropTypes.number,
-            occurrences: PropTypes.number,
         }).isRequired,
         onNameChange: PropTypes.func,
         directed: PropTypes.bool,
@@ -127,14 +126,6 @@ export default class InfoTable extends React.Component {
                                 size='tiny'
                                 content='The total number of nodes contained within this module and its children.' />
                             <Table.Cell content={node.totalChildren} />
-                        </Table.Row>
-                    }
-                    {node.occurrences != null &&
-                        <Table.Row>
-                            <Popup trigger={<Table.Cell content='Occurrences' />}
-                                size='tiny'
-                                content='The total number of occurrences contained within this module and its children.' />
-                            <Table.Cell content={node.occurrences} />
                         </Table.Row>
                     }
                 </Table.Body>

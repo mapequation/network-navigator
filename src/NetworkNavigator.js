@@ -31,10 +31,6 @@ export default class NetworkNavigator extends React.Component {
 
         const { root, setSearchFunction } = props;
 
-        if (props.occurrences) {
-            root.markOccurrences(props.occurrences);
-        }
-
         setSearchFunction((name) => {
             const hits = this.props.root.search(name);
             this.layouts.forEach(l => l.updateAttributes())
@@ -61,9 +57,12 @@ export default class NetworkNavigator extends React.Component {
                 this.renderStyle.nodeRadius = node => node.nodes ? nodeRadius(node.nodes.length) : nodeRadius(1);
             }
 
-            this.layouts.forEach(layout => {
-                layout.renderStyle = this.renderStyle;
-            });
+            this.layouts.forEach(layout => layout.renderStyle = this.renderStyle);
+        }
+
+        if (this.props.occurrences) {
+            root.clearOccurrences();
+            this.props.occurrences.forEach(o => root.markOccurrences(o));
         }
 
         this.layouts.forEach(layout => layout.updateAttributes());

@@ -139,24 +139,48 @@ export default class NetworkLayout {
             fill: n => this.style.nodeFillColor(n),
         };
 
-        if (this.network.occurrences) {
-            const radius = (n) => {
-                if (!(n.occurrences || n.occurred)) return 0;
-                const r = this.style.nodeRadius(n);
-                if (n.occurred) return r;
-                const fraction = n.occurrences / (n.totalChildren || 1);
-                return r * fraction;
-            };
+        const radius = (n) => {
+            if (n.visible) return 0;
+            const r = this.style.nodeRadius(n);
+            if (n.occurred) {
+                for (let item of n.occurred) {
+                    return r
+                }
+            } else {
+                const max = Array.from(n.occurrences.values())
+                    .reduce((max, curr) => Math.max(max, curr), 0);
+                return r * max / (n.totalChildren || 1);
+            }
+            return 0;
+        };
 
-            this.elements.occurrences = this.elements.node.append('circle')
-                .attr('class', 'occurrences')
-                .attr('r', radius)
-                .style('fill', '#F48074');
-
-            this.elements.occurrences.accessors = {
-                radius,
-            };
+        const fill = (n) => {
+            if (n.occurred) {
+                for (let color of n.occurred.keys()) {
+                    return color;
+                }
+            } else {
+                let color = '';
+                let max = 0;
+                for (let item of n.occurrences.entries()) {
+                    if (item[1] > max) {
+                        color = item[0];
+                        max = item[1];
+                    }
+                }
+                return color;
+            }
+            return '';
         }
+
+        this.elements.occurrences = this.elements.node.append('circle')
+            .attr('r', radius)
+            .style('fill', fill);
+
+        this.elements.occurrences.accessors = {
+            r: n => radius(n),
+            fill: n => fill(n),
+        };
 
         this.elements.searchMark = this.elements.node.append('circle')
             .attr('r', this.style.searchMarkRadius)
@@ -195,16 +219,15 @@ export default class NetworkLayout {
     updateAttributes(simulationRunning = false) {
         if (this.updateDisabled && !simulationRunning) return;
 
-        const { circle, searchMark, label, link } = this.elements;
+        const { circle, searchMark, label, link, occurrences } = this.elements;
 
         this.linkRenderer.nodeRadius(circle.accessors.r);
 
-        if (this.elements.occurrences) {
-            this.elements.occurrences
-                .attr('cx', n => n.x)
-                .attr('cy', n => n.y);
-        }
-
+        occurrences
+            .attr('r', occurrences.accessors.r)
+            .attr('fill', occurrences.accessors.fill)
+            .attr('cx', n => n.x)
+            .attr('cy', n => n.y);
         circle
             .style('fill', circle.accessors.fill)
             .attr('r', circle.accessors.r)
@@ -286,10 +309,6 @@ export default class NetworkLayout {
         const renderTarget = isRenderTarget({ x, y, k }, circle.accessors.r);
 
         if (k > 2) {
-            const t = d3.transition()
-                .duration(200)
-                .ease(d3.easeLinear);
-
             this.elements.node.on('.drag', null);
             this.simulation.stop();
             this.updateDisabled = false;
@@ -298,10 +317,6 @@ export default class NetworkLayout {
             const targets = this.nodes.filter(n => n.nodes && !n.visible && renderTarget(n));
 
             targets.forEach((n) => {
-                d3.select(`#${n.path.toId()}`).select('.occurrences')
-                    .transition(t)
-                    .attr('r', 0);
-
                 const childScale = 0.15;
                 const childTranslate = Point.from(n).mul(1 - childScale);
                 const transformMatrix = transformToMatrix({
@@ -341,17 +356,8 @@ export default class NetworkLayout {
         }
 
         if (k < 4) {
-            const t = d3.transition()
-                .duration(200)
-                .ease(d3.easeLinear);
-
             this.nodes.filter(n => n.visible && !renderTarget(n))
                 .forEach((n) => {
-                    if (this.elements.occurrences) {
-                        d3.select(`#${n.path.toId()}`).select('.occurrences')
-                            .transition(t)
-                            .attr('r', this.elements.occurrences.accessors.radius);
-                    }
                     this.dispatch.call('destroy', null, n.path)
                 });
         }
