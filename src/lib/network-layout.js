@@ -110,11 +110,11 @@ export default class NetworkLayout {
             lod: LOD.linkByIndex(this.links),
         };
 
-        const onNodeClicked = self => (function (n) {
+        const onNodeClicked = (self => function (n) {
             self.dispatch.call('click', this, n);
             d3.select(this).select('circle')
                 .style('stroke', '#f48074');
-        });
+        })(this);
 
         this.elements.node = parent.append('g')
             .attr('class', 'nodes')
@@ -123,7 +123,7 @@ export default class NetworkLayout {
             .enter()
             .append('g')
             .attr('id', n => n.path.toId())
-            .on('click', onNodeClicked(this))
+            .on('click', onNodeClicked)
             .on('mouseover', highlightLinks)
             .on('mouseout', restoreLinks(this.style))
             .call(this.onDrag);
