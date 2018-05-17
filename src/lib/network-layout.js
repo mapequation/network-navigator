@@ -141,15 +141,16 @@ export default class NetworkLayout {
 
         if (this.network.occurrences) {
             const radius = (n) => {
-                if (!n.occurrences || n.visible) return 0;
+                if (!(n.occurrences || n.occurred)) return 0;
                 const r = this.style.nodeRadius(n);
                 if (n.occurred) return r;
-                const fraction = n.occurrences / n.totalChildren;
+                const fraction = n.occurrences / (n.totalChildren || 1);
                 return r * fraction;
             };
 
             this.elements.occurrences = this.elements.node.append('circle')
-                .attr('r', n => radius(n))
+                .attr('class', 'occurrences')
+                .attr('r', radius)
                 .style('fill', '#F48074');
 
             this.elements.occurrences.accessors = {
@@ -200,7 +201,6 @@ export default class NetworkLayout {
 
         if (this.elements.occurrences) {
             this.elements.occurrences
-                .attr('r', this.elements.occurrences.accessors.radius)
                 .attr('cx', n => n.x)
                 .attr('cy', n => n.y);
         }
@@ -286,6 +286,10 @@ export default class NetworkLayout {
         const renderTarget = isRenderTarget({ x, y, k }, circle.accessors.r);
 
         if (k > 2) {
+            const t = d3.transition()
+                .duration(200)
+                .ease(d3.easeLinear);
+
             this.elements.node.on('.drag', null);
             this.simulation.stop();
             this.updateDisabled = false;
@@ -294,6 +298,10 @@ export default class NetworkLayout {
             const targets = this.nodes.filter(n => n.nodes && !n.visible && renderTarget(n));
 
             targets.forEach((n) => {
+                d3.select(`#${n.path.toId()}`).select('.occurrences')
+                    .transition(t)
+                    .attr('r', 0);
+
                 const childScale = 0.15;
                 const childTranslate = Point.from(n).mul(1 - childScale);
                 const transformMatrix = transformToMatrix({
@@ -333,8 +341,19 @@ export default class NetworkLayout {
         }
 
         if (k < 4) {
+            const t = d3.transition()
+                .duration(200)
+                .ease(d3.easeLinear);
+
             this.nodes.filter(n => n.visible && !renderTarget(n))
-                .forEach(n => this.dispatch.call('destroy', null, n.path));
+                .forEach((n) => {
+                    if (this.elements.occurrences) {
+                        d3.select(`#${n.path.toId()}`).select('.occurrences')
+                            .transition(t)
+                            .attr('r', this.elements.occurrences.accessors.radius);
+                    }
+                    this.dispatch.call('destroy', null, n.path)
+                });
         }
 
         return this;
