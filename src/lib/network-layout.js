@@ -1,7 +1,7 @@
 import * as d3 from 'd3';
 import { startCase, lowerCase, minBy, truncate } from 'lodash';
 import makeDragHandler from './drag-handler';
-import { highlightNode, restoreNode } from './highlight-node';
+import { highlightLinks, restoreLinks } from './highlight-links';
 import * as LOD from './level-of-detail';
 import Point from './point';
 import Simulation from './simulation';
@@ -110,6 +110,12 @@ export default class NetworkLayout {
             lod: LOD.linkByIndex(this.links),
         };
 
+        const onNodeClicked = self => (function (n) {
+            self.dispatch.call('click', this, n);
+            d3.select(this).select('circle')
+                .style('stroke', '#f48074');
+        });
+
         this.elements.node = parent.append('g')
             .attr('class', 'nodes')
             .selectAll('.node')
@@ -117,9 +123,9 @@ export default class NetworkLayout {
             .enter()
             .append('g')
             .attr('id', n => n.path.toId())
-            .on('click', n => this.dispatch.call('click', null, n))
-            .on('mouseover', highlightNode)
-            .on('mouseout', restoreNode(this.style))
+            .on('click', onNodeClicked(this))
+            .on('mouseover', highlightLinks)
+            .on('mouseout', restoreLinks(this.style))
             .call(this.onDrag);
 
         this.elements.circle = this.elements.node.append('circle')
@@ -178,6 +184,11 @@ export default class NetworkLayout {
             visibility: n => 'visible',
             text: nodeName,
         };
+    }
+
+    clearSelectedNodes() {
+        this.elements.circle
+            .style('stroke', this.style.nodeBorderColor);
     }
 
     updateAttributes(simulationRunning = false) {

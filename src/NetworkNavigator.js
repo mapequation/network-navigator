@@ -95,6 +95,7 @@ export default class NetworkNavigator extends React.Component {
         layout.on('click', (node) => {
             console.log(node);
             this.props.setSelectedNode(node);
+            this.layouts.forEach(l => l.clearSelectedNodes());
         });
 
         layout.on('render', ({ path, layout }) => {

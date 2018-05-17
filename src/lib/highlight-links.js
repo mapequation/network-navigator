@@ -1,13 +1,10 @@
 import { select } from 'd3';
 
-export function highlightNode(node) {
+export function highlightLinks(node) {
     if (node.visible) return;
 
     const outColor = '#f48074';
     const inColor = '#ba6157';
-
-    select(this).select('circle')
-        .style('stroke', outColor);
 
     const links = select(this.parentElement.parentElement)
           .select('.links')
@@ -21,11 +18,8 @@ export function highlightNode(node) {
         .style('fill', outColor);
 }
 
-export function restoreNode({ nodeBorderColor, linkFillColor }) {
+export function restoreLinks({ nodeBorderColor, linkFillColor }) {
     return function () {
-        select(this).select('circle')
-            .style('stroke', nodeBorderColor);
-
         select(this.parentElement.parentElement)
             .select('.links').selectAll('.link')
             .sort((a, b) => a.flow - b.flow)
