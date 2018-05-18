@@ -43,6 +43,14 @@ export default class InfoTable extends React.Component {
         }
     }
 
+    count(items) {
+        const visibleCount = items.filter(item => item.shouldRender).length;
+        if (visibleCount === items.length) {
+            return items.length;
+        }
+        return <span>{items.length} <span style={{color: '#999'}}>({visibleCount})</span></span>;
+    }
+
     render() {
         const { node, directed } = this.props;
 
@@ -109,7 +117,9 @@ export default class InfoTable extends React.Component {
                             <Popup trigger={<Table.Cell content='Nodes' />}
                                 size='tiny'
                                 content='The number of nodes contained within this module.' />
-                            <Table.Cell content={node.nodes.length} />
+                            <Popup trigger={<Table.Cell content={this.count(node.nodes)} />}
+                                size='tiny'
+                                content='Total (Visible)' />
                         </Table.Row>
                     }
                     {node.links &&
@@ -117,7 +127,9 @@ export default class InfoTable extends React.Component {
                             <Popup trigger={<Table.Cell content='Links' />}
                                 size='tiny'
                                 content='The number of links contained within this module.' />
-                            <Table.Cell content={node.links.length} />
+                            <Popup trigger={<Table.Cell content={this.count(node.links)} />}
+                                size='tiny'
+                                content='Total (Visible)' />
                         </Table.Row>
                     }
                     {node.totalChildren != null &&
