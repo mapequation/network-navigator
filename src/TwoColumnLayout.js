@@ -76,7 +76,7 @@ export default class TwoColumnLayout extends Component {
             };
 
         return (
-            <Sidebar.Pushable>
+            <Sidebar.Pushable style={{height: 'calc(100vh - 80px)'}}>
                 <Sidebar
                     style={{ overflow: 'scroll!important' }}
                     as={Menu}
@@ -114,7 +114,7 @@ export default class TwoColumnLayout extends Component {
                 <Sidebar.Pusher as={Grid} padded>
                     <Grid.Column
                         align='center'
-                        style={{ height: '100%', paddingTop: 0, paddingLeft: 0, ...background }}>
+                        style={{ paddingTop: 0, paddingLeft: 0, ...background }}>
                         {mainContent}
                     </Grid.Column>
                 </Sidebar.Pusher>
