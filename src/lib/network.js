@@ -65,6 +65,25 @@ class Link {
         this.target = target;
         this.flow = flow;
         this.shouldRender = true;
+        this._oppositeLink = undefined;
+    }
+
+    get oppositeLink() {
+        if (this._oppositeLink) {
+            return this._oppositeLink;
+        }
+
+        this._oppositeLink = this.source.inLinks.find(link => link.source === this.target);
+
+        if (this._oppositeLink) {
+            this._oppositeLink.oppositeLink = this;
+        }
+
+        return this._oppositeLink;
+    }
+
+    set oppositeLink(oppositeLink) {
+        this._oppositeLink = oppositeLink;
     }
 }
 
