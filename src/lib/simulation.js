@@ -7,6 +7,8 @@ import {
     scaleLinear
 } from 'd3';
 
+const maxFlow = items => items.reduce((max, item) => Math.max(max, item.flow), -Infinity);
+const minFlow = items => items.reduce((min, item) => Math.min(min, item.flow), Infinity);
 
 export default function Simulation({ x, y }, linkDistance = 250, charge = 500) {
     const simulation = forceSimulation()
@@ -23,25 +25,27 @@ export default function Simulation({ x, y }, linkDistance = 250, charge = 500) {
     simulation.alphaDecay(1 - Math.pow(0.001, 1/nIterations));
 
     simulation.init = ({ nodes, links }) => {
-        const maxLinkFlow = links.reduce((max, link) => Math.max(max, link.flow), -Infinity);
-        const minLinkFlow = links.reduce((min, link) => Math.min(min, link.flow), Infinity);
-        const minDistance = 100;
-        const maxDistance = linkDistance;
+        const maxLinkFlow = maxFlow(links);
+        const minLinkFlow = minFlow(links);
 
-        const distance = scaleLinear().domain([minLinkFlow, maxLinkFlow]).range([maxDistance, minDistance]);
-
-        const force = scaleLinear().domain([minLinkFlow, maxLinkFlow]).range([0.5, 1]);
-
+        const distance = scaleLinear().domain([minLinkFlow, maxLinkFlow]).range([linkDistance, 100]);
+        const linkStrength = scaleLinear().domain([minLinkFlow, maxLinkFlow]).range([0.5, 1]);
         const defaultStrength = simulation.force('link').strength();
-
-        const linkStrength = link => force(link.flow) * defaultStrength(link);
 
         simulation
             .nodes(nodes)
             .force('link')
             .links(links)
-            .distance(l => distance(l.flow))
-            .strength(linkStrength)
+            .distance(link => distance(link.flow))
+            .strength(link => linkStrength(link.flow) * defaultStrength(link));
+
+        if (nodes.nodes) {
+            const mass = scaleLinear().domain([minFlow(nodes), maxFlow(nodes)]).range([0.5, 1]);
+
+            simulation
+                .force('charge')
+                .strength(node => -charge * mass(node.flow));
+        }
 
         const alpha = simulation.alpha();
 
