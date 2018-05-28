@@ -23,7 +23,7 @@ export default class Settings extends React.Component {
 
     render() {
         return (
-            <MyAccordion title='Settings' visible>
+            <MyAccordion title='Settings'>
                 <Form>
                     <Form.Group inline>
                         <label>Size based on</label>
