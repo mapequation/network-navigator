@@ -110,7 +110,7 @@ class FileDialog extends React.Component {
 
         return (
             <div>
-                <Segment padded='very' style={{ marginTop: '200px', ...width }}>
+                <Segment padded='very' style={{ marginTop: '20vh', ...width }}>
                     <Help trigger={<Label as='a' corner='right' icon='help' />} />
                     <label className='ui primary button fluid' htmlFor='networkUpload'>
                         <Icon name='upload' />Load network...
