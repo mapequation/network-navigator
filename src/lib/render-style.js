@@ -31,11 +31,11 @@ import {
 export default function makeRenderStyle(maxNodeFlow, maxNodeExitFlow, maxLinkFlow) {
     const nodeFill = [interpolateGreens(2/9), interpolateGreens(3/9)];
     const nodeBorder = [interpolateGreens(3/9), interpolateGreens(6/9)];
-    const linkFill = [interpolateBlues(2/9), interpolateBlues(6/9)];
+    const linkFill = ['#9BCDFD', '#064575'];
 
     const nodeRadius = scaleSqrt().domain([0, maxNodeFlow]).range([10, 70]);
     const nodeFillColor = scaleSqrt().domain([0, maxNodeFlow]).range(nodeFill);
-    const nodeBorderWidth = scaleSqrt().domain([0, maxNodeExitFlow]).range([1, 5]);
+    const nodeBorderWidth = scaleSqrt().domain([0, maxNodeExitFlow]).range([2, 5]);
     const nodeBorderColor = scaleSqrt().domain([0, maxNodeExitFlow]).range(nodeBorder);
 
     const linkFillColor = scaleSqrt().domain([0, maxLinkFlow]).range(linkFill);
