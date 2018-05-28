@@ -64,7 +64,7 @@ class Link {
         this.source = source;
         this.target = target;
         this.flow = flow;
-        this.shouldRender = true;
+        this.shouldRender = false;
         this._oppositeLink = undefined;
     }
 
