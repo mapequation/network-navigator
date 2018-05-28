@@ -53,7 +53,7 @@ export default function Simulation({ x, y }, linkDistance = 250, charge = 500) {
             simulation.alpha(0.8);
         }
 
-        for (let i = 0; i < 80; i++) {
+        for (let i = 0; i < 23; i++) {
             simulation.tick();
         }
 
