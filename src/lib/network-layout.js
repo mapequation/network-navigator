@@ -357,9 +357,7 @@ export default class NetworkLayout {
 
         if (k < 4) {
             this.nodes.filter(n => n.visible && !renderTarget(n))
-                .forEach((n) => {
-                    this.dispatch.call('destroy', null, n.path)
-                });
+                .forEach(n => this.dispatch.call('destroy', null, n.path));
         }
 
         return this;
