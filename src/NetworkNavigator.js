@@ -39,11 +39,19 @@ export default class NetworkNavigator extends React.Component {
 
         this.renderStyle = makeRenderStyle(root.maxNodeFlow, root.maxNodeExitFlow, root.maxLinkFlow);
 
-        this.linkRenderer = (root.directed ? halfLink : undirectedLink)()
-            .nodeRadius(node => this.renderStyle.nodeRadius(node))
-            .width(link => this.renderStyle.linkWidth(link))
-            .oppositeLink(link => link.oppositeLink)
-            .bend((link, distance) => this.renderStyle.linkBend(distance));
+
+        if (root.directed) {
+            this.linkRenderer = halfLink()
+                .nodeRadius(node => this.renderStyle.nodeRadius(node))
+                .width(link => this.renderStyle.linkWidth(link))
+                .oppositeLink(link => link.oppositeLink)
+                .bend((link, distance) => this.renderStyle.linkBend(distance));
+        } else {
+            this.linkRenderer = undirectedLink()
+                .nodeRadius(node => this.renderStyle.nodeRadius(node))
+                .width(link => this.renderStyle.linkWidth(link))
+                .bend((link, distance) => this.renderStyle.linkBend(distance));
+        }
     }
 
     componentDidUpdate(prevProps) {
