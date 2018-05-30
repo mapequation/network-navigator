@@ -141,9 +141,9 @@ export default class NetworkLayout {
 
         const radius = (n) => {
             if (n.visible) return 0;
-            const r = this.style.nodeRadius(n);
+            const r = this.elements.circle.accessors.r(n);
             if (n.occurred) {
-                for (let item of n.occurred) {
+                if (n.occurred.size > 0) {
                     return r
                 }
             } else {
