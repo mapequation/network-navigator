@@ -8,7 +8,6 @@ import {
     scaleSqrt,
     scaleLinear,
     interpolateGreens,
-    interpolateBlues,
 } from 'd3';
 
 
