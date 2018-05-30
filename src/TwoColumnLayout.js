@@ -6,6 +6,7 @@ import Search from './Search';
 import FileDialog from './FileDialog';
 import NetworkNavigator from './NetworkNavigator';
 import Settings from './Settings';
+import Export from './Export';
 import Tree from './Tree';
 import OccurrencesTable from './OccurrencesTable';
 import Background from './Background.svg';
@@ -103,6 +104,9 @@ export default class TwoColumnLayout extends Component {
                     <Settings
                         onSizeChange={this.handleSizeChange}
                     />
+                    {this.state.network &&
+                        <Export network={this.state.network} filename={this.state.filename} />
+                    }
                     {this.state.network &&
                         <Tree network={this.state.network} />
                     }
