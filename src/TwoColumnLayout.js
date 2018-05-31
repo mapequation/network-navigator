@@ -6,11 +6,12 @@ import Search from './Search';
 import FileDialog from './FileDialog';
 import NetworkNavigator from './NetworkNavigator';
 import Settings from './Settings';
-import Export from './Export';
 import Tree from './Tree';
 import OccurrencesTable from './OccurrencesTable';
 import Background from './Background.svg';
 import addBeforeUnloadEventListener from './lib/before-unload';
+import FileSaver from 'file-saver';
+import ftreeFromNetwork from './lib/file-formats/ftree-from-network';
 
 export default class TwoColumnLayout extends Component {
     state = {
@@ -40,6 +41,14 @@ export default class TwoColumnLayout extends Component {
             selectedNode.name = name;
             this.forceUpdate();
         }
+    }
+
+    handleFilenameChange = (e, { value }) => this.setState({ filename: value });
+
+    handleDownloadClicked = () => {
+        const ftree = ftreeFromNetwork(this.state.network);
+        const blob = new Blob([ftree], { type: 'text/plain;charset=utf-8' });
+        FileSaver.saveAs(blob, this.state.filename);
     }
 
     handleOccurrencesChange = occurrences => this.setState({ occurrences });
@@ -88,7 +97,14 @@ export default class TwoColumnLayout extends Component {
                     vertical>
                     <Menu.Item onClick={this.toggleSidebar} icon='close' content='Close' />
                     <Menu.Item>
-                        <Input readOnly label='Filename' value={this.state.filename} />
+                        <Input
+                            type='text'
+                            label='Filename'
+                            labelPosition='left'
+                            icon={<Icon name='download' link onClick={this.handleDownloadClicked}/>}
+                            value={this.state.filename}
+                            onChange={this.handleFilenameChange}
+                        />
                     </Menu.Item>
                     <Menu.Item>
                         <Search searchFunction={this.state.searchFunction} />
@@ -104,9 +120,6 @@ export default class TwoColumnLayout extends Component {
                     <Settings
                         onSizeChange={this.handleSizeChange}
                     />
-                    {this.state.network &&
-                        <Export network={this.state.network} filename={this.state.filename} />
-                    }
                     {this.state.network &&
                         <Tree network={this.state.network} />
                     }
