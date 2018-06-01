@@ -1,6 +1,7 @@
 {
-  "name": "mapvis-app",
-  "version": "0.1.0",
+  "name": "infomap-network-navigator",
+  "version": "1.0.0",
+  "homepage": "http://navigator.mapequation.org",
   "private": true,
   "dependencies": {
     "d3": "^5.4.0",
