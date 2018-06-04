@@ -1,5 +1,5 @@
 import * as d3 from 'd3';
-import { startCase, lowerCase, minBy, truncate } from 'lodash';
+import { minBy, truncate } from 'lodash';
 import makeDragHandler from './drag-handler';
 import { highlightLinks, restoreLinks } from './highlight-links';
 import * as LOD from './level-of-detail';
@@ -10,7 +10,7 @@ const width = window.innerWidth;
 const height = window.innerHeight;
 const center = new Point(width / 2, height / 2);
 
-const nodeName = node => startCase(lowerCase(truncate(node.name)));
+const nodeName = node => truncate(node.name);
 
 const screenScale = ({ x, y, k }) => point => new Point(point.x * k + x, point.y * k + y);
 
@@ -194,10 +194,10 @@ export default class NetworkLayout {
             .text(nodeName)
             .attr('text-anchor', 'start')
             .style('fill', 'black')
-            .style('font-size', 12)
+            .style('font-size', 13)
             .style('paint-order', 'stroke')
             .style('stroke', 'white')
-            .style('stroke-width', '1.5px')
+            .style('stroke-width', '2px')
             .style('stroke-linecap', 'square')
             .style('stroke-linejoin', 'round');
 
