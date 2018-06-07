@@ -5,6 +5,7 @@ import MyAccordion from './helpers/MyAccordion';
 import InfoTable from './InfoTable';
 import Graph from './Graph'
 import DegreeDistribution from './DegreeDistribution';
+import { BarChart, XAxis, YAxis, Bar, Cell } from 'recharts';
 
 const SelectedNode = ({ node, directed, onNameChange }) => {
     const children = node ? node.nodes || [] : [];
@@ -28,6 +29,24 @@ const SelectedNode = ({ node, directed, onNameChange }) => {
                     nodes={children}
                     figureWidth={figureWidth} figureHeight={figureHeight}
                     directed={directed} />
+                { node.occurrences.size > 0 &&
+                <MyAccordion title='Occurrences histogram'>
+                    <BarChart
+                        width={figureWidth} height={figureHeight}
+                        margin={{top: 5, right: 0, bottom: 0, left: -10}}
+                        data={Array.from(node.occurrences).map(o => ({ name: o[0], value: o[1] }))}>
+                        <XAxis tick={false} />
+                        <YAxis />
+                        <Bar dataKey='value'>
+                        {
+                            Array.from(node.occurrences.keys()).map((color, i) =>
+                                <Cell fill={color} key={i} />
+                            )
+                        }
+                        </Bar>
+                    </BarChart>
+                </MyAccordion>
+                }
             </Menu.Menu>
         </MyAccordion>
     );
