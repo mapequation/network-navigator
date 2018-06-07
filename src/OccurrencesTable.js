@@ -69,7 +69,7 @@ export default class OccurrencesTable extends React.Component {
                     <Table.Header>
                         <Table.Row>
                             <Table.HeaderCell content='File' width='10' />
-                            <Table.HeaderCell content='Lines' width='4' />
+                            <Table.HeaderCell content='Nodes' width='4' />
                             <Table.HeaderCell content='Color' width='4' />
                         </Table.Row>
                     </Table.Header>
