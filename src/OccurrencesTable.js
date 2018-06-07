@@ -23,7 +23,7 @@ export default class OccurrencesTable extends React.Component {
         onFilesChange: () => null,
     }
 
-    fileColor = file => this.colors[this.state.files.indexOf(file) % this.colors.length];
+    fileColor = file => !file.enabled ? 'white' : this.colors[this.state.files.indexOf(file) % this.colors.length];
 
     loadFile = (file) => {
         return parseFile(file)
@@ -35,31 +35,38 @@ export default class OccurrencesTable extends React.Component {
                             name: file.name,
                             content: parsed.data.map(item => item[0]),
                             errors: parsed.errors,
+                            enabled: true,
                         }
                     ]
-                }), () => this.handleChange());
+                }), this.handleChange);
             })
-            .catch((err) => {
-                console.log(err);
-            });
+            .catch(err => console.log(err));
     }
 
     removeFile = (file) => {
         this.setState(prevState =>
             ({ files: prevState.files.filter(item => item !== file) }),
-            () => this.handleChange());
+            this.handleChange);
     }
 
-    handleChange() {
+    handleChange = () => {
         this.props.onFilesChange(
             this.state.files
                 .filter(file => file.errors.length === 0)
+                .filter(file => file.enabled)
                 .map(file => ({
                     name: file.name,
                     content: file.content,
                     color: this.fileColor(file),
                 }))
         );
+    }
+
+    toggleEnabled = (file) => {
+        file.enabled = !file.enabled;
+        this.setState(prevState =>
+            ({ files: prevState.files }),
+            this.handleChange);
     }
 
     render() {
@@ -88,7 +95,7 @@ export default class OccurrencesTable extends React.Component {
                                     {file.name}
                                 </Table.Cell>
                                 <Table.Cell content={file.content.length} title={file.content.length} />
-                                <Table.Cell style={{ background: this.fileColor(file) }} />
+                                <Table.Cell style={{ background: this.fileColor(file) }} onClick={() => this.toggleEnabled(file)} />
                             </Table.Row>
                         )}
                     </Table.Body>

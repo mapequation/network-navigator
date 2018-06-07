@@ -160,22 +160,22 @@ export default class NetworkLayout {
                     return color;
                 }
             } else {
-                let color = '';
-                let max = 0;
-                for (let item of n.occurrences.entries()) {
-                    if (item[1] > max) {
-                        color = item[0];
-                        max = item[1];
+                let maxColor = '';
+                let maxOccurrences = 0;
+                for (let [color, occurrences] of n.occurrences.entries()) {
+                    if (occurrences > maxOccurrences) {
+                        maxColor = color;
+                        maxOccurrences = occurrences;
                     }
                 }
-                return color;
+                return maxColor;
             }
             return '';
         }
 
         this.elements.occurrences = this.elements.node.append('circle')
             .attr('r', radius)
-            .style('fill', fill);
+            .attr('fill', fill);
 
         this.elements.occurrences.accessors = {
             r: n => radius(n),
