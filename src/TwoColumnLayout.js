@@ -6,7 +6,6 @@ import Search from './Search';
 import FileDialog from './FileDialog';
 import NetworkNavigator from './NetworkNavigator';
 import Settings from './Settings';
-import Tree from './Tree';
 import Occurrences from './Occurrences';
 import Background from './Background.svg';
 import addBeforeUnloadEventListener from './lib/before-unload';
@@ -120,9 +119,6 @@ export default class TwoColumnLayout extends Component {
                     <Settings
                         onSizeChange={this.handleSizeChange}
                     />
-                    {this.state.network &&
-                        <Tree network={this.state.network} />
-                    }
                     <Help trigger={<Menu.Item><Icon name='help' />Help</Menu.Item>} />
                     <Menu.Item as={'a'} href='https://github.com/mapequation/map-visualize'>
                         <Icon name='github' />Source code
