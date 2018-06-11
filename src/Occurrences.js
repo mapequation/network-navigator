@@ -5,6 +5,8 @@ import { Table, Icon, Button } from 'semantic-ui-react';
 import { BarChart, XAxis, YAxis, Bar, Cell } from 'recharts';
 import * as d3 from 'd3';
 import parseFile from './lib/parse-file';
+import { traverseDepthFirst } from './lib/network';
+import FileSaver from 'file-saver';
 
 export default class Occurrences extends React.Component {
     state = {
@@ -35,7 +37,7 @@ export default class Occurrences extends React.Component {
                         ...prevState.files,
                         {
                             name: file.name,
-                            content: parsed.data.map(item => item[0]),
+                            content: parsed.data.map(item => item[0]), // FIXME
                             errors: parsed.errors,
                             enabled: true,
                         }
@@ -51,11 +53,13 @@ export default class Occurrences extends React.Component {
             this.handleChange);
     }
 
+    validFiles = () => this.state.files
+        .filter(file => file.errors.length === 0)
+        .filter(file => file.enabled);
+
     handleChange = () => {
         this.props.onFilesChange(
-            this.state.files
-                .filter(file => file.errors.length === 0)
-                .filter(file => file.enabled)
+            this.validFiles()
                 .map(file => ({
                     name: file.name,
                     content: file.content,
@@ -69,6 +73,30 @@ export default class Occurrences extends React.Component {
         this.setState(prevState =>
             ({ files: prevState.files }),
             this.handleChange);
+    }
+
+    handleDownloadClicked = () => {
+        const { selectedNode, filename } = this.props;
+
+        const occurrences = new Map(this.validFiles().map(file => [file.name, []]));
+
+        this.validFiles().forEach((file) => {
+            const key = this.fileColor(file);
+
+            for (let node of traverseDepthFirst(selectedNode)) {
+                if (node.occurred && node.occurred.has(key)) {
+                    occurrences.get(file.name).push(node.physicalId);
+                }
+            }
+        });
+
+        const serializedOccurrences = Array.from(occurrences).map(each =>
+            `"${each[0]}",${each[1].toString()}`)
+            .join('\n');
+
+        const blob = new Blob([serializedOccurrences], { type: 'text/csv;charset=utf-8' });
+        const basename = filename.lastIndexOf('.') !== -1 ? filename.substring(0, filename.lastIndexOf('.')) : filename;
+        FileSaver.saveAs(blob, `${basename}-${selectedNode.path}.csv`);
     }
 
     render() {
@@ -143,6 +171,7 @@ export default class Occurrences extends React.Component {
                                 }
                             </Bar>
                         </BarChart>
+                        <Button compact size='mini' onClick={this.handleDownloadClicked}>Download CSV</Button>
                     </div>
                 }
             </MyAccordion>
