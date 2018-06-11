@@ -2,10 +2,11 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import MyAccordion from './helpers/MyAccordion';
 import { Table, Icon, Button } from 'semantic-ui-react';
+import { BarChart, XAxis, YAxis, Bar, Cell } from 'recharts';
 import * as d3 from 'd3';
 import parseFile from './lib/parse-file';
 
-export default class OccurrencesTable extends React.Component {
+export default class Occurrences extends React.Component {
     state = {
         files: [],
     }
@@ -17,6 +18,7 @@ export default class OccurrencesTable extends React.Component {
 
     static propTypes = {
         onFilesChange: PropTypes.func,
+        selectedNode: PropTypes.object,
     }
 
     static defaultProps = {
@@ -70,6 +72,8 @@ export default class OccurrencesTable extends React.Component {
     }
 
     render() {
+        const { selectedNode } = this.props;
+
         return (
             <MyAccordion title='Occurrences'>
                 <Table celled singleLine compact fixed>
@@ -123,6 +127,24 @@ export default class OccurrencesTable extends React.Component {
                         </Table.Row>
                     </Table.Footer>
                 </Table>
+                {selectedNode != null && selectedNode.occurrences && selectedNode.occurrences.size > 0 &&
+                    <div style={{ textAlign: 'center' }}>
+                        <BarChart
+                            width={285} height={150}
+                            margin={{ top: 5, right: 0, bottom: 0, left: -10 }}
+                            data={Array.from(selectedNode.occurrences).map(o => ({ name: o[0], value: o[1] }))}>
+                            <XAxis tick={false} />
+                            <YAxis />
+                            <Bar dataKey='value'>
+                                {
+                                    Array.from(selectedNode.occurrences.keys()).map((color, i) =>
+                                        <Cell fill={color} key={i} />
+                                    )
+                                }
+                            </Bar>
+                        </BarChart>
+                    </div>
+                }
             </MyAccordion>
         )
     }

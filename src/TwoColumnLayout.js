@@ -7,7 +7,7 @@ import FileDialog from './FileDialog';
 import NetworkNavigator from './NetworkNavigator';
 import Settings from './Settings';
 import Tree from './Tree';
-import OccurrencesTable from './OccurrencesTable';
+import Occurrences from './Occurrences';
 import Background from './Background.svg';
 import addBeforeUnloadEventListener from './lib/before-unload';
 import FileSaver from 'file-saver';
@@ -51,7 +51,7 @@ export default class TwoColumnLayout extends Component {
         FileSaver.saveAs(blob, this.state.filename);
     }
 
-    handleOccurrencesChange = occurrences => this.setState({ occurrences });
+    handleOccurrencesChange = occurrences => this.setState({ occurrences }, this.forceUpdate);
 
     render() {
         const mainContent = this.state.loadingComplete
@@ -109,7 +109,7 @@ export default class TwoColumnLayout extends Component {
                     <Menu.Item>
                         <Search searchFunction={this.state.searchFunction} />
                     </Menu.Item>
-                    <OccurrencesTable onFilesChange={this.handleOccurrencesChange} />
+                    <Occurrences onFilesChange={this.handleOccurrencesChange} selectedNode={this.state.selectedNode} />
                     {this.state.selectedNode &&
                         <SelectedNode
                             node={this.state.selectedNode}
