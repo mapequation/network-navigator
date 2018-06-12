@@ -85,7 +85,7 @@ export default class TwoColumnLayout extends Component {
             };
 
         return (
-            <Sidebar.Pushable style={{height: 'calc(100vh - 80px)'}}>
+            <Sidebar.Pushable style={{ height: 'calc(100vh - 80px)' }}>
                 <Sidebar
                     style={{ overflow: 'scroll!important' }}
                     as={Menu}
@@ -100,7 +100,7 @@ export default class TwoColumnLayout extends Component {
                             type='text'
                             label='Filename'
                             labelPosition='left'
-                            icon={<Icon name='download' link onClick={this.handleDownloadClicked}/>}
+                            icon={<Icon name='download' link onClick={this.handleDownloadClicked} />}
                             value={this.state.filename}
                             onChange={this.handleFilenameChange}
                         />
