@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import MyAccordion from './helpers/MyAccordion';
-import { Table, Icon, Button } from 'semantic-ui-react';
+import { Table, Icon, Button, Checkbox } from 'semantic-ui-react';
 import { BarChart, XAxis, YAxis, Bar, Cell } from 'recharts';
 import * as d3 from 'd3';
 import parseFile from './lib/parse-file';
@@ -27,7 +27,7 @@ export default class Occurrences extends React.Component {
         onFilesChange: () => null,
     }
 
-    fileColor = file => !file.enabled ? 'white' : this.colors[this.state.files.indexOf(file) % this.colors.length];
+    fileColor = file => this.colors[this.state.files.indexOf(file) % this.colors.length];
 
     loadFile = (file) => {
         return parseFile(file)
@@ -107,9 +107,10 @@ export default class Occurrences extends React.Component {
                 <Table celled singleLine compact fixed>
                     <Table.Header>
                         <Table.Row>
-                            <Table.HeaderCell content='File' width='10' />
+                            <Table.HeaderCell content='File' width='8' />
                             <Table.HeaderCell content='Nodes' width='4' />
                             <Table.HeaderCell content='Color' width='4' />
+                            <Table.HeaderCell content='' width='2' />
                         </Table.Row>
                     </Table.Header>
                     <Table.Body>
@@ -118,6 +119,9 @@ export default class Occurrences extends React.Component {
                                 <Table.Cell content='No files loaded' />
                                 <Table.Cell content='' />
                                 <Table.Cell content='' />
+                                <Table.Cell>
+                                    <Checkbox fitted disabled />
+                                </Table.Cell>
                             </Table.Row>
                         }
                         {this.state.files.map((file, i) =>
@@ -127,13 +131,16 @@ export default class Occurrences extends React.Component {
                                     {file.name}
                                 </Table.Cell>
                                 <Table.Cell content={file.content.length} title={file.content.length} />
-                                <Table.Cell style={{ background: this.fileColor(file) }} onClick={() => this.toggleEnabled(file)} />
+                                <Table.Cell style={{ background: this.fileColor(file) }} />
+                                <Table.Cell>
+                                    <Checkbox fitted checked={file.enabled} onClick={() => this.toggleEnabled(file)} />
+                                </Table.Cell>
                             </Table.Row>
                         )}
                     </Table.Body>
                     <Table.Footer>
                         <Table.Row>
-                            <Table.HeaderCell colSpan='3'>
+                            <Table.HeaderCell colSpan='4'>
                                 <Button as='label'
                                     compact
                                     size='mini'
