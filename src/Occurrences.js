@@ -2,11 +2,12 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import MyAccordion from './helpers/MyAccordion';
 import { Table, Icon, Button, Checkbox } from 'semantic-ui-react';
-import { BarChart, XAxis, YAxis, Bar, Cell } from 'recharts';
+import { BarChart, XAxis, YAxis, Bar, Cell, Tooltip } from 'recharts';
 import * as d3 from 'd3';
 import parseFile from './lib/parse-file';
 import { traverseDepthFirst } from './lib/network';
 import FileSaver from 'file-saver';
+import { truncate } from 'lodash';
 
 export default class Occurrences extends React.Component {
     state = {
@@ -60,9 +61,10 @@ export default class Occurrences extends React.Component {
     handleChange = () => {
         this.props.onFilesChange(
             this.validFiles()
-                .map(file => ({
+                .map((file, fileId) => ({
+                    fileId,
                     name: file.name,
-                    content: file.content,
+                    physicalIds: file.content,
                     color: this.fileColor(file),
                 }))
         );
@@ -80,11 +82,9 @@ export default class Occurrences extends React.Component {
 
         const occurrences = new Map(this.validFiles().map(file => [file.name, []]));
 
-        this.validFiles().forEach((file) => {
-            const key = this.fileColor(file);
-
+        this.validFiles().forEach((file, fileId) => {
             for (let node of traverseDepthFirst(selectedNode)) {
-                if (node.occurred && node.occurred.has(key)) {
+                if (node.occurred && node.occurred.has(fileId)) {
                     occurrences.get(file.name).push(node.physicalId);
                 }
             }
@@ -100,7 +100,9 @@ export default class Occurrences extends React.Component {
     }
 
     render() {
-        const { selectedNode } = this.props;
+        const { selectedNode, totalNodes } = this.props;
+
+        const fractionOfNodes = selectedNode.totalChildren / totalNodes;
 
         return (
             <MyAccordion title='Occurrences'>
@@ -153,7 +155,7 @@ export default class Occurrences extends React.Component {
                                     multiple
                                     id='occurrences'
                                     onChange={(event) => {
-                                        Array.from(this.input.files).forEach(file => this.loadFile(file));
+                                        Array.from(this.input.files).forEach(this.loadFile);
                                         event.target.value = null;
                                     }}
                                     ref={input => this.input = input}
@@ -163,22 +165,39 @@ export default class Occurrences extends React.Component {
                     </Table.Footer>
                 </Table>
                 {selectedNode != null && selectedNode.occurrences && selectedNode.occurrences.size > 0 &&
-                    <div style={{ textAlign: 'center' }}>
+                    <div>
+                        <p>
+                            Occurrences in selected module
+                            <Button
+                                compact
+                                size='mini'
+                                icon='download'
+                                content='CSV'
+                                floated='right'
+                                onClick={this.handleDownloadClicked}
+                            />
+                        </p>
                         <BarChart
                             width={285} height={150}
                             margin={{ top: 5, right: 0, bottom: 0, left: -10 }}
-                            data={Array.from(selectedNode.occurrences).map(o => ({ name: o[0], value: o[1] }))}>
-                            <XAxis tick={false} />
+                            data={Array.from(selectedNode.occurrences).map(o => ({
+                                name: truncate(o[1].name, { length: 34 }),
+                                occurrences: o[1].count,
+                                expected: Math.round(o[1].totalNodes * fractionOfNodes),
+                            }))}
+                        >
+                            <XAxis dataKey='name' tick={false} />
                             <YAxis />
-                            <Bar dataKey='value'>
+                            <Tooltip />
+                            <Bar dataKey='occurrences'>
                                 {
-                                    Array.from(selectedNode.occurrences.keys()).map((color, i) =>
-                                        <Cell fill={color} key={i} />
+                                    Array.from(selectedNode.occurrences.values()).map((o, i) =>
+                                        <Cell fill={o.color} key={i} />
                                     )
                                 }
                             </Bar>
+                            <Bar dataKey='expected' fill='#aaaaaa' />
                         </BarChart>
-                        <Button compact size='mini' onClick={this.handleDownloadClicked}>Download CSV</Button>
                     </div>
                 }
             </MyAccordion>

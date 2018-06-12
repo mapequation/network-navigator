@@ -148,7 +148,7 @@ export default class NetworkLayout {
                 }
             } else {
                 const max = Array.from(n.occurrences.values())
-                    .reduce((max, curr) => Math.max(max, curr), 0);
+                    .reduce((max, curr) => Math.max(max, curr.count), 0);
                 return r * max / (n.totalChildren || 1);
             }
             return 0;
@@ -156,16 +156,16 @@ export default class NetworkLayout {
 
         const fill = (n) => {
             if (n.occurred) {
-                for (let color of n.occurred.keys()) {
+                for (let { color } of n.occurred.values()) {
                     return color;
                 }
             } else {
                 let maxColor = '';
                 let maxOccurrences = 0;
-                for (let [color, occurrences] of n.occurrences.entries()) {
-                    if (occurrences > maxOccurrences) {
+                for (let { color, count } of n.occurrences.values()) {
+                    if (count > maxOccurrences) {
                         maxColor = color;
-                        maxOccurrences = occurrences;
+                        maxOccurrences = count;
                     }
                 }
                 return maxColor;

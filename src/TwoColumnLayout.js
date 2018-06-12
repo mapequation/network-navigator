@@ -108,7 +108,14 @@ export default class TwoColumnLayout extends Component {
                     <Menu.Item>
                         <Search searchFunction={this.state.searchFunction} />
                     </Menu.Item>
-                    <Occurrences onFilesChange={this.handleOccurrencesChange} selectedNode={this.state.selectedNode} filename={this.state.filename} />
+                    {this.state.network &&
+                        <Occurrences
+                            onFilesChange={this.handleOccurrencesChange}
+                            selectedNode={this.state.selectedNode}
+                            filename={this.state.filename}
+                            totalNodes={this.state.network.totalChildren}
+                        />
+                    }
                     {this.state.selectedNode &&
                         <SelectedNode
                             node={this.state.selectedNode}

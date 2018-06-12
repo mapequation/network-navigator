@@ -33,7 +33,7 @@ const node = () => ({
  */
 class Node {
     constructor(name, physicalId) {
-        this.name = name;
+        this.name = name.toString();
         this.physicalId = physicalId;
         this.occurred = new Map();
     }
@@ -227,50 +227,42 @@ class Network {
     }
 
     markOccurrences(occurrences) {
-        const physicalIds = new Map(occurrences.content.map(id => [id, true]));
-        const key = occurrences.color;
+        const physicalIds = new Map(occurrences.physicalIds.map(id => [id, true]));
+        const { fileId } = occurrences;
 
         for (let node of traverseDepthFirst(this)) {
-            if (node.nodes) {
-                if (!node.occurrences.has(key)) {
-                    node.occurrences.set(key, 0);
+            if (node.occurrences) {
+                if (!node.occurrences.has(fileId)) {
+                    node.occurrences.set(fileId, {
+                        count: 0,
+                        name: occurrences.name,
+                        color: occurrences.color,
+                        totalNodes: occurrences.physicalIds.length,
+                    });
                 }
                 continue;
             }
 
             if (physicalIds.has(node.physicalId)) {
-                node.occurred.set(key, true);
+                node.occurred.set(fileId, {
+                    name: occurrences.name,
+                    color: occurrences.color,
+                });
 
                 for (let parent of ancestors(node)) {
-                    parent.occurrences.set(key, parent.occurrences.get(key) + 1);
+                    parent.occurrences.get(fileId).count++;
                 }
             }
         }
     }
 
-    clearOccurrences(occurrences) {
-        if (!occurrences) {
-            for (let node of traverseDepthFirst(this)) {
-                if (node.occurrences) {
-                    node.occurrences.clear()
-                    continue;
-                }
-
-                node.occurred.clear();
-            }
-
-            return;
-        }
-
-        const key = occurrences.color;
-
+    clearOccurrences() {
         for (let node of traverseDepthFirst(this)) {
             if (node.occurrences) {
-                node.occurrences.delete(key);
-                continue;
+                node.occurrences.clear()
+            } else {
+                node.occurred.clear();
             }
-
-            node.occurred.delete(key);
         }
     }
 }
@@ -322,7 +314,7 @@ export function* traverseBreadthFirst(root) {
     }
 }
 
-function* ancestors(treeNode) {
+export function* ancestors(treeNode) {
     let parent = treeNode.parent;
 
     while (parent) {
