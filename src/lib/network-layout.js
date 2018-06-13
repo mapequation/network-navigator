@@ -44,7 +44,7 @@ const isRenderTarget = ({ x, y, k }, nodeRadius) => node => {
 const transformToMatrix = ({ x, y, k }) => [k, 0, 0, k, x, y];
 
 export default class NetworkLayout {
-    constructor({ linkRenderer, renderStyle, renderTarget, position, localTransform = {} }) {
+    constructor({ linkRenderer, renderStyle, renderTarget, position, localTransform = {}, labelsVisible = true }) {
         this.linkRenderer = linkRenderer;
         this.style = renderStyle;
         this.elements = renderTarget;
@@ -62,6 +62,8 @@ export default class NetworkLayout {
 
         this.dispatch = d3.dispatch('click', 'render', 'destroy');
         this.on = this.dispatch.on.bind(this.dispatch);
+
+        this.labelsVisible = labelsVisible;
     }
 
     get renderStyle() {
@@ -206,7 +208,7 @@ export default class NetworkLayout {
             y: n => n.y,
             dx: n => 1.1 * this.style.nodeRadius(n),
             lod: LOD.nodeByIndex(this.nodes),
-            visibility: n => 'visible',
+            visibility: n => this.labelsVisible ? 'visible' : 'hidden',
             text: nodeName,
         };
     }
@@ -270,7 +272,7 @@ export default class NetworkLayout {
             const dx = k * r + (k > 1 ? 1.4 * (1 - k) * r : 0);
             return Math.max(dx, 0);
         };
-        label.accessors.visibility = n => label.accessors.lod(k)(n) ? 'visible' : 'hidden';
+        label.accessors.visibility = n => this.labelsVisible && label.accessors.lod(k)(n) ? 'visible' : 'hidden';
         label.accessors.text = n => n.visible ? '' : nodeName(n);
         link.accessors.path = l => (k < 15 || !l.source.nodes) && link.accessors.lod(k)(l)
             ? this.linkRenderer(l) : '';
@@ -346,6 +348,7 @@ export default class NetworkLayout {
                         renderTarget,
                         position: Point.from(n),
                         localTransform: childTransform,
+                        labelsVisible: this.labelsVisible,
                     }),
                 });
             });

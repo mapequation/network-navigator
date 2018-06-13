@@ -33,7 +33,6 @@ export default class TwoColumnLayout extends Component {
         });
     };
 
-    handleSizeChange = size => this.setState({ size });
     handleNameChange = name => {
         const { selectedNode } = this.state;
         if (selectedNode) {
@@ -66,6 +65,7 @@ export default class TwoColumnLayout extends Component {
                 <NetworkNavigator
                     root={this.state.network}
                     occurrences={this.state.occurrences}
+                    labelsVisible={this.state.labelsVisible}
                     width={window.innerWidth}
                     height={window.innerHeight}
                     sizeBasedOn={this.state.size}
@@ -124,7 +124,8 @@ export default class TwoColumnLayout extends Component {
                         />
                     }
                     <Settings
-                        onSizeChange={this.handleSizeChange}
+                        onSizeChange={size => this.setState({ size })}
+                        onLabelsVisibleChange={labelsVisible => this.setState({ labelsVisible })}
                     />
                     <Help trigger={<Menu.Item><Icon name='help' />Help</Menu.Item>} />
                     <Menu.Item as={'a'} href='https://github.com/mapequation/map-visualize'>

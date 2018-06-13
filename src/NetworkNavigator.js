@@ -73,6 +73,10 @@ export default class NetworkNavigator extends React.Component {
             this.props.occurrences.forEach(o => root.markOccurrences(o));
         }
 
+        if (this.props.labelsVisible != null) {
+            this.layouts.forEach(layout => layout.labelsVisible = this.props.labelsVisible);
+        }
+
         this.layouts.forEach(layout => layout.updateAttributes());
     }
 
