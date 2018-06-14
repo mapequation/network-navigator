@@ -15,6 +15,7 @@ export default class NetworkNavigator extends React.Component {
         setSelectedNode: PropTypes.func,
         setSearchFunction: PropTypes.func,
         sizeBasedOn: PropTypes.string,
+        sizeScale: PropTypes.string,
     };
 
     static defaultProps = {
@@ -23,6 +24,7 @@ export default class NetworkNavigator extends React.Component {
         setSelectedNode: () => null,
         setSearchFunction: () => null,
         sizeBasedOn: 'flow',
+        sizeScale: 'root',
     };
 
     constructor(props) {
@@ -54,14 +56,20 @@ export default class NetworkNavigator extends React.Component {
     }
 
     componentDidUpdate(prevProps) {
-        const { root } = this.props;
+        const { root, sizeBasedOn, sizeScale } = this.props;
 
-        if (this.props.sizeBasedOn !== prevProps.sizeBasedOn) {
-            if (this.props.sizeBasedOn === 'flow') {
-                const nodeRadius = d3.scaleSqrt().domain([0, root.maxNodeFlow]).range([10, 70]);
+        if (sizeBasedOn !== prevProps.sizeBasedOn || sizeScale !== prevProps.sizeScale) {
+            let scale = d3.scaleSqrt;
+
+            if (sizeScale === 'linear') {
+                scale = d3.scaleLinear;
+            }
+
+            if (sizeBasedOn === 'flow') {
+                const nodeRadius = scale().domain([0, root.maxNodeFlow]).range([10, 70]).clamp(true);
                 this.renderStyle.nodeRadius = node => nodeRadius(node.flow);
-            } else if (this.props.sizeBasedOn === 'nodes') {
-                const nodeRadius = d3.scaleSqrt().domain([0, root.totalChildren]).range([10, 70]);
+            } else if (sizeBasedOn === 'nodes') {
+                const nodeRadius = scale().domain([0, root.totalChildren]).range([10, 70]).clamp(true);
                 this.renderStyle.nodeRadius = node => node.totalChildren ? nodeRadius(node.totalChildren) : nodeRadius(1);
             }
 

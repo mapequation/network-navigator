@@ -69,6 +69,7 @@ export default class TwoColumnLayout extends Component {
                     width={window.innerWidth}
                     height={window.innerHeight}
                     sizeBasedOn={this.state.size}
+                    sizeScale={this.state.sizeScale}
                     setSearchFunction={this.setSearchFunction}
                     setSelectedNode={this.setSelectedNode} />
             </div>
@@ -125,6 +126,7 @@ export default class TwoColumnLayout extends Component {
                     }
                     <Settings
                         onSizeChange={size => this.setState({ size })}
+                        onSizeScaleChange={sizeScale => this.setState({ sizeScale })}
                         onLabelsVisibleChange={labelsVisible => this.setState({ labelsVisible })}
                     />
                     <Help trigger={<Menu.Item><Icon name='help' />Help</Menu.Item>} />
