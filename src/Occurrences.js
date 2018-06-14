@@ -180,10 +180,10 @@ export default class Occurrences extends React.Component {
                         <BarChart
                             width={285} height={150}
                             margin={{ top: 5, right: 0, bottom: 0, left: -10 }}
-                            data={Array.from(selectedNode.occurrences).map(o => ({
-                                name: truncate(o[1].name, { length: 34 }),
-                                occurrences: o[1].count,
-                                expected: Math.round(o[1].totalNodes * fractionOfNodes),
+                            data={Array.from(selectedNode.occurrences.values()).map(o => ({
+                                name: truncate(o.name, { length: 34 }),
+                                occurrences: o.count,
+                                expected: Math.round(o.totalNodes * fractionOfNodes),
                             }))}
                         >
                             <XAxis dataKey='name' tick={false} />
