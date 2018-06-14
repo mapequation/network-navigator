@@ -61,8 +61,8 @@ export default class NetworkNavigator extends React.Component {
                 const nodeRadius = d3.scaleSqrt().domain([0, root.maxNodeFlow]).range([10, 70]);
                 this.renderStyle.nodeRadius = node => nodeRadius(node.flow);
             } else if (this.props.sizeBasedOn === 'nodes') {
-                const nodeRadius = d3.scaleSqrt().domain([0, root.maxNodeCount]).range([10, 70]);
-                this.renderStyle.nodeRadius = node => node.nodes ? nodeRadius(node.nodes.length) : nodeRadius(1);
+                const nodeRadius = d3.scaleSqrt().domain([0, root.totalChildren]).range([10, 70]);
+                this.renderStyle.nodeRadius = node => node.totalChildren ? nodeRadius(node.totalChildren) : nodeRadius(1);
             }
 
             this.layouts.forEach(layout => layout.renderStyle = this.renderStyle);
