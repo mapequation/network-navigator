@@ -5,32 +5,32 @@ import MyAccordion from './helpers/MyAccordion';
 
 export default class Settings extends React.Component {
     state = {
-        size: 'flow',
-        sizeScale: 'root',
+        nodeSize: 'flow',
+        nodeSizeScale: 'root',
         labelsVisible: true,
     };
 
     static propTypes = {
-        onSizeChange: PropTypes.func,
-        onSizeScaleChange: PropTypes.func,
+        onNodeSizeChange: PropTypes.func,
+        onNodeSizeScaleChange: PropTypes.func,
         onLabelsVisibleChange: PropTypes.func,
     };
 
     static defaultProps = {
-        onSizeChange: () => null,
-        onSizeScaleChange: () => null,
+        onNodeSizeChange: () => null,
+        onNodeSizeScaleChange: () => null,
         onLabelsVisibleChange: () => null,
     };
 
-    handleSizeChange = (e, { value }) => {
-        this.setState({ size: value },
-            () => this.props.onSizeChange(value));
+    handleNodeSizeChange = (e, { value }) => {
+        this.setState({ nodeSize: value },
+            () => this.props.onNodeSizeChange(value));
     };
 
 
-    handleSizeScaleChange = (e, { value }) => {
-        this.setState({ sizeScale: value },
-            () => this.props.onSizeScaleChange(value));
+    handleNodeSizeScaleChange = (e, { value }) => {
+        this.setState({ nodeSizeScale: value },
+            () => this.props.onNodeSizeScaleChange(value));
     }
 
     handleLabelsVisibleChange = (e, { checked }) => {
@@ -43,38 +43,38 @@ export default class Settings extends React.Component {
             <MyAccordion title='Settings'>
                 <Form>
                     <Form.Group inline>
-                        <label>Size based on</label>
+                        <label>Node size based on</label>
                         <Form.Field
                             control={Radio}
                             label='flow'
                             value='flow'
-                            checked={this.state.size === 'flow'}
-                            onChange={this.handleSizeChange}
+                            checked={this.state.nodeSize === 'flow'}
+                            onChange={this.handleNodeSizeChange}
                         />
                         <Form.Field
                             control={Radio}
                             label='nodes'
                             value='nodes'
-                            checked={this.state.size === 'nodes'}
-                            onChange={this.handleSizeChange}
+                            checked={this.state.nodeSize === 'nodes'}
+                            onChange={this.handleNodeSizeChange}
                         />
                     </Form.Group>
 
                     <Form.Group inline>
-                        <label>Size scale</label>
+                        <label>Node size scale</label>
                         <Form.Field
                             control={Radio}
                             label='root'
                             value='root'
-                            checked={this.state.sizeScale === 'root'}
-                            onChange={this.handleSizeScaleChange}
+                            checked={this.state.nodeSizeScale === 'root'}
+                            onChange={this.handleNodeSizeScaleChange}
                         />
                         <Form.Field
                             control={Radio}
                             label='linear'
                             value='linear'
-                            checked={this.state.sizeScale === 'linear'}
-                            onChange={this.handleSizeScaleChange}
+                            checked={this.state.nodeSizeScale === 'linear'}
+                            onChange={this.handleNodeSizeScaleChange}
                         />
                     </Form.Group>
 
