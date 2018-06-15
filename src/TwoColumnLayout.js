@@ -70,6 +70,7 @@ export default class TwoColumnLayout extends Component {
                     height={window.innerHeight}
                     nodeSizeBasedOn={this.state.nodeSize}
                     nodeSizeScale={this.state.nodeSizeScale}
+                    linkWidthScale={this.state.linkWidthScale}
                     setSearchFunction={this.setSearchFunction}
                     setSelectedNode={this.setSelectedNode} />
             </div>
@@ -127,6 +128,7 @@ export default class TwoColumnLayout extends Component {
                     <Settings
                         onNodeSizeChange={nodeSize => this.setState({ nodeSize })}
                         onNodeSizeScaleChange={nodeSizeScale => this.setState({ nodeSizeScale })}
+                        onLinkWidthScaleChange={linkWidthScale => this.setState({ linkWidthScale })}
                         onLabelsVisibleChange={labelsVisible => this.setState({ labelsVisible })}
                     />
                     <Help trigger={<Menu.Item><Icon name='help' />Help</Menu.Item>} />

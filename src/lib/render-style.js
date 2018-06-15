@@ -45,6 +45,8 @@ export default function makeRenderStyle(maxNodeFlow, maxNodeExitFlow, maxLinkFlo
     const linkBend = scaleLinear().domain([50, 250]).range([0, 40]).clamp(true);
 
     return {
+        nodeFill,
+        linkFill,
         nodeRadius: node => nodeRadius(node.flow),
         nodeFillColor: node => nodeFillColor(node.flow),
         nodeBorderColor: node => nodeBorderColor(node.exitFlow),

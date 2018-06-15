@@ -7,36 +7,32 @@ export default class Settings extends React.Component {
     state = {
         nodeSize: 'flow',
         nodeSizeScale: 'root',
+        linkWidthScale: 'root',
         labelsVisible: true,
     };
 
     static propTypes = {
         onNodeSizeChange: PropTypes.func,
         onNodeSizeScaleChange: PropTypes.func,
+        onLinkWidthScaleChange: PropTypes.func,
         onLabelsVisibleChange: PropTypes.func,
     };
 
-    static defaultProps = {
-        onNodeSizeChange: () => null,
-        onNodeSizeScaleChange: () => null,
-        onLabelsVisibleChange: () => null,
-    };
-
-    handleNodeSizeChange = (e, { value }) => {
+    handleNodeSizeChange = (e, { value }) =>
         this.setState({ nodeSize: value },
             () => this.props.onNodeSizeChange(value));
-    };
 
-
-    handleNodeSizeScaleChange = (e, { value }) => {
+    handleNodeSizeScaleChange = (e, { value }) =>
         this.setState({ nodeSizeScale: value },
             () => this.props.onNodeSizeScaleChange(value));
-    }
 
-    handleLabelsVisibleChange = (e, { checked }) => {
+    handleLinkWidthScaleChange = (e, { value }) =>
+        this.setState({ linkWidthScale: value },
+            () => this.props.onLinkWidthScaleChange(value));
+
+    handleLabelsVisibleChange = (e, { checked }) =>
         this.setState({ labelsVisible: checked },
             () => this.props.onLabelsVisibleChange(checked));
-    };
 
     render() {
         return (
@@ -61,7 +57,7 @@ export default class Settings extends React.Component {
                     </Form.Group>
 
                     <Form.Group inline>
-                        <label>Node size scale</label>
+                        <label>Node radius scale</label>
                         <Form.Field
                             control={Radio}
                             label='root'
@@ -75,6 +71,24 @@ export default class Settings extends React.Component {
                             value='linear'
                             checked={this.state.nodeSizeScale === 'linear'}
                             onChange={this.handleNodeSizeScaleChange}
+                        />
+                    </Form.Group>
+
+                    <Form.Group inline>
+                        <label>Link width scale</label>
+                        <Form.Field
+                            control={Radio}
+                            label='root'
+                            value='root'
+                            checked={this.state.linkWidthScale === 'root'}
+                            onChange={this.handleLinkWidthScaleChange}
+                        />
+                        <Form.Field
+                            control={Radio}
+                            label='linear'
+                            value='linear'
+                            checked={this.state.linkWidthScale === 'linear'}
+                            onChange={this.handleLinkWidthScaleChange}
                         />
                     </Form.Group>
 

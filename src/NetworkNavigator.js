@@ -16,6 +16,7 @@ export default class NetworkNavigator extends React.Component {
         setSearchFunction: PropTypes.func,
         nodeSizeBasedOn: PropTypes.string,
         nodeSizeScale: PropTypes.string,
+        linkWidthScale: PropTypes.string,
     };
 
     static defaultProps = {
@@ -25,6 +26,7 @@ export default class NetworkNavigator extends React.Component {
         setSearchFunction: () => null,
         nodeSizeBasedOn: 'flow',
         nodeSizeScale: 'root',
+        linkWidthScale: 'root',
     };
 
     constructor(props) {
@@ -56,22 +58,38 @@ export default class NetworkNavigator extends React.Component {
     }
 
     componentDidUpdate(prevProps) {
-        const { root, nodeSizeBasedOn, nodeSizeScale } = this.props;
+        const {
+            root,
+            nodeSizeBasedOn,
+            nodeSizeScale,
+            linkWidthScale,
+        } = this.props;
 
         if (nodeSizeBasedOn !== prevProps.nodeSizeBasedOn || nodeSizeScale !== prevProps.nodeSizeScale) {
-            let scale = d3.scaleSqrt;
-
-            if (nodeSizeScale === 'linear') {
-                scale = d3.scaleLinear;
-            }
+            const scale = nodeSizeScale === 'linear' ? d3.scaleLinear : d3.scaleSqrt;
 
             if (nodeSizeBasedOn === 'flow') {
-                const nodeRadius = scale().domain([0, root.maxNodeFlow]).range([10, 70]).clamp(true);
+                const nodeRadius = scale().domain([0, root.maxNodeFlow]).range([10, 70]);
+                const nodeFillColor = scale().domain([0, root.maxNodeFlow]).range(this.renderStyle.nodeFill);
                 this.renderStyle.nodeRadius = node => nodeRadius(node.flow);
+                this.renderStyle.nodeFillColor = node => nodeFillColor(node.flow);
             } else if (nodeSizeBasedOn === 'nodes') {
-                const nodeRadius = scale().domain([0, root.totalChildren]).range([10, 70]).clamp(true);
+                const nodeRadius = scale().domain([0, root.totalChildren]).range([10, 70]);
+                const nodeFillColor = scale().domain([0, root.totalChildren]).range(this.renderStyle.nodeFill);
                 this.renderStyle.nodeRadius = node => node.totalChildren ? nodeRadius(node.totalChildren) : nodeRadius(1);
+                this.renderStyle.nodeFillColor = node => node.totalChildren ? nodeFillColor(node.totalChildren) : nodeFillColor(1);
             }
+
+            this.layouts.forEach(layout => layout.renderStyle = this.renderStyle);
+        }
+
+        if (linkWidthScale !== prevProps.linkWidthScale) {
+            const scale = linkWidthScale === 'linear' ? d3.scaleLinear : d3.scaleSqrt;
+
+            const linkWidth = scale().domain([0, root.maxLinkFlow]).range([2, 15]);
+            const linkFillColor = scale().domain([0, root.maxLinkFlow]).range(this.renderStyle.linkFill);
+            this.renderStyle.linkWidth = link => linkWidth(link.flow);
+            this.renderStyle.linkFillColor = link => linkFillColor(link.flow);
 
             this.layouts.forEach(layout => layout.renderStyle = this.renderStyle);
         }
