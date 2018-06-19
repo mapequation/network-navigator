@@ -17,6 +17,7 @@ export default class NetworkNavigator extends React.Component {
         nodeSizeBasedOn: PropTypes.string,
         nodeSizeScale: PropTypes.string,
         linkWidthScale: PropTypes.string,
+        simulationEnabled: PropTypes.bool,
     };
 
     static defaultProps = {
@@ -27,6 +28,7 @@ export default class NetworkNavigator extends React.Component {
         nodeSizeBasedOn: 'flow',
         nodeSizeScale: 'root',
         linkWidthScale: 'root',
+        simulationEnabled: true,
     };
 
     constructor(props) {
@@ -63,6 +65,8 @@ export default class NetworkNavigator extends React.Component {
             nodeSizeBasedOn,
             nodeSizeScale,
             linkWidthScale,
+            labelsVisible,
+            simulationEnabled,
         } = this.props;
 
         if (nodeSizeBasedOn !== prevProps.nodeSizeBasedOn || nodeSizeScale !== prevProps.nodeSizeScale) {
@@ -99,8 +103,12 @@ export default class NetworkNavigator extends React.Component {
             this.props.occurrences.forEach(o => root.markOccurrences(o));
         }
 
-        if (this.props.labelsVisible != null) {
-            this.layouts.forEach(layout => layout.labelsVisible = this.props.labelsVisible);
+        if (labelsVisible != null) {
+            this.layouts.forEach(layout => layout.labelsVisible = labelsVisible);
+        }
+
+        if (simulationEnabled !== prevProps.simulationEnabled) {
+            this.layouts.forEach(layout => layout.simulationEnabled = simulationEnabled);
         }
 
         this.layouts.forEach(layout => layout.updateAttributes());

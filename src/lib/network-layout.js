@@ -44,7 +44,15 @@ const isRenderTarget = ({ x, y, k }, nodeRadius) => node => {
 const transformToMatrix = ({ x, y, k }) => [k, 0, 0, k, x, y];
 
 export default class NetworkLayout {
-    constructor({ linkRenderer, renderStyle, renderTarget, position, localTransform = {}, labelsVisible = true }) {
+    constructor({
+        linkRenderer,
+        renderStyle,
+        renderTarget,
+        position,
+        localTransform = {},
+        labelsVisible = true,
+        simulationEnabled = true,
+    }) {
         this.linkRenderer = linkRenderer;
         this.style = renderStyle;
         this.elements = renderTarget;
@@ -58,12 +66,14 @@ export default class NetworkLayout {
         this.nodes = [];
         this.links = [];
 
-        this.onDrag = makeDragHandler(this.simulation);
-
         this.dispatch = d3.dispatch('click', 'render', 'destroy');
         this.on = this.dispatch.on.bind(this.dispatch);
 
         this.labelsVisible = labelsVisible;
+
+        this.onDrag = simulationEnabled ? makeDragHandler(this.simulation) : this.simpleDragHandler;
+
+        this._simulationEnabled = simulationEnabled;
     }
 
     get renderStyle() {
@@ -72,6 +82,46 @@ export default class NetworkLayout {
 
     set renderStyle(style) {
         this.style = style;
+    }
+
+    get simpleDragHandler() {
+        return d3.drag()
+            .on('start', () => {
+                this.updateDisabled = true;
+            })
+            .on('drag', (node) => {
+                node.x = d3.event.x;
+                node.y = d3.event.y;
+                this.updateAttributes(true);
+            })
+            .on('end', () => {
+                this.updateDisabled = false;
+            });
+    }
+
+    get simulationEnabled() {
+        return this._simulationEnabled;
+    }
+
+    set simulationEnabled(enabled) {
+        this._simulationEnabled = enabled;
+
+        if (this.simulationEnabled) {
+            if (!this.stopped) {
+                this.simulation.alpha(0.3);
+                this.simulation.restart();
+            }
+            this.onDrag = makeDragHandler(this.simulation);
+            this.elements.node.call(this.onDrag);
+        } else {
+            this.simulation.stop();
+
+            this.onDrag = this.simpleDragHandler;
+
+            if (!this.stopped) {
+                this.elements.node.call(this.onDrag);
+            }
+        }
     }
 
     init(network) {
@@ -349,6 +399,7 @@ export default class NetworkLayout {
                         position: Point.from(n),
                         localTransform: childTransform,
                         labelsVisible: this.labelsVisible,
+                        simulationEnabled: this.simulationEnabled,
                     }),
                 });
             });

@@ -9,6 +9,7 @@ export default class Settings extends React.Component {
         nodeSizeScale: 'root',
         linkWidthScale: 'root',
         labelsVisible: true,
+        simulationEnabled: true,
     };
 
     static propTypes = {
@@ -16,6 +17,7 @@ export default class Settings extends React.Component {
         onNodeSizeScaleChange: PropTypes.func,
         onLinkWidthScaleChange: PropTypes.func,
         onLabelsVisibleChange: PropTypes.func,
+        onSimulationEnabledChange: PropTypes.func,
     };
 
     handleNodeSizeChange = (e, { value }) =>
@@ -33,6 +35,10 @@ export default class Settings extends React.Component {
     handleLabelsVisibleChange = (e, { checked }) =>
         this.setState({ labelsVisible: checked },
             () => this.props.onLabelsVisibleChange(checked));
+
+    handleSimulationEnabledChange = (e, { checked }) =>
+        this.setState({ simulationEnabled: checked },
+            () => this.props.onSimulationEnabledChange(checked));
 
     render() {
         return (
@@ -96,6 +102,12 @@ export default class Settings extends React.Component {
                         <label>Show labels</label>
                         <Checkbox toggle checked={this.state.labelsVisible} onChange={this.handleLabelsVisibleChange} />
                     </Form.Group>
+
+                    <Form.Group inline>
+                        <label>Run simulation</label>
+                        <Checkbox toggle checked={this.state.simulationEnabled} onChange={this.handleSimulationEnabledChange} />
+                    </Form.Group>
+
                 </Form>
             </MyAccordion>
         );

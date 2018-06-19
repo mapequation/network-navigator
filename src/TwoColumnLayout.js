@@ -71,6 +71,7 @@ export default class TwoColumnLayout extends Component {
                     nodeSizeBasedOn={this.state.nodeSize}
                     nodeSizeScale={this.state.nodeSizeScale}
                     linkWidthScale={this.state.linkWidthScale}
+                    simulationEnabled={this.state.simulationEnabled}
                     setSearchFunction={this.setSearchFunction}
                     setSelectedNode={this.setSelectedNode} />
             </div>
@@ -130,6 +131,7 @@ export default class TwoColumnLayout extends Component {
                         onNodeSizeScaleChange={nodeSizeScale => this.setState({ nodeSizeScale })}
                         onLinkWidthScaleChange={linkWidthScale => this.setState({ linkWidthScale })}
                         onLabelsVisibleChange={labelsVisible => this.setState({ labelsVisible })}
+                        onSimulationEnabledChange={simulationEnabled => this.setState({ simulationEnabled })}
                     />
                     <Help trigger={<Menu.Item><Icon name='help' />Help</Menu.Item>} />
                     <Menu.Item as={'a'} href='https://github.com/mapequation/map-visualize'>
