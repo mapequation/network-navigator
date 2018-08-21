@@ -23,9 +23,10 @@ export default class Search extends Component {
         this.setState({ isLoading: true });
         const results = this.props.searchFunction(value);
         this.setState({
-            results: results.sort(byFlow).slice(0, this.props.maxResults).map(n => ({
+            results: results.sort(byFlow).slice(0, this.props.maxResults).map((n, i) => ({
                 title: n.name,
                 price: n.path.toString(),
+                key: i,
             })),
             isLoading: false,
         });
