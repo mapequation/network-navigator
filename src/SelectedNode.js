@@ -8,7 +8,7 @@ import DegreeDistribution from './DegreeDistribution';
 
 const SelectedNode = ({ node, directed, onNameChange }) => {
     const children = node ? node.nodes || [] : [];
-    const flowDistribution = children.map(n => n.flow);
+    const flowDistribution = children.map(n => n.flow).sort((a, b) => b - a);
     const figureWidth = 285;
     const figureHeight = 150;
     const title = !node || (node && node.physicalId) ? 'Selected node' : 'Selected module';
