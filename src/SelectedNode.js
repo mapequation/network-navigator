@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { Menu } from 'semantic-ui-react';
-import MyAccordion from './helpers/MyAccordion';
+import MenuItemAccordion from './MenuItemAccordion';
 import InfoTable from './InfoTable';
 import Graph from './Graph'
 import DegreeDistribution from './DegreeDistribution';
@@ -14,22 +14,22 @@ const SelectedNode = ({ node, directed, onNameChange }) => {
     const title = !node || (node && node.physicalId) ? 'Selected node' : 'Selected module';
 
     return (
-        <MyAccordion title={title} visible>
+        <MenuItemAccordion title={title} visible>
             <InfoTable node={node} directed={directed} onNameChange={onNameChange} />
             <Menu.Menu>
-                <MyAccordion title='Module flow distribution' popup='Flow of nodes within this module.'>
+                <MenuItemAccordion title='Module flow distribution' popup='Flow of nodes within this module.'>
                     <Graph
                         xDescription='Node' xLabel='n'
                         yDescription='Flow' yLabel='f' logy
                         width={figureWidth} height={figureHeight}
                         data={flowDistribution} />
-                </MyAccordion>
+                </MenuItemAccordion>
                 <DegreeDistribution
                     nodes={children}
                     figureWidth={figureWidth} figureHeight={figureHeight}
                     directed={directed} />
             </Menu.Menu>
-        </MyAccordion>
+        </MenuItemAccordion>
     );
 };
 

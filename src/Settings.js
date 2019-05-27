@@ -1,7 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { Form, Radio, Checkbox } from 'semantic-ui-react';
-import MyAccordion from './helpers/MyAccordion';
+import MenuItemAccordion from './MenuItemAccordion';
 
 export default class Settings extends React.Component {
     state = {
@@ -42,7 +42,7 @@ export default class Settings extends React.Component {
 
     render() {
         return (
-            <MyAccordion title='Settings'>
+            <MenuItemAccordion title='Settings'>
                 <Form>
                     <Form.Group inline>
                         <label>Node size based on</label>
@@ -109,7 +109,7 @@ export default class Settings extends React.Component {
                     </Form.Group>
 
                 </Form>
-            </MyAccordion>
+            </MenuItemAccordion>
         );
     }
 };

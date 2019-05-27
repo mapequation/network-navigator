@@ -1,6 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import MyAccordion from './helpers/MyAccordion';
+import MenuItemAccordion from './MenuItemAccordion';
 import { Table, Icon, Button, Checkbox } from 'semantic-ui-react';
 import { BarChart, XAxis, YAxis, Bar, Cell, Tooltip } from 'recharts';
 import * as d3 from 'd3';
@@ -105,7 +105,7 @@ export default class Occurrences extends React.Component {
         const fractionOfNodes = selectedNode.totalChildren / totalNodes;
 
         return (
-            <MyAccordion title='Occurrences'>
+            <MenuItemAccordion title='Occurrences'>
                 <Table celled singleLine compact fixed>
                     <Table.Header>
                         <Table.Row>
@@ -200,7 +200,7 @@ export default class Occurrences extends React.Component {
                         </BarChart>
                     </div>
                 }
-            </MyAccordion>
+            </MenuItemAccordion>
         )
     }
 }
