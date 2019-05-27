@@ -161,16 +161,17 @@ export default class Graph extends React.Component {
 
     render() {
         const { width, height } = this.props;
+        const { logScale } = this.state;
 
         return (
             <div style={{ width }}>
                 <div style={{ textAlign: 'center' }}>
                     <Button.Group compact size='mini'>
-                        <Button active={!this.state.logScale} onClick={() => this.setState({ logScale: false })}>Linear</Button>
-                        <Button active={this.state.logScale} onClick={() => this.setState({ logScale: true })}>Log</Button>
+                        <Button active={!logScale} onClick={() => this.setState({ logScale: false })}>Linear</Button>
+                        <Button active={logScale} onClick={() => this.setState({ logScale: true })}>Log</Button>
                     </Button.Group>
                 </div>
-                <svg ref={node => this.node = node} width={width} height={height}></svg>
+                <svg ref={node => this.node = node} width={width} height={height}/>
             </div>
         );
     }

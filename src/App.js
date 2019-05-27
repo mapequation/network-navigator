@@ -4,6 +4,7 @@ import { Grid, Icon, Input, Label, Menu, Rail, Sidebar } from "semantic-ui-react
 import FileDialog from "./FileDialog";
 import addBeforeUnloadEventListener from "./lib/before-unload";
 import ftreeFromNetwork from "./lib/file-formats/ftree-from-network";
+import MenuItemAccordion from "./MenuItemAccordion";
 import NetworkNavigator from "./NetworkNavigator";
 import Occurrences from "./Occurrences";
 import Search from "./Search";
@@ -11,7 +12,7 @@ import SelectedNode from "./SelectedNode";
 import Settings from "./Settings";
 
 
-export default class TwoColumnLayout extends Component {
+export default class App extends Component {
     state = {
         sidebarVisible: false,
         loadingComplete: false,
@@ -94,12 +95,14 @@ export default class TwoColumnLayout extends Component {
                     <Search searchFunction={searchFunction}/>
                 </Menu.Item>
                 {network &&
-                <Occurrences
-                    onFilesChange={this.handleOccurrencesChange}
-                    selectedNode={selectedNode}
-                    filename={filename}
-                    totalNodes={network.totalChildren}
-                />
+                <MenuItemAccordion title='Occurrences'>
+                    <Occurrences
+                        onFilesChange={this.handleOccurrencesChange}
+                        selectedNode={selectedNode}
+                        filename={filename}
+                        totalNodes={network.totalChildren}
+                    />
+                </MenuItemAccordion>
                 }
                 {selectedNode &&
                 <SelectedNode
@@ -108,13 +111,15 @@ export default class TwoColumnLayout extends Component {
                     onNameChange={this.handleNameChange}
                 />
                 }
-                <Settings
-                    onNodeSizeChange={nodeSize => this.setState({ nodeSize })}
-                    onNodeSizeScaleChange={nodeSizeScale => this.setState({ nodeSizeScale })}
-                    onLinkWidthScaleChange={linkWidthScale => this.setState({ linkWidthScale })}
-                    onLabelsVisibleChange={labelsVisible => this.setState({ labelsVisible })}
-                    onSimulationEnabledChange={simulationEnabled => this.setState({ simulationEnabled })}
-                />
+                <MenuItemAccordion title='Settings'>
+                    <Settings
+                        onNodeSizeChange={nodeSize => this.setState({ nodeSize })}
+                        onNodeSizeScaleChange={nodeSizeScale => this.setState({ nodeSizeScale })}
+                        onLinkWidthScaleChange={linkWidthScale => this.setState({ linkWidthScale })}
+                        onLabelsVisibleChange={labelsVisible => this.setState({ labelsVisible })}
+                        onSimulationEnabledChange={simulationEnabled => this.setState({ simulationEnabled })}
+                    />
+                </MenuItemAccordion>
             </Sidebar>
             <Sidebar.Pusher as={Grid} padded>
                 <Grid.Column style={{ paddingTop: 0, paddingLeft: 0 }}>

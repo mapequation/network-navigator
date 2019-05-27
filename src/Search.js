@@ -1,16 +1,16 @@
-import React, { Component } from 'react';
-import PropTypes from 'prop-types';
-import { Search as SearchInput } from 'semantic-ui-react';
-import { byFlow } from './lib/filter';
+import PropTypes from "prop-types";
+import React, { Component } from "react";
+import { Search as SearchInput } from "semantic-ui-react";
+import { byFlow } from "./lib/filter";
+
 
 export default class Search extends Component {
     state = {
-        isLoading: false,
         results: [],
-    }
+    };
 
     static propTypes = {
-        searchFunction: PropTypes.func.isRequired,
+        searchFunction: PropTypes.func,
         maxResults: PropTypes.number,
     };
 
@@ -20,7 +20,6 @@ export default class Search extends Component {
     };
 
     handleSearchChange = (e, { value }) => {
-        this.setState({ isLoading: true });
         const results = this.props.searchFunction(value);
         this.setState({
             results: results.sort(byFlow).slice(0, this.props.maxResults).map((n, i) => ({
@@ -28,21 +27,18 @@ export default class Search extends Component {
                 price: n.path.toString(),
                 key: i,
             })),
-            isLoading: false,
         });
-    }
+    };
 
     render() {
-        const { results, isLoading } = this.state;
+        const { results } = this.state;
 
-        return (
-            <SearchInput
-                fluid
-                input={{ fluid: true }}
-                placeholder='Search nodes...'
-                onSearchChange={this.handleSearchChange}
-                results={results}
-                loading={isLoading} />
-        );
+        return <SearchInput
+            fluid
+            input={{ fluid: true }}
+            placeholder='Search nodes...'
+            onSearchChange={this.handleSearchChange}
+            results={results}
+        />;
     }
 }

@@ -1,7 +1,8 @@
-import React from 'react';
-import PropTypes from 'prop-types';
-import MenuItemAccordion from './MenuItemAccordion';
-import Graph from './Graph'
+import PropTypes from "prop-types";
+import React from "react";
+import Graph from "./Graph";
+import MenuItemAccordion from "./MenuItemAccordion";
+
 
 const DegreeDistribution = ({ nodes, figureWidth, figureHeight, directed }) => {
     if (!directed) {
@@ -12,29 +13,31 @@ const DegreeDistribution = ({ nodes, figureWidth, figureHeight, directed }) => {
                     xDescription='Node' xLabel='n'
                     yDescription='Degree' yLabel='k'
                     width={figureWidth} height={figureHeight}
-                    data={degreeDistribution} />
+                    data={degreeDistribution}/>
             </MenuItemAccordion>
         );
     } else {
         const inDegreeDistribution = nodes.map(n => n.kin).sort((a, b) => b - a);
         const outDegreeDistribution = nodes.map(n => n.kout).sort((a, b) => b - a);
         return (
-            <div>
-                <MenuItemAccordion title='In degree distribution' popup='Number of incoming links to nodes within this module.'>
+            <React.Fragment>
+                <MenuItemAccordion title='In degree distribution'
+                                   popup='Number of incoming links to nodes within this module.'>
                     <Graph
                         xDescription='Node' xLabel='n'
                         yDescription='Degree' yLabel='k' ySubscript='in'
                         width={figureWidth} height={figureHeight}
-                        data={inDegreeDistribution} />
+                        data={inDegreeDistribution}/>
                 </MenuItemAccordion>
-                <MenuItemAccordion title='Out degree distribution' popup='Number of outgoing links from nodes within this module.'>
+                <MenuItemAccordion title='Out degree distribution'
+                                   popup='Number of outgoing links from nodes within this module.'>
                     <Graph
                         xDescription='Node' xLabel='n'
                         yDescription='Degree' yLabel='k' ySubscript='out'
                         width={figureWidth} height={figureHeight}
-                        data={outDegreeDistribution} />
+                        data={outDegreeDistribution}/>
                 </MenuItemAccordion>
-            </div>
+            </React.Fragment>
         );
     }
 };
@@ -44,10 +47,10 @@ DegreeDistribution.propTypes = {
     figureWidth: PropTypes.number.isRequired,
     figureHeight: PropTypes.number.isRequired,
     directed: PropTypes.bool,
-}
+};
 
 DegreeDistribution.defaultProps = {
     directed: false,
-}
+};
 
 export default DegreeDistribution;

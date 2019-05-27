@@ -2,8 +2,8 @@ import React from "react";
 import ReactDOM from "react-dom";
 import "./index.css";
 import registerServiceWorker from "./registerServiceWorker";
-import TwoColumnLayout from "./TwoColumnLayout";
+import App from "./App";
 
 
-ReactDOM.render(<TwoColumnLayout/>, document.getElementById("root"));
+ReactDOM.render(<App/>, document.getElementById("root"));
 registerServiceWorker();

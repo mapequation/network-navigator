@@ -1,13 +1,13 @@
-import React from 'react';
-import PropTypes from 'prop-types';
-import { Form, Radio, Checkbox } from 'semantic-ui-react';
-import MenuItemAccordion from './MenuItemAccordion';
+import PropTypes from "prop-types";
+import React from "react";
+import { Checkbox, Form, Radio } from "semantic-ui-react";
+
 
 export default class Settings extends React.Component {
     state = {
-        nodeSize: 'flow',
-        nodeSizeScale: 'root',
-        linkWidthScale: 'root',
+        nodeSize: "flow",
+        nodeSizeScale: "root",
+        linkWidthScale: "root",
         labelsVisible: true,
         simulationEnabled: true,
     };
@@ -42,7 +42,7 @@ export default class Settings extends React.Component {
 
     render() {
         return (
-            <MenuItemAccordion title='Settings'>
+            <React.Fragment>
                 <Form>
                     <Form.Group inline>
                         <label>Node size based on</label>
@@ -50,14 +50,14 @@ export default class Settings extends React.Component {
                             control={Radio}
                             label='flow'
                             value='flow'
-                            checked={this.state.nodeSize === 'flow'}
+                            checked={this.state.nodeSize === "flow"}
                             onChange={this.handleNodeSizeChange}
                         />
                         <Form.Field
                             control={Radio}
                             label='nodes'
                             value='nodes'
-                            checked={this.state.nodeSize === 'nodes'}
+                            checked={this.state.nodeSize === "nodes"}
                             onChange={this.handleNodeSizeChange}
                         />
                     </Form.Group>
@@ -68,14 +68,14 @@ export default class Settings extends React.Component {
                             control={Radio}
                             label='root'
                             value='root'
-                            checked={this.state.nodeSizeScale === 'root'}
+                            checked={this.state.nodeSizeScale === "root"}
                             onChange={this.handleNodeSizeScaleChange}
                         />
                         <Form.Field
                             control={Radio}
                             label='linear'
                             value='linear'
-                            checked={this.state.nodeSizeScale === 'linear'}
+                            checked={this.state.nodeSizeScale === "linear"}
                             onChange={this.handleNodeSizeScaleChange}
                         />
                     </Form.Group>
@@ -86,30 +86,31 @@ export default class Settings extends React.Component {
                             control={Radio}
                             label='root'
                             value='root'
-                            checked={this.state.linkWidthScale === 'root'}
+                            checked={this.state.linkWidthScale === "root"}
                             onChange={this.handleLinkWidthScaleChange}
                         />
                         <Form.Field
                             control={Radio}
                             label='linear'
                             value='linear'
-                            checked={this.state.linkWidthScale === 'linear'}
+                            checked={this.state.linkWidthScale === "linear"}
                             onChange={this.handleLinkWidthScaleChange}
                         />
                     </Form.Group>
 
                     <Form.Group inline>
                         <label>Show labels</label>
-                        <Checkbox toggle checked={this.state.labelsVisible} onChange={this.handleLabelsVisibleChange} />
+                        <Checkbox toggle checked={this.state.labelsVisible} onChange={this.handleLabelsVisibleChange}/>
                     </Form.Group>
 
                     <Form.Group inline>
                         <label>Run simulation</label>
-                        <Checkbox toggle checked={this.state.simulationEnabled} onChange={this.handleSimulationEnabledChange} />
+                        <Checkbox toggle checked={this.state.simulationEnabled}
+                                  onChange={this.handleSimulationEnabledChange}/>
                     </Form.Group>
 
                 </Form>
-            </MenuItemAccordion>
+            </React.Fragment>
         );
     }
 };
