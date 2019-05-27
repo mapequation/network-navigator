@@ -1,27 +1,27 @@
-import React from 'react';
-import PropTypes from 'prop-types';
-import { Segment, Button, Divider, Icon, Progress, Label } from 'semantic-ui-react';
-import Help from './Help';
-import parseFile from './lib/parse-file';
-import parseFTree from './lib/file-formats/ftree';
-import networkFromFTree from './lib/file-formats/network-from-ftree';
+import PropTypes from "prop-types";
+import React from "react";
+import { Container, Divider, Icon, Progress, Segment, Step } from "semantic-ui-react";
+import Background from "./Background.svg";
+import Documentation from "./Documentation";
+import Header from "./Header";
+import parseFTree from "./lib/file-formats/ftree";
+import networkFromFTree from "./lib/file-formats/network-from-ftree";
+import parseFile from "./lib/parse-file";
+
 
 class FileDialog extends React.Component {
     state = {
         progressVisible: false,
-        progressLabel: '',
+        progressLabel: "",
         progressValue: 0,
         progressError: false,
     };
 
     static propTypes = {
         onFileLoaded: PropTypes.func.isRequired,
-    }
+    };
 
-    constructor(props) {
-        super(props);
-        this.progressTimeout = null;
-    }
+    progressTimeout = null;
 
     errorState = err => ({
         progressError: true,
@@ -40,14 +40,14 @@ class FileDialog extends React.Component {
         this.setState({
             progressVisible: true,
             progressValue: 1,
-            progressLabel: 'Reading file',
+            progressLabel: "Reading file",
             progressError: false,
         });
 
         this.progressTimeout = setTimeout(() =>
             this.setState({
                 progressValue: 2,
-                progressLabel: 'Parsing',
+                progressLabel: "Parsing",
             }), 400);
 
         return parseFile(file)
@@ -68,12 +68,12 @@ class FileDialog extends React.Component {
 
                 this.setState({
                     progressValue: 3,
-                    progressLabel: 'Success',
+                    progressLabel: "Success",
                 });
 
                 this.progressTimeout = setTimeout(() => {
                     this.setState({ progressVisible: false });
-                    this.props.onFileLoaded({ network, filename: name })
+                    this.props.onFileLoaded({ network, filename: name });
                 }, 200);
             })
             .catch((err) => {
@@ -81,15 +81,15 @@ class FileDialog extends React.Component {
                 this.setState(this.errorState(err));
                 console.log(err);
             });
-    }
+    };
 
     loadExampleData = () => {
-        const filename = 'citation_data.ftree';
+        const filename = "citation_data.ftree";
 
         this.setState({
             progressVisible: true,
             progressValue: 1,
-            progressLabel: 'Reading file',
+            progressLabel: "Reading file",
             progressError: false,
         });
 
@@ -100,45 +100,88 @@ class FileDialog extends React.Component {
                 this.setState(this.errorState(err));
                 console.log(err);
             });
-    }
+    };
 
     render() {
-        const width = {
-            maxWidth: '500px',
-            width: '80%',
+        const { progressError, progressLabel, progressValue, progressVisible } = this.state;
+
+        const background = {
+            background: `linear-gradient(hsla(0, 0%, 100%, 0.5), hsla(0, 0%, 100%, 0.5)), url(${Background}) no-repeat`,
+            backgroundSize: "cover",
+            backgroundPosition: "center top",
         };
 
         return (
-            <div>
-                <Segment padded='very' style={{ marginTop: '20vh', ...width }}>
-                    <Help trigger={<Label as='a' corner='right' icon='help' />} />
-                    <label className='ui primary button fluid' htmlFor='networkUpload'>
-                        <Icon name='upload' />Load network...
-                    </label>
-                    <input style={{ display: 'none' }}
-                        type='file'
-                        id='networkUpload'
-                        onChange={() => this.loadNetwork(this.input.files[0])}
-                        ref={input => this.input = input}
-                    />
-                    <Divider horizontal>or</Divider>
-                    <Button fluid secondary onClick={this.loadExampleData}>Load citation data</Button>
-                </Segment>
-                <Segment padded='very' style={{ ...width }} basic>
-                    {this.state.progressVisible &&
-                        <Progress
-                            align='left'
-                            indicating
-                            error={this.state.progressError}
-                            label={this.state.progressLabel}
-                            total={3}
-                            value={this.state.progressValue}
-                        />
-                    }
-                </Segment>
-            </div>
+            <React.Fragment>
+                <Header/>
+                <div style={{ padding: "100px 0 100px 0", ...background }}>
+                    <Segment
+                        as={Container}
+                        text
+                        textAlign="center"
+                        style={{ padding: "50px 0px" }}
+                        padded='very'
+                    >
+
+                        <Step.Group>
+                            <Step link onClick={this.loadExampleData}>
+                                <Icon name="book"/>
+                                <Step.Content>
+                                    <Step.Title>Load example</Step.Title>
+                                    <Step.Description>Citation network</Step.Description>
+                                </Step.Content>
+                            </Step>
+                        </Step.Group>
+
+                        <Divider horizontal style={{ margin: "20px 100px 30px 100px" }} content="Or"/>
+
+                        <Step.Group ordered>
+                            <Step>
+                                <Step.Content>
+                                    <Step.Title>Run Infomap</Step.Title>
+                                    <Step.Description>Community detection using the Map Equation</Step.Description>
+                                </Step.Content>
+                            </Step>
+                            <Step
+                                as="label"
+                                link
+                                active
+                                htmlFor="networkUpload"
+                            >
+                                <Step.Content>
+                                    <Step.Title>Load network</Step.Title>
+                                    <Step.Description>Supported format: <code>ftree</code></Step.Description>
+                                </Step.Content>
+                                <input
+                                    style={{ display: "none" }}
+                                    type='file'
+                                    id='networkUpload'
+                                    onChange={() => this.loadNetwork(this.input.files[0])}
+                                    accept=".ftree"
+                                    ref={input => this.input = input}
+                                />
+                            </Step>
+                        </Step.Group>
+
+                        {progressVisible &&
+                        <div style={{ padding: "50px 100px 0" }}>
+                            <Progress
+                                align='left'
+                                indicating
+                                total={3}
+                                error={progressError}
+                                label={progressLabel}
+                                value={progressValue}
+                            />
+                        </div>
+                        }
+                    </Segment>
+                </div>
+                <Documentation/>
+            </React.Fragment>
         );
     }
 }
+
 
 export default FileDialog;
