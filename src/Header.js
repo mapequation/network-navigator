@@ -1,5 +1,6 @@
-import React from 'react';
-import './Header.css';
+import React from "react";
+import "./Header.css";
+
 
 const Header = () => (
     <header className="documentation">
@@ -8,7 +9,9 @@ const Header = () => (
                 <div>
                     <h1 className="ui header">
                         <a href="http://www.mapequation.org">
-                            <img className="mapequation-logo" src="http://www.mapequation.org/assets/img/twocolormapicon_whiteboarder.svg" alt="mapequation-icon" />
+                            <img className="mapequation-logo"
+                                 src="//www.mapequation.org/assets/img/twocolormapicon_whiteboarder.svg"
+                                 alt="mapequation-icon"/>
                         </a>
                         <div className="content">
                             <span className="brand">
