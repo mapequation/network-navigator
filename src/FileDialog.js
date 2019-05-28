@@ -135,11 +135,10 @@ class FileDialog extends React.Component {
 
                         <Divider horizontal style={{ margin: "20px 100px 30px 100px" }} content="Or"/>
 
-                        <Step.Group ordered>
-                            <Step>
+                        <Step.Group ordered size="large">
+                            <Step link as="a" href="//infomap.mapequation.org/?args=--ftree">
                                 <Step.Content>
-                                    <Step.Title>Run Infomap</Step.Title>
-                                    <Step.Description>Community detection using the Map Equation</Step.Description>
+                                    <Step.Title>Cluster network with Infomap</Step.Title>
                                 </Step.Content>
                             </Step>
                             <Step
@@ -149,8 +148,7 @@ class FileDialog extends React.Component {
                                 htmlFor="networkUpload"
                             >
                                 <Step.Content>
-                                    <Step.Title>Load network</Step.Title>
-                                    <Step.Description>Supported format: <code>ftree</code></Step.Description>
+                                    <Step.Title>Load ftree file</Step.Title>
                                 </Step.Content>
                                 <input
                                     style={{ display: "none" }}
