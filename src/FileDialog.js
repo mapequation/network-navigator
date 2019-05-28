@@ -9,6 +9,12 @@ import networkFromFTree from "./lib/file-formats/network-from-ftree";
 import parseFile from "./lib/parse-file";
 
 
+const errorState = err => ({
+    progressError: true,
+    progressLabel: err.toString(),
+});
+
+
 class FileDialog extends React.Component {
     state = {
         progressVisible: false,
@@ -22,11 +28,6 @@ class FileDialog extends React.Component {
     };
 
     progressTimeout = null;
-
-    errorState = err => ({
-        progressError: true,
-        progressLabel: err.toString(),
-    });
 
     componentWillUnmount() {
         clearTimeout(this.progressTimeout);
@@ -78,7 +79,7 @@ class FileDialog extends React.Component {
             })
             .catch((err) => {
                 clearTimeout(this.progressTimeout);
-                this.setState(this.errorState(err));
+                this.setState(errorState(err));
                 console.log(err);
             });
     };
@@ -97,7 +98,7 @@ class FileDialog extends React.Component {
             .then(res => res.text())
             .then(file => this.loadNetwork(file, filename))
             .catch((err) => {
-                this.setState(this.errorState(err));
+                this.setState(errorState(err));
                 console.log(err);
             });
     };
