@@ -14,16 +14,11 @@ import Settings from "./Settings";
 
 export default class App extends Component {
     state = {
-        sidebarVisible: false,
-        loadingComplete: false,
+        sidebarVisible: true,
         filename: "",
     };
 
-    toggleSidebar = () => this.setState({ sidebarVisible: !this.state.sidebarVisible });
-
-    setSelectedNode = selectedNode => this.setState({ selectedNode });
-
-    setSearchFunction = searchFunction => this.setState({ searchFunction });
+    toggleSidebar = () => this.setState(prevState => ({ sidebarVisible: !prevState.sidebarVisible }));
 
     onFileLoaded = ({ network, filename }) => {
         addBeforeUnloadEventListener("Are you sure you want to leave this page?");
@@ -31,8 +26,6 @@ export default class App extends Component {
             network,
             filename,
             selectedNode: network,
-            sidebarVisible: true,
-            loadingComplete: true,
         });
     };
 
@@ -44,15 +37,11 @@ export default class App extends Component {
         }
     };
 
-    handleFilenameChange = (e, { value }) => this.setState({ filename: value });
-
     handleDownloadClicked = () => {
         const ftree = ftreeFromNetwork(this.state.network);
         const blob = new Blob([ftree], { type: "text/plain;charset=utf-8" });
         FileSaver.saveAs(blob, this.state.filename);
     };
-
-    handleOccurrencesChange = occurrences => this.setState({ occurrences }, this.forceUpdate);
 
     render() {
         const {
@@ -67,7 +56,6 @@ export default class App extends Component {
             nodeSizeScale,
             linkWidthScale,
             simulationEnabled,
-            loadingComplete,
         } = this.state;
 
         const mainContent = <Sidebar.Pushable style={{ height: "100vh" }}>
@@ -88,7 +76,7 @@ export default class App extends Component {
                         labelPosition='left'
                         icon={<Icon name='download' link onClick={this.handleDownloadClicked}/>}
                         value={filename}
-                        onChange={this.handleFilenameChange}
+                        onChange={(e, { value }) => this.setState({ filename: value })}
                     />
                 </Menu.Item>
                 <Menu.Item>
@@ -97,7 +85,7 @@ export default class App extends Component {
                 {network &&
                 <MenuItemAccordion title='Occurrences'>
                     <Occurrences
-                        onFilesChange={this.handleOccurrencesChange}
+                        onFilesChange={occurrences => this.setState({ occurrences }, this.forceUpdate)}
                         selectedNode={selectedNode}
                         filename={filename}
                         totalNodes={network.totalChildren}
@@ -142,12 +130,14 @@ export default class App extends Component {
                         nodeSizeScale={nodeSizeScale}
                         linkWidthScale={linkWidthScale}
                         simulationEnabled={simulationEnabled}
-                        setSearchFunction={this.setSearchFunction}
-                        setSelectedNode={this.setSelectedNode}
+                        setSearchFunction={searchFunction => this.setState({ searchFunction })}
+                        setSelectedNode={selectedNode => this.setState({ selectedNode })}
                     />
                 </Grid.Column>
             </Sidebar.Pusher>
         </Sidebar.Pushable>;
+
+        const loadingComplete = !!network;
 
         return loadingComplete ? mainContent : <FileDialog onFileLoaded={this.onFileLoaded}/>;
     }
