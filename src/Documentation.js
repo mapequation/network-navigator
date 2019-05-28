@@ -8,17 +8,16 @@ const Documentation = () =>
             <Grid.Column>
                 <Header as="h1">Network Navigator</Header>
                 <p>
-                    This is an interactive map browser for networks clustered with <a
-                    href='http://www.mapequation.org/code.html'>Infomap</a>. Think of it kind of like <a
-                    href='http://maps.google.com'>Google Maps</a> for hierarchical networks. No data will be uploaded
-                    anywhere, everything runs locally in your browser.
+                    This is an interactive map for networks clustered with <a
+                    href='http://www.mapequation.org/code.html'>Infomap</a>. Think of it like Google Maps for
+                    hierarchical networks. Everything runs locally on your computer; no data is uploaded to any server.
                 </p>
 
                 <Header>Requirements</Header>
                 <p>
                     Extensive testing has only been done with recent versions of Chrome and Safari, but Firefox should
-                    also work. This application is graphics heavy. Older computers, especially laptops with integrated
-                    GPUs will struggle to keep a high frame rate.
+                    also work. This application is graphics heavy. Older computers or laptops with integrated GPUs can
+                    struggle to keep a high frame rate.
                 </p>
                 <Header>Limitations</Header>
                 <p>
@@ -28,18 +27,19 @@ const Documentation = () =>
 
                 <Header as="h1">Navigation</Header>
                 <p>
-                    Navigate by scrolling in and out, either with your scroll wheel or two finger swiping up and down on
-                    your trackpad. Don't use the pinch-to-zoom gesture if you have a trackpad as this will zoom the
-                    entire page. When a module is zoomed in far enough, the contained network will be revealed.
+                    Zoom by scrolling in and out, either with your scroll wheel or two-finger swiping up and down on
+                    your trackpad. Do not use the pinch-to-zoom gesture if you have a trackpad, this will zoom the
+                    entire page. Reveal sub-modules by zooming in far enough.
                 </p>
                 <p>
-                    Pan by click and drag anywhere where there isn't a module or node. The physics simulation can be
-                    manipulated by dragging modules and nodes around. This only works for one layer at a time, only
-                    modules which hasn't its contained network revealed can be moved.
+                    Pan by clicking and drag anywhere where there is not a module or node. Manipulate the physics
+                    simulation by dragging modules and nodes around. This only works for one layer at a time, you can
+                    only move modules that have not revealed its sub-modules.
+
                 </p>
                 <p>
                     Select a node or module by clicking on it. Information about the currently selected node or module
-                    is shown in the sidebar menu under <cite>Selected node</cite>.
+                    is shown in the sidebar menu under <cite>“Selected node"</cite>.
                 </p>
             </Grid.Column>
             <Grid.Column>
