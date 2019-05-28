@@ -26,17 +26,22 @@ const Documentation = () =>
                 </p>
 
                 <Header as="h1">Navigation</Header>
+                <Header>Zoom to reveal</Header>
                 <p>
                     Zoom by scrolling in and out, either with your scroll wheel or two-finger swiping up and down on
                     your trackpad. Do not use the pinch-to-zoom gesture if you have a trackpad, this will zoom the
                     entire page. Reveal sub-modules by zooming in far enough.
                 </p>
+
+                <Header>Click and drag to manipulate</Header>
                 <p>
                     Pan by clicking and drag anywhere where there is not a module or node. Manipulate the physics
                     simulation by dragging modules and nodes around. This only works for one layer at a time, you can
                     only move modules that have not revealed its sub-modules.
 
                 </p>
+
+                <Header>Information about modules</Header>
                 <p>
                     Select a node or module by clicking on it. Information about the currently selected node or module
                     is shown in the sidebar menu under <cite>“Selected node"</cite>.
