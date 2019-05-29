@@ -1,6 +1,6 @@
 import FileSaver from "file-saver";
 import React, { Component } from "react";
-import { Grid, Icon, Input, Label, Menu, Rail, Sidebar } from "semantic-ui-react";
+import { Grid, Header, Icon, Image, Input, Label, Menu, Rail, Sidebar } from "semantic-ui-react";
 import FileDialog from "./FileDialog";
 import ftreeFromNetwork from "./lib/file-formats/ftree-from-network";
 import MenuItemAccordion from "./MenuItemAccordion";
@@ -66,6 +66,21 @@ export default class App extends Component {
                 visible={sidebarVisible}
                 vertical
             >
+                <Menu.Item header href="//www.mapequation.org/navigator">
+                    <Header>
+                        <Image
+                            size="mini"
+                            verticalAlign="middle"
+                            src="//www.mapequation.org/assets/img/twocolormapicon_whiteboarder.svg"
+                            alt="mapequation-icon"
+                        />
+                        <div className="content">
+                            <span className="brand">
+                                <span className="brand-infomap">Infomap</span> <span className="brand-nn">Network Navigator</span>
+                            </span>
+                        </div>
+                    </Header>
+                </Menu.Item>
                 <Menu.Item onClick={this.toggleSidebar} icon='close' content='Close'/>
                 <Menu.Item>
                     <Input
