@@ -32,14 +32,14 @@ export default class NetworkNavigator extends React.Component {
         simulationEnabled: true,
     };
 
+    layouts = new Map();
+
     constructor(props) {
         super(props);
-        this.layouts = new Map();
-
         const { root, setSearchFunction } = props;
 
         setSearchFunction((name) => {
-            const hits = this.props.root.search(name);
+            const hits = props.root.search(name);
             this.layouts.forEach(l => l.updateAttributes());
             return hits;
         });
@@ -206,13 +206,16 @@ export default class NetworkNavigator extends React.Component {
         const { width, height } = this.props;
 
         return (
-            <svg ref={node => this.svgNode = node}
-                 width={width}
-                 height={height}
-                 xmlns='http://www.w3.org/2000/svg'>
-                <rect className='background' width={width} height={height} fill='#fff'></rect>
-                <g id='network'></g>
-                <g id='labelsContainer'></g>
+            <svg
+                ref={node => this.svgNode = node}
+                width={width}
+                height={height}
+                xmlns={d3.namespaces.svg}
+                xmlnsXlink={d3.namespaces.xlink}
+            >
+                <rect className='background' width={width} height={height} fill='#fff'/>
+                <g id='network'/>
+                <g id='labelsContainer'/>
             </svg>
         );
     }
