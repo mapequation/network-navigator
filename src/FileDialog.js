@@ -1,7 +1,7 @@
 import PropTypes from "prop-types";
 import React from "react";
 import localforage from "localforage";
-import { Container, Divider, Icon, Progress, Segment, Step } from "semantic-ui-react";
+import { Container, Divider, Progress, Segment, Step } from "semantic-ui-react";
 import Background from "./Background.svg";
 import Documentation from "./Documentation";
 import Header from "./Header";
@@ -122,6 +122,8 @@ class FileDialog extends React.Component {
     render() {
         const { progressError, progressLabel, progressValue, progressVisible, ftree } = this.state;
 
+        const disabled = progressVisible && !progressError;
+
         const background = {
             background: `linear-gradient(hsla(0, 0%, 100%, 0.5), hsla(0, 0%, 100%, 0.5)), url(${Background}) no-repeat`,
             backgroundSize: "cover",
@@ -141,13 +143,14 @@ class FileDialog extends React.Component {
                     >
 
                         <Step.Group>
-                            <Step link onClick={this.loadExampleData}>
-                                <Icon name="book"/>
-                                <Step.Content>
-                                    <Step.Title>Load example</Step.Title>
-                                    <Step.Description>Citation network</Step.Description>
-                                </Step.Content>
-                            </Step>
+                            <Step
+                                disabled={disabled}
+                                icon="book"
+                                title="Load example"
+                                description="Citation network"
+                                link
+                                onClick={this.loadExampleData}
+                            />
                         </Step.Group>
 
                         {!!ftree &&
@@ -155,12 +158,13 @@ class FileDialog extends React.Component {
                             <Divider hidden/>
 
                             <Step.Group>
-                                <Step link onClick={() => this.loadNetwork(ftree, "infomap.ftree")}>
-                                    <Icon name="cloud download"/>
-                                    <Step.Content>
-                                        <Step.Title>Open from Infomap Online</Step.Title>
-                                    </Step.Content>
-                                </Step>
+                                <Step
+                                    disabled={disabled}
+                                    icon="cloud download"
+                                    title="Open from Infomap Online"
+                                    link
+                                    onClick={() => this.loadNetwork(ftree, "infomap.ftree")}
+                                />
                             </Step.Group>
                         </React.Fragment>
                         }
@@ -168,30 +172,30 @@ class FileDialog extends React.Component {
                         <Divider horizontal style={{ margin: "20px 100px 30px 100px" }} content="Or"/>
 
                         <Step.Group ordered>
-                            <Step link as="a" href="//www.mapequation.org/infomap/?args=--ftree">
-                                <Step.Content>
-                                    <Step.Title>Cluster network with Infomap</Step.Title>
-                                </Step.Content>
-                            </Step>
                             <Step
+                                disabled={disabled}
+                                link
+                                as="a"
+                                title="Cluster network with Infomap"
+                                href="//www.mapequation.org/infomap/?args=--ftree"
+                            />
+                            <Step
+                                disabled={disabled}
                                 as="label"
                                 link
-                                active
-                                htmlFor="networkUpload"
-                            >
-                                <Step.Content>
-                                    <Step.Title>Load ftree file</Step.Title>
-                                </Step.Content>
-                                <input
-                                    style={{ display: "none" }}
-                                    type='file'
-                                    id='networkUpload'
-                                    onChange={() => this.loadNetwork(this.input.files[0])}
-                                    accept=".ftree"
-                                    ref={input => this.input = input}
-                                />
-                            </Step>
+                                active={!disabled}
+                                title="Load ftree file"
+                                htmlFor="upload"
+                            />
                         </Step.Group>
+                        <input
+                            style={{ visibility: "hidden" }}
+                            type='file'
+                            id='upload'
+                            onChange={() => this.loadNetwork(this.input.files[0])}
+                            accept=".ftree"
+                            ref={input => this.input = input}
+                        />
 
                         {progressVisible &&
                         <div style={{ padding: "50px 100px 0" }}>
