@@ -137,7 +137,7 @@ class FileDialog extends React.Component {
                         <Divider horizontal style={{ margin: "20px 100px 30px 100px" }} content="Or"/>
 
                         <Step.Group ordered>
-                            <Step link as="a" href="//mapequation.org/infomap/?args=--ftree">
+                            <Step link as="a" href="//www.mapequation.org/infomap/?args=--ftree">
                                 <Step.Content>
                                     <Step.Title>Cluster network with Infomap</Step.Title>
                                 </Step.Content>

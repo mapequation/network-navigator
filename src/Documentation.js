@@ -74,7 +74,7 @@ const Documentation = () =>
                 </p>
                 <p>
                     Infomap is available as a <a href="https://www.mapequation.org/code.html">stand-alone</a> C++
-                    application and on the web as <a href="https://mapequation.org/infomap">Infomap Online</a>.
+                    application and on the web as <a href="https://www.mapequation.org/infomap">Infomap Online</a>.
                 </p>
             </Grid.Column>
         </Grid>
