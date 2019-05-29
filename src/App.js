@@ -2,7 +2,6 @@ import FileSaver from "file-saver";
 import React, { Component } from "react";
 import { Grid, Icon, Input, Label, Menu, Rail, Sidebar } from "semantic-ui-react";
 import FileDialog from "./FileDialog";
-import addBeforeUnloadEventListener from "./lib/before-unload";
 import ftreeFromNetwork from "./lib/file-formats/ftree-from-network";
 import MenuItemAccordion from "./MenuItemAccordion";
 import NetworkNavigator from "./NetworkNavigator";
@@ -21,7 +20,6 @@ export default class App extends Component {
     toggleSidebar = () => this.setState(prevState => ({ sidebarVisible: !prevState.sidebarVisible }));
 
     onFileLoaded = ({ network, filename }) => {
-        addBeforeUnloadEventListener("Are you sure you want to leave this page?");
         this.setState({
             network,
             filename,
