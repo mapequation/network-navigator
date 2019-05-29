@@ -15,6 +15,7 @@ export default class App extends Component {
     state = {
         sidebarVisible: true,
         filename: "",
+        network: null,
     };
 
     toggleSidebar = () => this.setState(prevState => ({ sidebarVisible: !prevState.sidebarVisible }));
@@ -56,6 +57,20 @@ export default class App extends Component {
             simulationEnabled,
         } = this.state;
 
+        const networkNavigator = <NetworkNavigator
+            root={network}
+            occurrences={occurrences}
+            labelsVisible={labelsVisible}
+            width={window.innerWidth}
+            height={window.innerHeight}
+            nodeSizeBasedOn={nodeSize}
+            nodeSizeScale={nodeSizeScale}
+            linkWidthScale={linkWidthScale}
+            simulationEnabled={simulationEnabled}
+            setSearchFunction={searchFunction => this.setState({ searchFunction })}
+            setSelectedNode={selectedNode => this.setState({ selectedNode })}
+        />;
+
         const mainContent = <Sidebar.Pushable style={{ height: "100vh" }}>
             <Sidebar
                 style={{ overflow: "scroll!important" }}
@@ -81,7 +96,7 @@ export default class App extends Component {
                         </div>
                     </Header>
                 </Menu.Item>
-                <Menu.Item onClick={this.toggleSidebar} icon='close' content='Close'/>
+                <Menu.Item onClick={this.toggleSidebar} icon='close' content='Hide sidebar'/>
                 <Menu.Item>
                     <Input
                         type='text'
@@ -122,31 +137,23 @@ export default class App extends Component {
                     />
                 </MenuItemAccordion>
             </Sidebar>
-            <Sidebar.Pusher as={Grid} padded>
-                <Grid.Column style={{ paddingTop: 0, paddingLeft: 0 }}>
-                    <Rail attached internal position='right'>
-                        <Label
-                            as='a'
-                            attached='top right'
-                            icon='sidebar'
-                            content='Show sidebar'
+            <Sidebar.Pusher style={{ overflow: "hidden" }}>
+                <Rail
+                    internal
+                    position="right"
+                    style={{ paddingRight: 0, marginRight: 0, height: 0 }}
+                >
+                    <Menu vertical>
+                        <Menu.Item
+                            icon="sidebar"
+                            content="Show sidebar"
                             onClick={this.toggleSidebar}
                         />
-                    </Rail>
-                    <NetworkNavigator
-                        root={network}
-                        occurrences={occurrences}
-                        labelsVisible={labelsVisible}
-                        width={window.innerWidth}
-                        height={window.innerHeight}
-                        nodeSizeBasedOn={nodeSize}
-                        nodeSizeScale={nodeSizeScale}
-                        linkWidthScale={linkWidthScale}
-                        simulationEnabled={simulationEnabled}
-                        setSearchFunction={searchFunction => this.setState({ searchFunction })}
-                        setSelectedNode={selectedNode => this.setState({ selectedNode })}
-                    />
-                </Grid.Column>
+                    </Menu>
+                </Rail>
+                <React.StrictMode>
+                    {networkNavigator}
+                </React.StrictMode>
             </Sidebar.Pusher>
         </Sidebar.Pushable>;
 
