@@ -1,7 +1,7 @@
 {
   "name": "infomap-network-navigator",
   "version": "1.0.0",
-  "homepage": "http://navigator.mapequation.org",
+  "homepage": "/navigator",
   "private": true,
   "dependencies": {
     "d3": "^5.9.2",
@@ -20,6 +20,6 @@
     "build": "react-scripts build",
     "test": "react-scripts test --env=jsdom",
     "eject": "react-scripts eject",
-    "deploy": "react-scripts build && scp -r build mapequation:/var/www/network-navigator"
+    "deploy": "react-scripts build && scp -r build/* mapequation:/var/www/network-navigator"
   }
 }
