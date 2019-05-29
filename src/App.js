@@ -1,6 +1,6 @@
 import FileSaver from "file-saver";
 import React, { Component } from "react";
-import { Grid, Header, Icon, Image, Input, Label, Menu, Rail, Sidebar } from "semantic-ui-react";
+import { Header, Icon, Image, Input, Menu, Rail, Sidebar } from "semantic-ui-react";
 import FileDialog from "./FileDialog";
 import ftreeFromNetwork from "./lib/file-formats/ftree-from-network";
 import MenuItemAccordion from "./MenuItemAccordion";

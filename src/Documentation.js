@@ -1,5 +1,6 @@
 import React from "react";
 import { Container, Grid, Header, Icon } from "semantic-ui-react";
+import Legend from "./Legend";
 
 
 const Documentation = () =>
@@ -13,6 +14,8 @@ const Documentation = () =>
                     hierarchical networks. Everything runs locally on your computer; no data is uploaded to any server.
                     When transferring data from Infomap Online, the network is stored in your browser.
                 </p>
+
+                <Legend/>
 
                 <Header>Requirements</Header>
                 <p>
