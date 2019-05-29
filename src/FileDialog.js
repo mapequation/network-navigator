@@ -1,5 +1,6 @@
 import PropTypes from "prop-types";
 import React from "react";
+import localforage from "localforage";
 import { Container, Divider, Icon, Progress, Segment, Step } from "semantic-ui-react";
 import Background from "./Background.svg";
 import Documentation from "./Documentation";
@@ -29,9 +30,25 @@ class FileDialog extends React.Component {
 
     progressTimeout = null;
 
+    componentDidMount() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const args = urlParams.get('infomap');
+        if (args) {
+            localforage.config({ name: "infomap" });
+            this.loadLocal(args);
+        }
+    }
+
     componentWillUnmount() {
         clearTimeout(this.progressTimeout);
     }
+
+    loadLocal = async (name) => {
+        const ftree = await localforage.getItem("ftree");
+        if (ftree) {
+            this.loadNetwork(ftree, name);
+        }
+    };
 
     loadNetwork = (file, name) => {
         if (!name && file.name) {
