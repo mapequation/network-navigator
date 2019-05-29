@@ -11,6 +11,7 @@ const Documentation = () =>
                     This is an interactive map for networks clustered with <a
                     href='http://www.mapequation.org/code.html'>Infomap</a>. Think of it like Google Maps for
                     hierarchical networks. Everything runs locally on your computer; no data is uploaded to any server.
+                    When transferring data from Infomap Online, the network is stored in your browser.
                 </p>
 
                 <Header>Requirements</Header>

@@ -22,6 +22,7 @@ class FileDialog extends React.Component {
         progressLabel: "",
         progressValue: 0,
         progressError: false,
+        ftree: null,
     };
 
     static propTypes = {
@@ -33,22 +34,20 @@ class FileDialog extends React.Component {
     componentDidMount() {
         const urlParams = new URLSearchParams(window.location.search);
         const args = urlParams.get('infomap');
-        if (args) {
-            localforage.config({ name: "infomap" });
-            this.loadLocal(args);
-        }
+
+        localforage.config({ name: "infomap" });
+        localforage.getItem("ftree")
+            .then(ftree => {
+                this.setState({ ftree });
+                if (args) {
+                    this.loadNetwork(ftree, args);
+                }
+            });
     }
 
     componentWillUnmount() {
         clearTimeout(this.progressTimeout);
     }
-
-    loadLocal = async (name) => {
-        const ftree = await localforage.getItem("ftree");
-        if (ftree) {
-            this.loadNetwork(ftree, name);
-        }
-    };
 
     loadNetwork = (file, name) => {
         if (!name && file.name) {
@@ -121,7 +120,7 @@ class FileDialog extends React.Component {
     };
 
     render() {
-        const { progressError, progressLabel, progressValue, progressVisible } = this.state;
+        const { progressError, progressLabel, progressValue, progressVisible, ftree } = this.state;
 
         const background = {
             background: `linear-gradient(hsla(0, 0%, 100%, 0.5), hsla(0, 0%, 100%, 0.5)), url(${Background}) no-repeat`,
@@ -150,6 +149,21 @@ class FileDialog extends React.Component {
                                 </Step.Content>
                             </Step>
                         </Step.Group>
+
+                        {!!ftree &&
+                        <React.Fragment>
+                            <Divider hidden/>
+
+                            <Step.Group>
+                                <Step link onClick={() => this.loadNetwork(ftree, "infomap.ftree")}>
+                                    <Icon name="cloud download"/>
+                                    <Step.Content>
+                                        <Step.Title>Open from Infomap Online</Step.Title>
+                                    </Step.Content>
+                                </Step>
+                            </Step.Group>
+                        </React.Fragment>
+                        }
 
                         <Divider horizontal style={{ margin: "20px 100px 30px 100px" }} content="Or"/>
 
