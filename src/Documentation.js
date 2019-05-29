@@ -79,7 +79,6 @@ const Documentation = () =>
             </Grid.Column>
         </Grid>
     </Container>;
-;
-;
+
 
 export default Documentation;
