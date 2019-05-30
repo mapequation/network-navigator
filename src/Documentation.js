@@ -1,5 +1,5 @@
 import React from "react";
-import { Container, Grid, Header, Icon } from "semantic-ui-react";
+import { Container, Grid, Header, Icon, Image } from "semantic-ui-react";
 import Legend from "./Legend";
 
 
@@ -9,18 +9,25 @@ const Documentation = () =>
             <Grid.Column>
                 <Header as="h1">Network Navigator</Header>
                 <p>
-                    This is an interactive map for networks clustered with <a
+                    This is an interactive zoomable map for networks clustered with <a
                     href='http://www.mapequation.org/code.html'>Infomap</a>. Think of it like Google Maps for
                     hierarchical networks. Everything runs locally on your computer; no data is uploaded to any server.
-                    When transferring data from Infomap Online, the network is stored in your browser.
                 </p>
 
-                <Legend/>
+                <Header>Legend</Header>
+                <p>
+                    Modules are drawn as circles with area proportional to the contained flow. The module border
+                    thickness is proportional to exiting flow. Links between nodes are aggregated on module level and
+                    their thickness are proportional to the flow between modules.
+                </p>
+                <Image centered fluid size="large">
+                    <Legend/>
+                </Image>
 
                 <Header>Requirements</Header>
                 <p>
-                    Extensive testing has only been done with recent versions of Chrome and Safari, but Firefox should
-                    also work. This application is graphics heavy. Older computers or laptops with integrated GPUs can
+                    Extensive testing has only been done with recent versions of Chrome, Safari and Firefox. This
+                    application is graphics heavy. Older computers or laptops with integrated GPUs can
                     struggle to keep a high frame rate.
                 </p>
                 <Header>Limitations</Header>

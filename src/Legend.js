@@ -106,7 +106,10 @@ const link1 = {
 const arrows = [flow, exitFlow, link0, link1];
 
 export default () => (
-    <svg xmlns="http://www.w3.org/2000/svg" width={400} height={130}>
+    <svg
+        viewBox="0 0 400 130"
+        xmlns="http://www.w3.org/2000/svg"
+    >
         <defs>
             <marker
                 id='head'
