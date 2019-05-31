@@ -2,9 +2,10 @@ import * as d3 from 'd3';
 import { minBy, truncate } from 'lodash';
 import makeDragHandler from './drag-handler';
 import { highlightLinks, restoreLinks } from './highlight-links';
-import * as LOD from './level-of-detail';
+import { linkByIndex, nodeByIndex } from './level-of-detail';
 import Point from './point';
 import Simulation from './simulation';
+
 
 const width = window.innerWidth;
 const height = window.innerHeight;
@@ -18,17 +19,6 @@ const distanceFromCenter = Point.distanceFrom(center);
 
 const insideScreenBounds = point =>
     0 < point.x && point.x < width && 0 < point.y && point.y < height;
-
-/*
-const closestPointOnBoundary = (point, radius) => {
-    const u = center.sub(point).normalize.mul(radius);
-    return u.add(point);
-};
-
-const visibleOnScreen = (point, radius) => {
-    return insideScreenBounds(point) || insideScreenBounds(closestPointOnBoundary(point, radius));
-};
-*/
 
 const radiusLargeEnough = radius => radius > Math.min(width, height) / 4;
 
@@ -45,14 +35,14 @@ const transformToMatrix = ({ x, y, k }) => [k, 0, 0, k, x, y];
 
 export default class NetworkLayout {
     constructor({
-        linkRenderer,
-        renderStyle,
-        renderTarget,
-        position,
-        localTransform = {},
-        labelsVisible = true,
-        simulationEnabled = true,
-    }) {
+                    linkRenderer,
+                    renderStyle,
+                    renderTarget,
+                    position,
+                    localTransform = {},
+                    labelsVisible = true,
+                    simulationEnabled = true,
+                }) {
         this.linkRenderer = linkRenderer;
         this.style = renderStyle;
         this.elements = renderTarget;
@@ -106,7 +96,7 @@ export default class NetworkLayout {
     set simulationEnabled(enabled) {
         this._simulationEnabled = enabled;
 
-        if (this.simulationEnabled) {
+        if (enabled) {
             if (!this.stopped) {
                 this.simulation.alpha(0.3);
                 this.simulation.restart();
@@ -143,12 +133,13 @@ export default class NetworkLayout {
     }
 
     createElements() {
-        const { parent, labels } = this.elements;
+        const { elements } = this;
+        const { parent, labels } = elements;
 
         parent.selectAll('*').remove();
         labels.selectAll('*').remove();
 
-        this.elements.link = parent.append('g')
+        elements.link = parent.append('g')
             .attr('class', 'links')
             .selectAll('.link')
             .data(this.links)
@@ -157,9 +148,9 @@ export default class NetworkLayout {
             .attr('class', 'link')
             .style('fill', this.style.linkFillColor);
 
-        this.elements.link.accessors = {
-            path: l => LOD.linkByIndex(this.links)()(l) ? this.linkRenderer(l) : '',
-            lod: LOD.linkByIndex(this.links),
+        elements.link.accessors = {
+            path: l => linkByIndex(this.links)()(l) ? this.linkRenderer(l) : '',
+            lod: linkByIndex(this.links),
         };
 
         const onNodeClicked = (dispatch => function (n) {
@@ -168,7 +159,7 @@ export default class NetworkLayout {
                 .style('stroke', '#f48074');
         })(this.dispatch);
 
-        this.elements.node = parent.append('g')
+        elements.node = parent.append('g')
             .attr('class', 'nodes')
             .selectAll('.node')
             .data(this.nodes)
@@ -180,23 +171,23 @@ export default class NetworkLayout {
             .on('mouseout', restoreLinks(this.style))
             .call(this.onDrag);
 
-        this.elements.circle = this.elements.node.append('circle')
+        elements.circle = elements.node.append('circle')
             .attr('r', this.style.nodeRadius)
             .style('fill', this.style.nodeFillColor)
             .style('stroke', this.style.nodeBorderColor)
             .style('stroke-width', this.style.nodeBorderWidth);
 
-        this.elements.circle.accessors = {
+        elements.circle.accessors = {
             r: n => this.style.nodeRadius(n),
             fill: n => this.style.nodeFillColor(n),
         };
 
         const radius = (n) => {
             if (n.visible) return 0;
-            const r = this.elements.circle.accessors.r(n);
+            const r = elements.circle.accessors.r(n);
             if (n.occurred) {
                 if (n.occurred.size > 0) {
-                    return r
+                    return r;
                 }
             } else {
                 const max = Array.from(n.occurrences.values())
@@ -223,22 +214,22 @@ export default class NetworkLayout {
                 return maxColor;
             }
             return '';
-        }
+        };
 
-        this.elements.occurrences = this.elements.node.append('circle')
+        elements.occurrences = elements.node.append('circle')
             .attr('r', radius)
             .attr('fill', fill);
 
-        this.elements.occurrences.accessors = {
+        elements.occurrences.accessors = {
             r: n => radius(n),
             fill: n => fill(n),
         };
 
-        this.elements.searchMark = this.elements.node.append('circle')
+        elements.searchMark = elements.node.append('circle')
             .attr('r', this.style.searchMarkRadius)
             .style('fill', '#F48074');
 
-        this.elements.label = labels.selectAll('.label')
+        elements.label = labels.selectAll('.label')
             .data(this.nodes)
             .enter()
             .append('text')
@@ -253,12 +244,12 @@ export default class NetworkLayout {
             .style('stroke-linecap', 'square')
             .style('stroke-linejoin', 'round');
 
-        this.elements.label.accessors = {
+        elements.label.accessors = {
             x: n => n.x,
             y: n => n.y,
             dx: n => 1.1 * this.style.nodeRadius(n),
-            lod: LOD.nodeByIndex(this.nodes),
-            visibility: n => this.labelsVisible ? 'visible' : 'hidden',
+            lod: nodeByIndex(this.nodes),
+            visibility: () => this.labelsVisible ? 'visible' : 'hidden',
             text: nodeName,
         };
     }
@@ -302,7 +293,9 @@ export default class NetworkLayout {
     }
 
     applyTransform(transform) {
-        const { circle, label, link } = this.elements;
+        const { circle, label, link, node, parent } = this.elements;
+        const { style, linkRenderer, labelsVisible } = this;
+
         const {
             translate = Point.origin,
             scale = 1,
@@ -318,11 +311,11 @@ export default class NetworkLayout {
         label.accessors.x = n => x + k * n.x;
         label.accessors.y = n => y + k * n.y;
         label.accessors.dx = (n) => {
-            const r = 1.1 * this.style.nodeRadius(n);
+            const r = 1.1 * style.nodeRadius(n);
             const dx = k * r + (k > 1 ? 1.4 * (1 - k) * r : 0);
             return Math.max(dx, 0);
         };
-        label.accessors.visibility = n => this.labelsVisible && label.accessors.lod(k)(n) ? 'visible' : 'hidden';
+        label.accessors.visibility = n => labelsVisible && label.accessors.lod(k)(n) ? 'visible' : 'hidden';
         label.accessors.text = n => n.visible ? '' : nodeName(n);
         link.accessors.path = l => (k < 15 || !l.source.nodes) && link.accessors.lod(k)(l)
             ? this.linkRenderer(l) : '';
@@ -337,14 +330,14 @@ export default class NetworkLayout {
             })();
 
             circle.accessors.fill = (n) => {
-                if (!n.nodes) return this.style.nodeFillColor(n);
-                const fill = d3.interpolateRgb(this.style.nodeFillColor(n), '#ffffff');
+                if (!n.nodes) return style.nodeFillColor(n);
+                const fill = d3.interpolateRgb(style.nodeFillColor(n), '#ffffff');
                 return fill(zoomNormalized(k));
             };
 
             circle.accessors.r = (n) => {
                 const targetRadius = 60;
-                const initialRadius = this.style.nodeRadius(n);
+                const initialRadius = style.nodeRadius(n);
                 if (!n.nodes) return initialRadius;
                 if (k >= 9 && n === closest) {
                     const r = d3.interpolateNumber(Math.max(targetRadius, initialRadius), 200);
@@ -361,7 +354,7 @@ export default class NetworkLayout {
         const renderTarget = isRenderTarget({ x, y, k }, circle.accessors.r);
 
         if (k > 2) {
-            this.elements.node.on('.drag', null);
+            node.on('.drag', null);
             this.simulation.stop();
             this.updateDisabled = false;
             this.stopped = true;
@@ -377,11 +370,11 @@ export default class NetworkLayout {
                 });
 
                 const renderTarget = {
-                    parent: this.elements.parent.append('g')
+                    parent: parent.append('g')
                         .attr('transform', `matrix(${transformMatrix})`),
                     labels: d3.select('#labelsContainer').append('g')
                         .attr('class', 'network labels'),
-                }
+                };
 
                 const childTransform = {
                     parentTranslate: Point.add(translate, parentTranslate),
@@ -393,18 +386,18 @@ export default class NetworkLayout {
                 this.dispatch.call('render', null, {
                     path: n.path,
                     layout: new NetworkLayout({
-                        linkRenderer: this.linkRenderer,
-                        renderStyle: this.renderStyle,
+                        linkRenderer,
+                        renderStyle: style,
                         renderTarget,
                         position: Point.from(n),
                         localTransform: childTransform,
-                        labelsVisible: this.labelsVisible,
+                        labelsVisible: labelsVisible,
                         simulationEnabled: this.simulationEnabled,
                     }),
                 });
             });
         } else if (this.stopped) {
-            this.elements.node.call(this.onDrag);
+            node.call(this.onDrag);
             this.simulation.restart();
             this.stopped = false;
         }
