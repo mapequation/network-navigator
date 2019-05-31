@@ -1,6 +1,6 @@
 import FileSaver from "file-saver";
 import React, { Component } from "react";
-import { Header, Icon, Input, Menu, Rail, Sidebar } from "semantic-ui-react";
+import { Button, Header, Icon, Input, Menu, Rail, Sidebar } from "semantic-ui-react";
 import FileDialog from "./FileDialog";
 import ftreeFromNetwork from "../lib/file-formats/ftree-from-network";
 import MenuItemAccordion from "./MenuItemAccordion";
@@ -11,6 +11,7 @@ import Settings from "./Settings";
 import SelectedNode from "./SelectedNode";
 import Distributions from "./Distributions";
 import MenuHeader from "./MenuHeader";
+import { savePng, saveSvg } from "../io/export";
 
 
 export default class App extends Component {
@@ -141,6 +142,17 @@ export default class App extends Component {
                         onLabelsVisibleChange={labelsVisible => this.setState({ labelsVisible })}
                         onSimulationEnabledChange={simulationEnabled => this.setState({ simulationEnabled })}
                     />
+                </Menu.Item>
+                <Menu.Item>
+                    <Header as="h4">Export</Header>
+                    <Button icon size="small" labelPosition="left"
+                            onClick={() => saveSvg("networkNavigatorSvg", filename + ".svg")}>
+                        <Icon name="download"/>SVG
+                    </Button>
+                    <Button icon size="small" labelPosition="left"
+                            onClick={() => savePng("networkNavigatorSvg", filename + ".png")}>
+                        <Icon name="image"/>PNG
+                    </Button>
                 </Menu.Item>
             </Sidebar>
             <Sidebar.Pusher style={{ overflow: "hidden" }}>

@@ -206,16 +206,13 @@ export default class NetworkNavigator extends React.Component {
     }
 
     render() {
-        const { width, height } = this.props;
-
         return (
             <svg
                 ref={node => this.svgNode = node}
-                width={width}
-                height={height}
                 style={{ width: "100vw", height: "100vh" }}
                 xmlns={d3.namespaces.svg}
                 xmlnsXlink={d3.namespaces.xlink}
+                id="networkNavigatorSvg"
             >
                 <rect className='background' width="100%" height="100%" fill='#fff'/>
                 <g id='network'/>
