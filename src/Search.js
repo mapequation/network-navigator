@@ -36,7 +36,7 @@ export default class Search extends Component {
         return <SearchInput
             fluid
             input={{ fluid: true }}
-            placeholder='Search nodes...'
+            placeholder='Find nodes...'
             onSearchChange={this.handleSearchChange}
             results={results}
         />;
