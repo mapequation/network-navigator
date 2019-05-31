@@ -20,7 +20,7 @@ const Documentation = () =>
                     thickness is proportional to exiting flow. Links between nodes are aggregated on module level and
                     their thickness are proportional to the flow between modules.
                 </p>
-                <Image centered fluid size="large">
+                <Image size="large">
                     <Legend/>
                 </Image>
 
