@@ -1,7 +1,7 @@
 import PropTypes from "prop-types";
 import React from "react";
 import localforage from "localforage";
-import { Container, Divider, Progress, Segment, Step } from "semantic-ui-react";
+import { Container, Divider, Image, Progress, Segment, Step } from "semantic-ui-react";
 import Background from "./Background.svg";
 import Documentation from "./Documentation";
 import Header from "./Header";
@@ -160,11 +160,22 @@ class FileDialog extends React.Component {
                             <Step.Group>
                                 <Step
                                     disabled={disabled}
-                                    icon="cloud download"
-                                    title="Open from Infomap Online"
                                     link
                                     onClick={() => this.loadNetwork(ftree, "infomap.ftree")}
-                                />
+                                >
+                                    <Image
+                                        spaced="right"
+                                        size="tiny"
+                                        verticalAlign="middle"
+                                        src="//www.mapequation.org/assets/img/twocolormapicon_whiteboarder.svg"
+                                        alt="mapequation-icon"/>
+                                    <Step.Content>
+                                        <Step.Title>
+                                            Open from <span className="brand brand-infomap">Infomap</span> <span
+                                            className="brand brand-nn">Online</span>
+                                        </Step.Title>
+                                    </Step.Content>
+                                </Step>
                             </Step.Group>
                         </React.Fragment>
                         }
@@ -177,7 +188,7 @@ class FileDialog extends React.Component {
                                 link
                                 as="a"
                                 title="Cluster network with Infomap"
-                                href="//www.mapequation.org/infomap/?args=--ftree"
+                                href="//www.mapequation.org/infomap"
                             />
                             <Step
                                 disabled={disabled}
