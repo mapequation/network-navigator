@@ -166,6 +166,7 @@ class FileDialog extends React.Component {
                                     <Image
                                         spaced="right"
                                         size="tiny"
+                                        disabled={disabled}
                                         verticalAlign="middle"
                                         src="//www.mapequation.org/assets/img/twocolormapicon_whiteboarder.svg"
                                         alt="mapequation-icon"
