@@ -21,7 +21,7 @@ export default class App extends Component {
         network: null,
     };
 
-    toggleSidebar = () => this.setState(prevState => ({ sidebarVisible: !prevState.sidebarVisible }));
+    toggleSidebar = () => this.setState(state => ({ sidebarVisible: !state.sidebarVisible }));
 
     onFileLoaded = ({ network, filename }) => {
         this.setState({
