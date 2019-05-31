@@ -2,12 +2,12 @@ import PropTypes from "prop-types";
 import React from "react";
 import localforage from "localforage";
 import { Container, Divider, Image, Progress, Segment, Step } from "semantic-ui-react";
-import Background from "./Background.svg";
+import Background from "../images/Background.svg";
 import Documentation from "./Documentation";
 import Header from "./Header";
-import parseFTree from "./lib/file-formats/ftree";
-import networkFromFTree from "./lib/file-formats/network-from-ftree";
-import parseFile from "./lib/parse-file";
+import parseFTree from "../lib/file-formats/ftree";
+import networkFromFTree from "../lib/file-formats/network-from-ftree";
+import parseFile from "../lib/parse-file";
 
 
 const errorState = err => ({

@@ -1,4 +1,4 @@
-import { halfLink } from "./lib/link-renderer";
+import { halfLink } from "../lib/link-renderer";
 import React from "react";
 
 

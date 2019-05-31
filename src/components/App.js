@@ -1,8 +1,8 @@
 import FileSaver from "file-saver";
 import React, { Component } from "react";
-import { Header, Icon, Image, Input, Menu, Rail, Sidebar } from "semantic-ui-react";
+import { Header, Icon, Input, Menu, Rail, Sidebar } from "semantic-ui-react";
 import FileDialog from "./FileDialog";
-import ftreeFromNetwork from "./lib/file-formats/ftree-from-network";
+import ftreeFromNetwork from "../lib/file-formats/ftree-from-network";
 import MenuItemAccordion from "./MenuItemAccordion";
 import NetworkNavigator from "./NetworkNavigator";
 import Occurrences from "./Occurrences";
@@ -10,6 +10,7 @@ import Search from "./Search";
 import Settings from "./Settings";
 import SelectedNode from "./SelectedNode";
 import Distributions from "./Distributions";
+import MenuHeader from "./MenuHeader";
 
 
 export default class App extends Component {
@@ -58,6 +59,12 @@ export default class App extends Component {
             simulationEnabled,
         } = this.state;
 
+        const loadingComplete = !!network;
+
+        if (!loadingComplete) {
+            return <FileDialog onFileLoaded={this.onFileLoaded}/>;
+        }
+
         const networkNavigator = <NetworkNavigator
             root={network}
             occurrences={occurrences}
@@ -72,7 +79,7 @@ export default class App extends Component {
             setSelectedNode={selectedNode => this.setState({ selectedNode })}
         />;
 
-        const mainContent = <Sidebar.Pushable style={{ height: "100vh" }}>
+        return <Sidebar.Pushable style={{ height: "100vh" }}>
             <Sidebar
                 style={{ overflow: "scroll!important" }}
                 as={Menu}
@@ -83,19 +90,7 @@ export default class App extends Component {
                 vertical
             >
                 <Menu.Item header href="//www.mapequation.org/navigator">
-                    <Header>
-                        <Image
-                            size="mini"
-                            verticalAlign="middle"
-                            src="//www.mapequation.org/assets/img/twocolormapicon_whiteboarder.svg"
-                            alt="mapequation-icon"
-                        />
-                        <div className="content">
-                            <span className="brand">
-                                <span className="brand-infomap">Infomap</span> <span className="brand-nn">Network Navigator</span>
-                            </span>
-                        </div>
-                    </Header>
+                    <MenuHeader/>
                 </Menu.Item>
                 <Menu.Item onClick={this.toggleSidebar} icon='close' content='Hide sidebar'/>
                 <Menu.Item>
@@ -111,27 +106,24 @@ export default class App extends Component {
                 <Menu.Item>
                     <Search searchFunction={searchFunction}/>
                 </Menu.Item>
-                {selectedNode &&
                 <Menu.Item>
                     <Header as="h4">
-                        {!selectedNode || (selectedNode && selectedNode.physicalId) ? "Selected node" : "Selected module"}
+                        {selectedNode.physicalId ? "Selected node" : "Selected module"}
                     </Header>
                     <SelectedNode
-                        directed={network ? network.directed : false}
+                        directed={network.directed}
                         node={selectedNode}
                         onNameChange={this.handleNameChange}
                     />
                     <Menu.Menu>
                         <Distributions
-                            directed={network ? network.directed : false}
-                            nodes={selectedNode ? selectedNode.nodes || [] : []}
+                            directed={network.directed}
+                            nodes={selectedNode.nodes || []}
                             figureWidth={285}
                             figureHeight={150}
                         />
                     </Menu.Menu>
                 </Menu.Item>
-                }
-                {network &&
                 <MenuItemAccordion title='Occurrences'>
                     <Occurrences
                         onFilesChange={occurrences => this.setState({ occurrences }, this.forceUpdate)}
@@ -140,7 +132,6 @@ export default class App extends Component {
                         totalNodes={network.totalChildren}
                     />
                 </MenuItemAccordion>
-                }
                 <Menu.Item>
                     <Header as="h4">Settings</Header>
                     <Settings
@@ -171,9 +162,5 @@ export default class App extends Component {
                 </React.StrictMode>
             </Sidebar.Pusher>
         </Sidebar.Pushable>;
-
-        const loadingComplete = !!network;
-
-        return loadingComplete ? mainContent : <FileDialog onFileLoaded={this.onFileLoaded}/>;
     }
 }

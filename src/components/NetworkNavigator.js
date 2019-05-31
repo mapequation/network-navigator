@@ -1,11 +1,11 @@
 import * as d3 from "d3";
 import PropTypes from "prop-types";
 import React from "react";
-import { connectedLinks, takeLargest } from "./lib/filter";
-import { halfLink, undirectedLink } from "./lib/link-renderer";
-import NetworkLayout from "./lib/network-layout";
-import Point from "./lib/point";
-import makeRenderStyle from "./lib/render-style";
+import { connectedLinks, takeLargest } from "../lib/filter";
+import { halfLink, undirectedLink } from "../lib/link-renderer";
+import NetworkLayout from "../lib/network-layout";
+import Point from "../lib/point";
+import makeRenderStyle from "../lib/render-style";
 
 
 export default class NetworkNavigator extends React.Component {

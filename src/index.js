@@ -2,7 +2,7 @@ import React from "react";
 import { render, hydrate } from "react-dom";
 import "./index.css";
 import { unregister } from "./registerServiceWorker";
-import App from "./App";
+import App from "./components/App";
 
 
 const rootElement = document.getElementById("root");

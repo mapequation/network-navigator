@@ -1,7 +1,7 @@
 import PropTypes from "prop-types";
 import React, { Component } from "react";
 import { Search as SearchInput } from "semantic-ui-react";
-import { byFlow } from "./lib/filter";
+import { byFlow } from "../lib/filter";
 
 
 export default class Search extends Component {
