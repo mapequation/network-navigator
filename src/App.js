@@ -7,8 +7,9 @@ import MenuItemAccordion from "./MenuItemAccordion";
 import NetworkNavigator from "./NetworkNavigator";
 import Occurrences from "./Occurrences";
 import Search from "./Search";
-import SelectedNode from "./SelectedNode";
 import Settings from "./Settings";
+import SelectedNode from "./SelectedNode";
+import Distributions from "./Distributions";
 
 
 export default class App extends Component {
@@ -111,11 +112,24 @@ export default class App extends Component {
                     <Search searchFunction={searchFunction}/>
                 </Menu.Item>
                 {selectedNode &&
-                <SelectedNode
-                    node={selectedNode}
-                    directed={network ? network.directed : false}
-                    onNameChange={this.handleNameChange}
-                />
+                <Menu.Item>
+                    <Header as="h4">
+                        {!selectedNode || (selectedNode && selectedNode.physicalId) ? "Selected node" : "Selected module"}
+                    </Header>
+                    <SelectedNode
+                        directed={network ? network.directed : false}
+                        node={selectedNode}
+                        onNameChange={this.handleNameChange}
+                    />
+                    <Menu.Menu>
+                        <Distributions
+                            directed={network ? network.directed : false}
+                            nodes={selectedNode ? selectedNode.nodes || [] : []}
+                            figureWidth={285}
+                            figureHeight={150}
+                        />
+                    </Menu.Menu>
+                </Menu.Item>
                 }
                 {network &&
                 <MenuItemAccordion title='Occurrences'>
@@ -127,7 +141,8 @@ export default class App extends Component {
                     />
                 </MenuItemAccordion>
                 }
-                <MenuItemAccordion title='Settings'>
+                <Menu.Item>
+                    <Header as="h4">Settings</Header>
                     <Settings
                         onNodeSizeChange={nodeSize => this.setState({ nodeSize })}
                         onNodeSizeScaleChange={nodeSizeScale => this.setState({ nodeSizeScale })}
@@ -135,7 +150,7 @@ export default class App extends Component {
                         onLabelsVisibleChange={labelsVisible => this.setState({ labelsVisible })}
                         onSimulationEnabledChange={simulationEnabled => this.setState({ simulationEnabled })}
                     />
-                </MenuItemAccordion>
+                </Menu.Item>
             </Sidebar>
             <Sidebar.Pusher style={{ overflow: "hidden" }}>
                 <Rail
