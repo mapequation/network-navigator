@@ -6,7 +6,7 @@ import React from "react";
 import { Bar, BarChart, Cell, Tooltip, XAxis, YAxis } from "recharts";
 import { Button, Checkbox, Icon, Table } from "semantic-ui-react";
 import { traverseDepthFirst } from "../lib/network";
-import parseFile from "../lib/parse-file";
+import parseFile from "../io/parse-file";
 
 
 export default class Occurrences extends React.Component {

@@ -7,7 +7,7 @@ import Documentation from "./Documentation";
 import Header from "./Header";
 import parseFTree from "../lib/file-formats/ftree";
 import networkFromFTree from "../lib/file-formats/network-from-ftree";
-import parseFile from "../lib/parse-file";
+import parseFile from "../io/parse-file";
 
 
 const errorState = err => ({
