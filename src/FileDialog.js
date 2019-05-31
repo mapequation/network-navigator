@@ -168,7 +168,8 @@ class FileDialog extends React.Component {
                                         size="tiny"
                                         verticalAlign="middle"
                                         src="//www.mapequation.org/assets/img/twocolormapicon_whiteboarder.svg"
-                                        alt="mapequation-icon"/>
+                                        alt="mapequation-icon"
+                                    />
                                     <Step.Content>
                                         <Step.Title>
                                             Open from <span className="brand brand-infomap">Infomap</span> <span
@@ -187,9 +188,16 @@ class FileDialog extends React.Component {
                                 disabled={disabled}
                                 link
                                 as="a"
-                                title="Cluster network with Infomap"
                                 href="//www.mapequation.org/infomap"
-                            />
+                            >
+                                <Step.Content>
+                                    <Step.Title>Cluster network with Infomap</Step.Title>
+                                    <Step.Description>
+                                        Command line version or <span className="brand brand-infomap">Infomap</span> <span
+                                        className="brand brand-nn">Online</span>
+                                    </Step.Description>
+                                </Step.Content>
+                            </Step>
                             <Step
                                 disabled={disabled}
                                 as="label"
