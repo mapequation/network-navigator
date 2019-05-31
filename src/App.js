@@ -110,6 +110,13 @@ export default class App extends Component {
                 <Menu.Item>
                     <Search searchFunction={searchFunction}/>
                 </Menu.Item>
+                {selectedNode &&
+                <SelectedNode
+                    node={selectedNode}
+                    directed={network ? network.directed : false}
+                    onNameChange={this.handleNameChange}
+                />
+                }
                 {network &&
                 <MenuItemAccordion title='Occurrences'>
                     <Occurrences
@@ -119,13 +126,6 @@ export default class App extends Component {
                         totalNodes={network.totalChildren}
                     />
                 </MenuItemAccordion>
-                }
-                {selectedNode &&
-                <SelectedNode
-                    node={selectedNode}
-                    directed={network ? network.directed : false}
-                    onNameChange={this.handleNameChange}
-                />
                 }
                 <MenuItemAccordion title='Settings'>
                     <Settings
