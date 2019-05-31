@@ -1,9 +1,15 @@
 import React from "react";
-import ReactDOM from "react-dom";
+import { render, hydrate } from "react-dom";
 import "./index.css";
 import { unregister } from "./registerServiceWorker";
 import App from "./App";
 
 
-ReactDOM.render(<App/>, document.getElementById("root"));
+const rootElement = document.getElementById("root");
+if (rootElement.hasChildNodes()) {
+    hydrate(<App/>, rootElement);
+} else {
+    render(<App/>, rootElement);
+}
+
 unregister();
