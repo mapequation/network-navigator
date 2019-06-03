@@ -12,9 +12,10 @@
  * @author Anton Eriksson
  */
 
-import { traverseBreadthFirst, traverseDepthFirst } from '../network';
-import { byFlow } from '../filter';
-import flowFormat from './flow-format';
+import { byFlow } from "../filter";
+import { traverseBreadthFirst, traverseDepthFirst } from "../network";
+import flowFormat from "./flow-format";
+
 
 /**
  * Serialize Network to FTree string.
@@ -22,38 +23,38 @@ import flowFormat from './flow-format';
  * @param {Network} network
  */
 export default function ftreeFromNetwork(network) {
-    let modules = '';
-    let nodes = '';
-    let links = '';
+  let modules = "";
+  let nodes = "";
+  let links = "";
 
-    for (let node of traverseBreadthFirst(network)) {
-        if (node.nodes) {
-            if (node.path.toString() !== 'root') {
-                modules += `${node.path} ${flowFormat(node.flow)} "${node.name}" ${flowFormat(node.exitFlow)}\n`;
-            }
-        }
+  for (let node of traverseBreadthFirst(network)) {
+    if (node.nodes) {
+      if (node.path.toString() !== "root") {
+        modules += `${node.path} ${flowFormat(node.flow)} "${node.name}" ${flowFormat(node.exitFlow)}\n`;
+      }
     }
+  }
 
-    for (let node of traverseDepthFirst(network)) {
-        if (!node.nodes) {
-            nodes += `${node.path} ${flowFormat(node.flow)} "${node.name}" ${node.physicalId}\n`;
-        } else {
-            links += `*Links ${node.path} ${flowFormat(node.exitFlow)} ${node.links.length} ${node.nodes.length}\n`;
-            for (let link of node.links.sort(byFlow)) {
-                links += `${link.source.id} ${link.target.id} ${flowFormat(link.flow)}\n`;
-            }
-        }
+  for (let node of traverseDepthFirst(network)) {
+    if (!node.nodes) {
+      nodes += `${node.path} ${flowFormat(node.flow)} "${node.name}" ${node.physicalId}\n`;
+    } else {
+      links += `*Links ${node.path} ${flowFormat(node.exitFlow)} ${node.links.length} ${node.nodes.length}\n`;
+      for (let link of node.links.sort(byFlow)) {
+        links += `${link.source.id} ${link.target.id} ${flowFormat(link.flow)}\n`;
+      }
     }
+  }
 
-    return [
-        '*Modules\n',
-        '# path flow name exitFlow\n',
-        modules,
-        '*Nodes\n',
-        '# path flow name node\n',
-        nodes,
-        `*Links ${network.directed ? 'directed' : 'undirected'}\n`,
-        '#*Links path exitFlow numEdges numChildren\n',
-        links,
-    ].join('');
+  return [
+    "*Modules\n",
+    "# path flow name exitFlow\n",
+    modules,
+    "*Nodes\n",
+    "# path flow name node\n",
+    nodes,
+    `*Links ${network.directed ? "directed" : "undirected"}\n`,
+    "#*Links path exitFlow numEdges numChildren\n",
+    links
+  ].join("");
 }

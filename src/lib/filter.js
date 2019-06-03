@@ -18,7 +18,7 @@
  *                  zero otherwise
  */
 export function byFlow(obj1, obj2) {
-    return obj2.flow - obj1.flow;
+  return obj2.flow - obj1.flow;
 }
 
 /**
@@ -28,9 +28,9 @@ export function byFlow(obj1, obj2) {
  * @return {number} the total flow.
  */
 export function sumFlow(objects) {
-    return objects
-        .map(obj => obj.flow)
-        .reduce((total, flow) => total + flow, 0);
+  return objects
+    .map(obj => obj.flow)
+    .reduce((total, flow) => total + flow, 0);
 }
 
 /**
@@ -43,8 +43,8 @@ export function sumFlow(objects) {
  * @return {Node[]} the connected nodes
  */
 export function connectedNodes({ nodes, links }) {
-    return nodes.filter(node =>
-        links.some(link => link.source === node || link.target === node));
+  return nodes.filter(node =>
+    links.some(link => link.source === node || link.target === node));
 }
 
 /**
@@ -57,8 +57,8 @@ export function connectedNodes({ nodes, links }) {
  * @return {Object[]} the connected links
  */
 export function connectedLinks({ nodes, links }) {
-    return links.filter(link =>
-        nodes.includes(link.source) && nodes.includes(link.target));
+  return links.filter(link =>
+    nodes.includes(link.source) && nodes.includes(link.target));
 }
 
 /**
@@ -70,9 +70,9 @@ export function connectedLinks({ nodes, links }) {
  * @return {Object[]} the amount largest by flow
  */
 export function takeLargest(objects, amount) {
-    return [...objects]
-        .sort(byFlow)
-        .slice(0, amount);
+  return [...objects]
+    .sort(byFlow)
+    .slice(0, amount);
 }
 
 /**
@@ -84,11 +84,11 @@ export function takeLargest(objects, amount) {
  * @return {Object[]} the accumulated objects
  */
 export function accumulateLargest(objects, flowFactor) {
-    const targetFlow = flowFactor * sumFlow(objects);
+  const targetFlow = flowFactor * sumFlow(objects);
 
-    let accumulated = 0;
+  let accumulated = 0;
 
-    return [...objects]
-        .sort(byFlow)
-        .filter(node => (accumulated += node.flow) <= targetFlow);
+  return [...objects]
+    .sort(byFlow)
+    .filter(node => (accumulated += node.flow) <= targetFlow);
 }

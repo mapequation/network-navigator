@@ -4,11 +4,7 @@
  * @author Anton Eriksson
  */
 
-import {
-    scaleSqrt,
-    scaleLinear,
-    interpolateGreens,
-} from 'd3';
+import { interpolateGreens, scaleLinear, scaleSqrt } from "d3";
 
 
 /**
@@ -28,37 +24,37 @@ import {
  * @return {Object} an object with render style accessors
  */
 export default function makeRenderStyle(maxNodeFlow, maxNodeExitFlow, maxLinkFlow) {
-    const nodeFill = [interpolateGreens(2/9), interpolateGreens(3/9)];
-    const nodeBorder = [interpolateGreens(3/9), interpolateGreens(6/9)];
-    const linkFill = ['#9BCDFD', '#064575'];
+  const nodeFill = [interpolateGreens(2 / 9), interpolateGreens(3 / 9)];
+  const nodeBorder = [interpolateGreens(3 / 9), interpolateGreens(6 / 9)];
+  const linkFill = ["#9BCDFD", "#064575"];
 
-    const nodeRadius = scaleSqrt().domain([0, maxNodeFlow]).range([10, 70]);
-    const nodeFillColor = scaleSqrt().domain([0, maxNodeFlow]).range(nodeFill);
-    const nodeBorderWidth = scaleSqrt().domain([0, maxNodeExitFlow]).range([2, 5]);
-    const nodeBorderColor = scaleSqrt().domain([0, maxNodeExitFlow]).range(nodeBorder);
+  const nodeRadius = scaleSqrt().domain([0, maxNodeFlow]).range([10, 70]);
+  const nodeFillColor = scaleSqrt().domain([0, maxNodeFlow]).range(nodeFill);
+  const nodeBorderWidth = scaleSqrt().domain([0, maxNodeExitFlow]).range([2, 5]);
+  const nodeBorderColor = scaleSqrt().domain([0, maxNodeExitFlow]).range(nodeBorder);
 
-    const linkFillColor = scaleSqrt().domain([0, maxLinkFlow]).range(linkFill);
-    const linkWidth = scaleSqrt().domain([0, maxLinkFlow]).range([2, 15]);
+  const linkFillColor = scaleSqrt().domain([0, maxLinkFlow]).range(linkFill);
+  const linkWidth = scaleSqrt().domain([0, maxLinkFlow]).range([2, 15]);
 
-    const searchMarkRadius = scaleSqrt().domain([0, 10]).range([0, 10]).clamp(true);
+  const searchMarkRadius = scaleSqrt().domain([0, 10]).range([0, 10]).clamp(true);
 
-    const linkBend = scaleLinear().domain([50, 250]).range([0, 40]).clamp(true);
+  const linkBend = scaleLinear().domain([50, 250]).range([0, 40]).clamp(true);
 
-    return {
-        nodeFill,
-        linkFill,
-        nodeRadius: node => nodeRadius(node.flow),
-        nodeFillColor: node => nodeFillColor(node.flow),
-        nodeBorderColor: node => nodeBorderColor(node.exitFlow),
-        nodeBorderWidth: node => nodeBorderWidth(node.exitFlow),
-        linkFillColor: link => linkFillColor(link.flow),
-        linkWidth: link => linkWidth(link.flow),
-        searchMarkRadius: node =>
-            node.visible
-                ? 0  // render nothing if module content is visible
-                : node.physicalId && node.searchHits
-                    ? nodeRadius(node.flow) // a node should be completely filled
-                    : searchMarkRadius(node.searchHits || 0), // ... and a module has a marker of varying radius
-        linkBend,
-    };
+  return {
+    nodeFill,
+    linkFill,
+    nodeRadius: node => nodeRadius(node.flow),
+    nodeFillColor: node => nodeFillColor(node.flow),
+    nodeBorderColor: node => nodeBorderColor(node.exitFlow),
+    nodeBorderWidth: node => nodeBorderWidth(node.exitFlow),
+    linkFillColor: link => linkFillColor(link.flow),
+    linkWidth: link => linkWidth(link.flow),
+    searchMarkRadius: node =>
+      node.visible
+        ? 0  // render nothing if module content is visible
+        : node.physicalId && node.searchHits
+        ? nodeRadius(node.flow) // a node should be completely filled
+        : searchMarkRadius(node.searchHits || 0), // ... and a module has a marker of varying radius
+    linkBend
+  };
 }

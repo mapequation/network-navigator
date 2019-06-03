@@ -5,7 +5,6 @@
  * @author Anton Eriksson
  */
 
-
 /**
  * Parse file with Papa.parse using a default config object.
  *
@@ -13,15 +12,15 @@
  * @return {Promise}
  */
 export default function parseFile(file) {
-    const opts = {
-        comments: '#',
-        delimiter: ' ',
-        quoteChar: '"',
-        dynamicTyping: true,
-        skipEmptyLines: true,
-        worker: true,
-    };
+  const opts = {
+    comments: "#",
+    delimiter: " ",
+    quoteChar: "\"",
+    dynamicTyping: true,
+    skipEmptyLines: true,
+    worker: true
+  };
 
-    return new Promise((complete, error) =>
-        Papa.parse(file, Object.assign(opts, { complete, error }))); // eslint-disable-line no-undef
+  return new Promise((complete, error) =>
+    Papa.parse(file, Object.assign(opts, { complete, error }))); // eslint-disable-line no-undef
 }
