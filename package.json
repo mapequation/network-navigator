@@ -17,6 +17,7 @@
     "semantic-ui-react": "^0.80.2"
   },
   "devDependencies": {
+    "prettier": "^1.17.1",
     "react-snap": "^1.23.0"
   },
   "scripts": {
