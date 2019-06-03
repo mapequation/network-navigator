@@ -124,7 +124,7 @@ export default class LoadNetwork extends React.Component {
     const background = {
       padding: "100px 0 100px 0",
       background: `linear-gradient(hsla(0, 0%, 100%, 0.5), hsla(0, 0%, 100%, 0.5)), url(${Background}) no-repeat`,
-      backgroundSize: "cover",
+      backgroundSize: "cover, cover",
       backgroundPosition: "center top"
     };
 
