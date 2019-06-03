@@ -4,7 +4,7 @@ import Graph from "./Graph";
 import MenuItemAccordion from "./MenuItemAccordion";
 
 
-const Distributions = (props) => {
+export default function Distributions(props) {
   const { directed, nodes, figureWidth, figureHeight } = props;
 
   const flow = nodes.map(n => n.flow).sort((a, b) => b - a);
@@ -74,5 +74,3 @@ Distributions.propTypes = {
 Distributions.defaultProps = {
   directed: false
 };
-
-export default Distributions;
