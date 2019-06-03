@@ -27,12 +27,12 @@ export default class Occurrences extends React.Component {
 
   fileColor = file => this.colors[this.state.files.indexOf(file) % this.colors.length];
 
-  loadFile = (file) => {
-    return parseFile(file)
+  loadFile = (file) =>
+    parseFile(file)
       .then((parsed) => {
-        this.setState(prevState => ({
+        this.setState(state => ({
           files: [
-            ...prevState.files,
+            ...state.files,
             {
               name: file.name,
               content: parsed.data.map(item => item[0]), // FIXME
@@ -43,19 +43,16 @@ export default class Occurrences extends React.Component {
         }), this.handleChange);
       })
       .catch(err => console.log(err));
-  };
 
-  removeFile = (file) => {
+  removeFile = (file) =>
     this.setState(prevState =>
         ({ files: prevState.files.filter(item => item !== file) }),
       this.handleChange);
-  };
 
   validFiles = () => this.state.files
-    .filter(file => file.errors.length === 0)
-    .filter(file => file.enabled);
+    .filter(file => file.errors.length === 0 && file.enabled);
 
-  handleChange = () => {
+  handleChange = () =>
     this.props.onFilesChange(
       this.validFiles()
         .map((file, fileId) => ({
@@ -65,12 +62,11 @@ export default class Occurrences extends React.Component {
           color: this.fileColor(file)
         }))
     );
-  };
 
   toggleEnabled = (file) => {
     file.enabled = !file.enabled;
-    this.setState(prevState =>
-        ({ files: prevState.files }),
+    this.setState(state =>
+        ({ files: state.files }),
       this.handleChange);
   };
 
@@ -98,6 +94,7 @@ export default class Occurrences extends React.Component {
 
   render() {
     const { selectedNode, totalNodes } = this.props;
+    const { files } = this.state;
 
     const fractionOfNodes = selectedNode.totalChildren / totalNodes;
 
@@ -113,7 +110,7 @@ export default class Occurrences extends React.Component {
             </Table.Row>
           </Table.Header>
           <Table.Body>
-            {!this.state.files.length &&
+            {!files.length &&
             <Table.Row disabled>
               <Table.Cell content='No files loaded'/>
               <Table.Cell content=''/>
@@ -123,7 +120,7 @@ export default class Occurrences extends React.Component {
               </Table.Cell>
             </Table.Row>
             }
-            {this.state.files.map((file, i) =>
+            {files.map((file, i) =>
               <Table.Row key={i}>
                 <Table.Cell error={file.errors.length > 0} title={file.name}>
                   <Icon name='delete' onClick={() => this.removeFile(file)}/>
