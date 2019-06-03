@@ -1,129 +1,123 @@
 import PropTypes from "prop-types";
-import React from "react";
+import React, { useState } from "react";
 import { Checkbox, Form, Radio } from "semantic-ui-react";
 
 
-export default class Settings extends React.Component {
-  state = {
-    nodeSize: "flow",
-    nodeSizeScale: "root",
-    linkWidthScale: "root",
-    labelsVisible: true,
-    simulationEnabled: true
+export default function Settings(props) {
+  const [nodeSize, setNodeSize] = useState("flow");
+  const [nodeScale, setNodeScale] = useState("root");
+  const [linkScale, setLinkScale] = useState("root");
+  const [labelsVisible, setLabelsVisible] = useState(true);
+  const [simulationEnabled, setSimulationEnabled] = useState(true);
+
+  const handleNodeSizeChange = (e, { value }) => {
+    setNodeSize(value);
+    props.onNodeSizeChange(value);
   };
 
-  static propTypes = {
-    onNodeSizeChange: PropTypes.func,
-    onNodeSizeScaleChange: PropTypes.func,
-    onLinkWidthScaleChange: PropTypes.func,
-    onLabelsVisibleChange: PropTypes.func,
-    onSimulationEnabledChange: PropTypes.func
+  const handleNodeScaleChange = (e, { value }) => {
+    setNodeScale(value);
+    props.onNodeScaleChange(value);
   };
 
-  handleNodeSizeChange = (e, { value }) =>
-    this.setState({ nodeSize: value },
-      () => this.props.onNodeSizeChange(value));
+  const handleLinkScaleChange = (e, { value }) => {
+    setLinkScale(value);
+    props.onLinkScaleChange(value);
+  };
 
-  handleNodeSizeScaleChange = (e, { value }) =>
-    this.setState({ nodeSizeScale: value },
-      () => this.props.onNodeSizeScaleChange(value));
+  const handleLabelsVisibleChange = (e, { checked }) => {
+    setLabelsVisible(checked);
+    props.onLabelsVisibleChange(checked);
+  };
 
-  handleLinkWidthScaleChange = (e, { value }) =>
-    this.setState({ linkWidthScale: value },
-      () => this.props.onLinkWidthScaleChange(value));
+  const handleSimulationEnabledChange = (e, { checked }) => {
+    setSimulationEnabled(checked);
+    props.onSimulationEnabledChange(checked);
+  };
 
-  handleLabelsVisibleChange = (e, { checked }) =>
-    this.setState({ labelsVisible: checked },
-      () => this.props.onLabelsVisibleChange(checked));
+  return (
+    <React.Fragment>
+      <Form>
+        <Form.Group>
+          <Form.Field>Module size based on</Form.Field>
+          <Form.Field
+            control={Radio}
+            label='flow'
+            value='flow'
+            checked={nodeSize === "flow"}
+            onChange={handleNodeSizeChange}
+          />
+          <Form.Field
+            control={Radio}
+            label='nodes'
+            value='nodes'
+            checked={nodeSize === "nodes"}
+            onChange={handleNodeSizeChange}
+          />
+        </Form.Group>
 
-  handleSimulationEnabledChange = (e, { checked }) =>
-    this.setState({ simulationEnabled: checked },
-      () => this.props.onSimulationEnabledChange(checked));
+        <Form.Group>
+          <Form.Field>Module radius scale as</Form.Field>
+          <Form.Field
+            control={Radio}
+            label="root"
+            value="root"
+            checked={nodeScale === "root"}
+            onChange={handleNodeScaleChange}
+          />
+          <Form.Field
+            control={Radio}
+            label="linear"
+            value="linear"
+            checked={nodeScale === "linear"}
+            onChange={handleNodeScaleChange}
+          />
+        </Form.Group>
 
-  render() {
-    const {
-      nodeSize,
-      nodeSizeScale,
-      linkWidthScale,
-      labelsVisible,
-      simulationEnabled
-    } = this.state;
+        <Form.Group>
+          <Form.Field>Link width scale as</Form.Field>
+          <Form.Field
+            control={Radio}
+            label='root'
+            value='root'
+            checked={linkScale === "root"}
+            onChange={handleLinkScaleChange}
+          />
+          <Form.Field
+            control={Radio}
+            label='linear'
+            value='linear'
+            checked={linkScale === "linear"}
+            onChange={handleLinkScaleChange}
+          />
+        </Form.Group>
 
-    return (
-      <React.Fragment>
-        <Form>
-          <Form.Group>
-            <Form.Field>Module size based on</Form.Field>
-            <Form.Field
-              control={Radio}
-              label='flow'
-              value='flow'
-              checked={nodeSize === "flow"}
-              onChange={this.handleNodeSizeChange}
-            />
-            <Form.Field
-              control={Radio}
-              label='nodes'
-              value='nodes'
-              checked={nodeSize === "nodes"}
-              onChange={this.handleNodeSizeChange}
-            />
-          </Form.Group>
-
-          <Form.Group>
-            <Form.Field>Module radius scale as</Form.Field>
-            <Form.Field
-              control={Radio}
-              label="root"
-              value="root"
-              checked={nodeSizeScale === "root"}
-              onChange={this.handleNodeSizeScaleChange}
-            />
-            <Form.Field
-              control={Radio}
-              label="linear"
-              value="linear"
-              checked={nodeSizeScale === "linear"}
-              onChange={this.handleNodeSizeScaleChange}
-            />
-          </Form.Group>
-
-          <Form.Group>
-            <Form.Field>Link width scale as</Form.Field>
-            <Form.Field
-              control={Radio}
-              label='root'
-              value='root'
-              checked={linkWidthScale === "root"}
-              onChange={this.handleLinkWidthScaleChange}
-            />
-            <Form.Field
-              control={Radio}
-              label='linear'
-              value='linear'
-              checked={linkWidthScale === "linear"}
-              onChange={this.handleLinkWidthScaleChange}
-            />
-          </Form.Group>
-
-          <Form.Group>
-            <Checkbox
-              toggle
-              onChange={this.handleLabelsVisibleChange}
-              checked={labelsVisible}
-              label="Show labels"
-            />
-          </Form.Group>
-          <Form.Group>
-            <Checkbox
-              toggle
-              onChange={this.handleSimulationEnabledChange}
-              checked={simulationEnabled}
-              label="Enable simulation"
-            />
-          </Form.Group>
-        </Form>
-      </React.Fragment>
-    );
-  }
+        <Form.Group>
+          <Checkbox
+            toggle
+            onChange={handleLabelsVisibleChange}
+            checked={labelsVisible}
+            label="Show labels"
+          />
+        </Form.Group>
+        <Form.Group>
+          <Checkbox
+            toggle
+            onChange={handleSimulationEnabledChange}
+            checked={simulationEnabled}
+            label="Enable simulation"
+          />
+        </Form.Group>
+      </Form>
+    </React.Fragment>
+  );
 };
+
+Settings.propTypes = {
+  onNodeSizeChange: PropTypes.func,
+  onNodeScaleChange: PropTypes.func,
+  onLinkScaleChange: PropTypes.func,
+  onLabelsVisibleChange: PropTypes.func,
+  onSimulationEnabledChange: PropTypes.func
+};
+

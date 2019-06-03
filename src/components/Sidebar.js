@@ -123,8 +123,8 @@ export default class Sidebar extends React.Component {
           <Header as="h4">Settings</Header>
           <Settings
             onNodeSizeChange={nodeSize => this.setState({ nodeSize })}
-            onNodeSizeScaleChange={nodeSizeScale => this.setState({ nodeSizeScale })}
-            onLinkWidthScaleChange={linkWidthScale => this.setState({ linkWidthScale })}
+            onNodeScaleChange={nodeSizeScale => this.setState({ nodeSizeScale })}
+            onLinkScaleChange={linkWidthScale => this.setState({ linkWidthScale })}
             onLabelsVisibleChange={labelsVisible => this.setState({ labelsVisible })}
             onSimulationEnabledChange={simulationEnabled => this.setState({ simulationEnabled })}
           />
