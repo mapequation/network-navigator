@@ -12,8 +12,8 @@
  * @author Anton Eriksson
  */
 
-import { byFlow } from "../filter";
-import { traverseBreadthFirst, traverseDepthFirst } from "../network";
+import { byFlow } from "../lib/filter";
+import { traverseBreadthFirst, traverseDepthFirst } from "../lib/network";
 import flowFormat from "./flow-format";
 
 

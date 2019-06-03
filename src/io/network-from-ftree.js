@@ -8,9 +8,9 @@
  * @author Anton Eriksson
  */
 
-import { byFlow } from "../filter";
-import * as Network from "../network";
-import TreePath from "../treepath";
+import { byFlow } from "../lib/filter";
+import * as Network from "../lib/network";
+import TreePath from "../lib/treepath";
 
 
 /**

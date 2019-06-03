@@ -4,8 +4,8 @@ import React from "react";
 import { Container, Divider, Image, Progress, Segment, Step } from "semantic-ui-react";
 import Background from "../images/Background.svg";
 import parseFile from "../io/parse-file";
-import parseFTree from "../lib/file-formats/ftree";
-import networkFromFTree from "../lib/file-formats/network-from-ftree";
+import parseFTree from "../io/ftree";
+import networkFromFTree from "../io/network-from-ftree";
 
 
 const errorState = err => ({

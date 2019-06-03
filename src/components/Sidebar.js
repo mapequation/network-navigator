@@ -2,7 +2,7 @@ import FileSaver from "file-saver";
 import React, { Component } from "react";
 import { Button, Header, Icon, Input, Menu, Sidebar as SemanticSidebar } from "semantic-ui-react";
 import { savePng, saveSvg } from "../io/export";
-import ftreeFromNetwork from "../lib/file-formats/ftree-from-network";
+import ftreeFromNetwork from "../io/ftree-from-network";
 import Distributions from "./Distributions";
 import MenuHeader from "./MenuHeader";
 import MenuItemAccordion from "./MenuItemAccordion";
