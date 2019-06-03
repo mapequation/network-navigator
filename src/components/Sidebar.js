@@ -91,7 +91,7 @@ export default class Sidebar extends Component {
           />
         </Menu.Item>
         <Menu.Item>
-          <Search searchFunction={searchFunction}/>
+          <Search onSearchChange={searchFunction}/>
         </Menu.Item>
         <Menu.Item>
           <Header as="h4">
