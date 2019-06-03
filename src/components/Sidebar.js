@@ -1,5 +1,5 @@
 import FileSaver from "file-saver";
-import React, { Component } from "react";
+import React from "react";
 import { Button, Header, Icon, Input, Menu, Sidebar as SemanticSidebar } from "semantic-ui-react";
 import { savePng, saveSvg } from "../io/export";
 import ftreeFromNetwork from "../io/ftree-from-network";
@@ -14,7 +14,7 @@ import Settings from "./Settings";
 import ShowSidebarButton from "./ShowSidebarButton";
 
 
-export default class Sidebar extends Component {
+export default class Sidebar extends React.Component {
   state = {
     sidebarVisible: true,
     selectedNode: null
@@ -98,8 +98,8 @@ export default class Sidebar extends Component {
             {selectedNode.physicalId ? "Selected node" : "Selected module"}
           </Header>
           <SelectedNode
-            directed={network.directed}
             node={selectedNode}
+            directed={network.directed}
             onNameChange={this.handleNameChange}
           />
           <Menu.Menu>
