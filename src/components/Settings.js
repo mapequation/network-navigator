@@ -5,8 +5,6 @@ import Dispatch from "../context/Dispatch";
 
 const MyCheckbox = props => <Checkbox style={{ display: "block", margin: "0.3em 0 0.3em 0" }} {...props}/>;
 
-const ToggleCheckbox = props => <MyCheckbox toggle {...props}/>;
-
 const SliderCheckbox = props => <MyCheckbox slider {...props}/>;
 
 export default function Settings(props) {
@@ -36,12 +34,12 @@ export default function Settings(props) {
         checked={linkScale === "root"}
         onChange={(e, { checked }) => dispatch({ type: "linkScale", value: checked ? "root" : "linear" })}
       />
-      <ToggleCheckbox
+      <MyCheckbox
         label="Show labels"
         checked={labelsVisible}
         onChange={(e, { checked }) => dispatch({ type: "labelsVisible", value: checked })}
       />
-      <ToggleCheckbox
+      <MyCheckbox
         label="Enable simulation"
         checked={simulationEnabled}
         onChange={(e, { checked }) => dispatch({ type: "simulationEnabled", value: checked })}
