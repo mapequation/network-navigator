@@ -294,7 +294,6 @@ export default class NetworkLayout {
 
   applyTransform(transform) {
     const { circle, label, link, node, parent } = this.elements;
-    const { style, linkRenderer, labelsVisible } = this;
 
     const {
       translate = Point.origin,
@@ -311,11 +310,11 @@ export default class NetworkLayout {
     label.accessors.x = n => x + k * n.x;
     label.accessors.y = n => y + k * n.y;
     label.accessors.dx = (n) => {
-      const r = 1.1 * style.nodeRadius(n);
+      const r = 1.1 * this.style.nodeRadius(n);
       const dx = k * r + (k > 1 ? 1.4 * (1 - k) * r : 0);
       return Math.max(dx, 0);
     };
-    label.accessors.visibility = n => labelsVisible && label.accessors.lod(k)(n) ? "visible" : "hidden";
+    label.accessors.visibility = n => this.labelsVisible && label.accessors.lod(k)(n) ? "visible" : "hidden";
     label.accessors.text = n => n.visible ? "" : nodeName(n);
     link.accessors.path = l => (k < 15 || !l.source.nodes) && link.accessors.lod(k)(l)
       ? this.linkRenderer(l) : "";
@@ -330,14 +329,14 @@ export default class NetworkLayout {
       })();
 
       circle.accessors.fill = (n) => {
-        if (!n.nodes) return style.nodeFillColor(n);
-        const fill = d3.interpolateRgb(style.nodeFillColor(n), "#ffffff");
+        if (!n.nodes) return this.style.nodeFillColor(n);
+        const fill = d3.interpolateRgb(this.style.nodeFillColor(n), "#ffffff");
         return fill(zoomNormalized(k));
       };
 
       circle.accessors.r = (n) => {
         const targetRadius = 60;
-        const initialRadius = style.nodeRadius(n);
+        const initialRadius = this.style.nodeRadius(n);
         if (!n.nodes) return initialRadius;
         if (k >= 9 && n === closest) {
           const r = d3.interpolateNumber(Math.max(targetRadius, initialRadius), 200);
@@ -386,12 +385,12 @@ export default class NetworkLayout {
         this.dispatch.call("render", null, {
           path: n.path,
           layout: new NetworkLayout({
-            linkRenderer,
-            renderStyle: style,
+            linkRenderer: this.linkRenderer,
+            renderStyle: this.style,
             renderTarget,
             position: Point.from(n),
             localTransform: childTransform,
-            labelsVisible: labelsVisible,
+            labelsVisible: this.labelsVisible,
             simulationEnabled: this.simulationEnabled
           })
         });

@@ -152,23 +152,42 @@ class Network {
   }
 
   get maxNodeFlow() {
+    if (this._maxNodeFlow) {
+      return this._maxNodeFlow;
+    }
+
     const children = Array.from(traverseDepthFirst(this));
-    return maxBy(children, node => node.flow).flow;
+    this._maxNodeFlow = maxBy(children, node => node.flow).flow;
+    return this._maxNodeFlow;
   }
 
   get maxNodeExitFlow() {
+    if (this._maxNodeExitFlow) {
+      return this._maxNodeExitFlow;
+    }
+
     const children = Array.from(traverseDepthFirst(this));
-    return maxBy(children, node => node.exitFlow).exitFlow;
+    this._maxNodeExitFlow = maxBy(children, node => node.exitFlow).exitFlow;
+    return this._maxNodeExitFlow;
   }
 
   get maxLinkFlow() {
+    if (this._maxLinkFlow) {
+      return this._maxLinkFlow;
+    }
+
     const children = Array.from(traverseDepthFirst(this));
-    return maxBy(flatMap(children, node => node.links || []), link => link.flow).flow;
+    this._maxLinkFlow = maxBy(flatMap(children, node => node.links || []), link => link.flow).flow;
+    return this._maxLinkFlow;
   }
 
   get maxNodeCount() {
+    if (this._maxNodeCount) {
+      return this._maxNodeCount;
+    }
     const children = Array.from(traverseDepthFirst(this));
-    return maxBy(children, node => (node.nodes || []).length).nodes.length;
+    this._maxNodeCount = maxBy(children, node => (node.nodes || []).length).nodes.length;
+    return this._maxNodeCount;
   }
 
   /**

@@ -1,6 +1,7 @@
 import PropTypes from "prop-types";
-import React, { useState } from "react";
+import React, { useContext, useLayoutEffect, useState } from "react";
 import { Input, Popup, Table } from "semantic-ui-react";
+import Dispatch from "../context/Dispatch";
 
 
 const count = (items) => {
@@ -14,13 +15,19 @@ const count = (items) => {
 export default function SelectedNode(props) {
   const { node, directed } = props;
   const [name, setName] = useState(node.name);
-
-  const isRoot = node.path.toString() === "root";
+  const dispatch = useContext(Dispatch);
 
   const handleChange = (e, { value }) => {
-    props.onNameChange(value);
+    node.name = value;
     setName(value);
+    dispatch({ type: "selectedNodeNameChange" });
   };
+
+  useLayoutEffect(() => {
+    setName(node.name);
+  }, [node]);
+
+  const isRoot = node.path.toString() === "root";
 
   return (
     <Table celled singleLine striped compact>

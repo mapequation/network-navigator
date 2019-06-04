@@ -1,11 +1,12 @@
 import PropTypes from "prop-types";
 import React from "react";
+import { Menu } from "semantic-ui-react";
 import Graph from "./Graph";
 import MenuItemAccordion from "./MenuItemAccordion";
 
 
 export default function Distributions(props) {
-  const { directed, nodes, figureWidth, figureHeight } = props;
+  const { directed, nodes, ...size } = props;
 
   const flow = nodes.map(n => n.flow).sort((a, b) => b - a);
   const degree = nodes.map(n => n.kin + n.kout).sort((a, b) => b - a);
@@ -13,12 +14,12 @@ export default function Distributions(props) {
   const outDegree = nodes.map(n => n.kout).sort((a, b) => b - a);
 
   const flowDistribution = (
-    <MenuItemAccordion title='Module flow distribution' popup='Flow of nodes within this module.'>
+    <MenuItemAccordion title='Flow distribution' popup='Flow of nodes within this module.'>
       <Graph
         xDescription='Node' xLabel='n'
         yDescription='Flow' yLabel='f' logy
-        width={figureWidth} height={figureHeight}
         data={flow}
+        {...size}
       />
     </MenuItemAccordion>
   );
@@ -29,9 +30,8 @@ export default function Distributions(props) {
       <Graph
         xDescription='Node' xLabel='n'
         yDescription='Degree' yLabel='k'
-        width={figureWidth}
-        height={figureHeight}
         data={degree}
+        {...size}
       />
       }
       {directed &&
@@ -39,17 +39,15 @@ export default function Distributions(props) {
         <Graph
           xDescription='Node' xLabel='n'
           yDescription='In degree' yLabel='k' ySubscript='in'
-          width={figureWidth}
-          height={figureHeight}
           data={inDegree}
+          {...size}
         />
         <br/>
         <Graph
           xDescription='Node' xLabel='n'
           yDescription='Out degree' yLabel='k' ySubscript='out'
-          width={figureWidth}
-          height={figureHeight}
           data={outDegree}
+          {...size}
         />
       </React.Fragment>
       }
@@ -58,19 +56,25 @@ export default function Distributions(props) {
 
   return (
     <React.Fragment>
-      {flowDistribution}
-      {degreeDistribution}
+      <Menu.Menu>
+        {flowDistribution}
+      </Menu.Menu>
+      <Menu.Menu>
+        {degreeDistribution}
+      </Menu.Menu>
     </React.Fragment>
   );
 };
 
 Distributions.propTypes = {
   nodes: PropTypes.array.isRequired,
-  figureWidth: PropTypes.number.isRequired,
-  figureHeight: PropTypes.number.isRequired,
+  width: PropTypes.number,
+  height: PropTypes.number,
   directed: PropTypes.bool
 };
 
 Distributions.defaultProps = {
+  width: 285,
+  height: 150,
   directed: false
 };

@@ -7,8 +7,8 @@ import { byFlow } from "../lib/filter";
 export default function Search(props) {
   const [results, setResults] = useState([]);
 
-  const handleSearchChange = (e, { value }) => {
-    const results = props.onSearchChange(value);
+  const handleChange = (e, { value }) => {
+    const results = props.onChange(value);
     setResults(results
       .sort(byFlow)
       .slice(0, props.maxResults)
@@ -23,17 +23,17 @@ export default function Search(props) {
     fluid
     input={{ fluid: true }}
     placeholder='Find nodes...'
-    onSearchChange={handleSearchChange}
+    onSearchChange={handleChange}
     results={results}
   />;
 }
 
 Search.propTypes = {
-  onSearchChange: PropTypes.func,
+  onChange: PropTypes.func,
   maxResults: PropTypes.number
 };
 
 Search.defaultProps = {
-  onSearchChange: () => [],
+  onChange: () => [],
   maxResults: 15
 };

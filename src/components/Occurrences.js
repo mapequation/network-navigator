@@ -17,12 +17,14 @@ export default class Occurrences extends React.Component {
   colors = d3.schemeCategory10;
 
   static propTypes = {
-    onFilesChange: PropTypes.func,
-    selectedNode: PropTypes.object
+    onChange: PropTypes.func,
+    selectedNode: PropTypes.object,
+    filename: PropTypes.string.isRequired,
+    totalNodes: PropTypes.number.isRequired
   };
 
   static defaultProps = {
-    onFilesChange: () => null
+    onChange: () => null
   };
 
   fileColor = file => this.colors[this.state.files.indexOf(file) % this.colors.length];
@@ -53,7 +55,7 @@ export default class Occurrences extends React.Component {
     .filter(file => file.errors.length === 0 && file.enabled);
 
   handleChange = () =>
-    this.props.onFilesChange(
+    this.props.onChange(
       this.validFiles()
         .map((file, fileId) => ({
           fileId,

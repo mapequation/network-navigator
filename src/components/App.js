@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import Documentation from "./Documentation";
 import Header from "./Header";
+import Layout from "./Layout";
 import LoadNetwork from "./LoadNetwork";
-import Sidebar from "./Sidebar";
 
 
 export default function App() {
@@ -16,10 +16,10 @@ export default function App() {
   if (!state.network) {
     return <React.Fragment>
       <Header/>
-      <LoadNetwork onFileLoaded={setState}/>
+      <LoadNetwork onLoad={setState}/>
       <Documentation/>
     </React.Fragment>;
   }
 
-  return <Sidebar {...state}/>;
+  return <Layout {...state}/>;
 }

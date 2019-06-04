@@ -23,7 +23,7 @@ export default class LoadNetwork extends React.Component {
   };
 
   static propTypes = {
-    onFileLoaded: PropTypes.func.isRequired
+    onLoad: PropTypes.func.isRequired
   };
 
   progressTimeout = null;
@@ -87,7 +87,7 @@ export default class LoadNetwork extends React.Component {
 
         this.progressTimeout = setTimeout(() => {
           this.setState({ progressVisible: false });
-          this.props.onFileLoaded({ network, filename: name });
+          this.props.onLoad({ network, filename: name });
         }, 200);
       })
       .catch((err) => {
