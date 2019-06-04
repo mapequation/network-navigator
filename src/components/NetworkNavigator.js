@@ -56,7 +56,7 @@ export default class NetworkNavigator extends React.Component {
     }
   }
 
-  componentDidUpdate() {
+  componentDidUpdate(prevProps) {
     const {
       network,
       occurrences,
@@ -67,7 +67,7 @@ export default class NetworkNavigator extends React.Component {
       simulationEnabled
     } = this.props;
 
-    {
+    if (nodeSize !== prevProps.nodeSize || nodeScale !== prevProps.nodeScale) {
       const scale = nodeScale === "linear" ? d3.scaleLinear : d3.scaleSqrt;
 
       if (nodeSize === "flow") {
@@ -85,7 +85,7 @@ export default class NetworkNavigator extends React.Component {
       }
     }
 
-    {
+    if (linkScale !== prevProps.linkScale) {
       const scale = linkScale === "linear" ? d3.scaleLinear : d3.scaleSqrt;
       const linkWidth = scale().domain([0, network.maxLinkFlow]).range([2, 15]);
       const linkFillColor = scale().domain([0, network.maxLinkFlow]).range(this.renderStyle.linkFill);
