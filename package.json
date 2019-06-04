@@ -11,7 +11,7 @@
     "prop-types": "^15.7.2",
     "react": "^16.8.6",
     "react-dom": "^16.8.6",
-    "react-scripts": "1.1.4",
+    "react-scripts": "^3.0.0",
     "recharts": "^1.6.2",
     "semantic-ui-css": "^2.4.1",
     "semantic-ui-react": "^0.80.2"
@@ -23,9 +23,21 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
-    "test": "react-scripts test --env=jsdom",
+    "test": "react-scripts test",
     "eject": "react-scripts eject",
     "deploy": "react-scripts build && react-snap && scp -r build/* mapequation:/var/www/network-navigator",
     "postbuild": "react-snap"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
   }
 }
