@@ -109,7 +109,7 @@ export default class NetworkNavigator extends React.Component {
 
   renderPath(currentPath) {
     const { network } = this.props;
-    const dispatch = this.context;
+    const { dispatch } = this.context;
 
     const treeNode = network.getNodeByPath(currentPath);
 
@@ -141,7 +141,7 @@ export default class NetworkNavigator extends React.Component {
 
   componentDidMount() {
     const { network } = this.props;
-    const dispatch = this.context;
+    const { dispatch } = this.context;
     const { innerWidth, innerHeight } = window;
 
     dispatch({

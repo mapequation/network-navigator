@@ -44,9 +44,9 @@ export default function Layout(props) {
   };
 
   const [state, dispatch] = useReducer(reducer, initialState);
-
+  
   return (
-    <Dispatch.Provider value={dispatch}>
+    <Dispatch.Provider value={{ dispatch }}>
       <SemanticSidebar.Pushable style={{ height: "100vh", overflow: "hidden" }}>
         <Sidebar {...state} {...props} />
         <SemanticSidebar.Pusher>

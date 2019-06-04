@@ -20,7 +20,7 @@ export default function Sidebar(props) {
     selectedNode
   } = props;
 
-  const dispatch = useContext(Dispatch);
+  const { dispatch } = useContext(Dispatch);
 
   const handleDownloadClick = () => {
     const ftree = ftreeFromNetwork(network);

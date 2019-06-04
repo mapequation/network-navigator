@@ -11,7 +11,7 @@ export default function Settings(props) {
     labelsVisible,
     simulationEnabled
   } = props;
-  const dispatch = useContext(Dispatch);
+  const { dispatch } = useContext(Dispatch);
 
   return (
     <Form>

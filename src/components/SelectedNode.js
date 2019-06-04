@@ -15,7 +15,7 @@ const count = (items) => {
 export default function SelectedNode(props) {
   const { node, directed } = props;
   const [name, setName] = useState(node.name);
-  const dispatch = useContext(Dispatch);
+  const { dispatch } = useContext(Dispatch);
 
   const handleChange = (e, { value }) => {
     node.name = value;
