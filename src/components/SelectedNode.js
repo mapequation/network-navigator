@@ -158,10 +158,5 @@ SelectedNode.propTypes = {
     links: PropTypes.array,
     totalChildren: PropTypes.number
   }).isRequired,
-  onNameChange: PropTypes.func,
   directed: PropTypes.bool
-};
-
-SelectedNode.defaultProps = {
-  onNameChange: () => null
 };
