@@ -3,7 +3,7 @@ import { Checkbox } from "semantic-ui-react";
 import Dispatch from "../context/Dispatch";
 
 
-const MyCheckbox = props => <Checkbox style={{ margin: "0.3em 0 0.3em 0" }} {...props}/>;
+const MyCheckbox = props => <Checkbox style={{ display: "block", margin: "0.3em 0 0.3em 0" }} {...props}/>;
 
 const ToggleCheckbox = props => <MyCheckbox toggle {...props}/>;
 
