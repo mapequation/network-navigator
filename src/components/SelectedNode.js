@@ -30,7 +30,7 @@ export default function SelectedNode(props) {
   const isRoot = node.path.toString() === "root";
 
   return (
-    <Table celled singleLine striped compact>
+    <Table celled singleLine striped compact size="small">
       <Table.Body>
         <Table.Row>
           <Popup
