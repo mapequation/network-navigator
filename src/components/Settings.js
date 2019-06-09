@@ -40,7 +40,7 @@ export default function Settings(props) {
         onChange={(e, { checked }) => dispatch({ type: "labelsVisible", value: checked })}
       />
       <MyCheckbox
-        label="Enable simulation"
+        label="Run simulation"
         checked={simulationEnabled}
         onChange={(e, { checked }) => dispatch({ type: "simulationEnabled", value: checked })}
       />
