@@ -66,7 +66,7 @@ export default function Sidebar(props) {
       <Menu.Menu>
         <Menu.Item
           icon="download"
-          content={"Download " + filename}
+          content={"Download network"}
           onClick={handleDownloadClick}
         />
       </Menu.Menu>
