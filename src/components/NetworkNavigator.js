@@ -113,6 +113,10 @@ export default class NetworkNavigator extends React.Component {
 
     const treeNode = network.getNodeByPath(currentPath);
 
+    if (treeNode.links) {
+      treeNode.connect();
+    }
+
     takeLargest(treeNode, 20);
 
     const layout = this.layouts.get(currentPath);

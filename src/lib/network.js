@@ -2,60 +2,31 @@ import { escapeRegExp, flatMap, maxBy } from "lodash";
 import TreePath from "./treepath";
 
 
-/******************************************
- * Common properties for Network and Node *
- ******************************************/
-const hasFlow = (flow = 0) => ({
-  flow,
-  exitFlow: 0
-});
-
-const isRenderable = {
-  shouldRender: true
-};
-
-const treeNode = (id) => ({
-  id,
-  path: new TreePath(id),
-  parent: null
-});
-
-const node = () => ({
-  kin: 0,
-  kout: 0,
-  inLinks: [],
-  outLinks: []
-});
-
-
 /**
  * A node in a network
- *
- * Internal use only, @see createNode
  */
 class Node {
-  constructor(name, physicalId) {
+  kin = 0;
+  kout = 0;
+  inLinks = [];
+  outLinks = [];
+  parent = null;
+  shouldRender = true;
+  occurred = new Map();
+  exitFlow = 0;
+
+  constructor(id, name, flow, physicalId) {
+    this.id = id;
+    this.path = new TreePath(id);
+    this.flow = flow;
     this.name = name.toString();
     this.physicalId = physicalId;
-    this.occurred = new Map();
-  }
-
-  /**
-   * Create a Node
-   *
-   * @param {number} id the id
-   * @param {string} name the name
-   * @param {number} flow the flow
-   * @param {number} physicalId the physical id
-   * @return {Node} the node
-   */
-  static create(id, name, flow, physicalId) {
-    return Object.assign(new Node(name, physicalId), treeNode(id), node(), hasFlow(flow), isRenderable);
   }
 }
 
 
-export const createNode = Node.create;
+export const createNode = (id, name, flow, physicalId) =>
+  new Node(id, name, flow, physicalId);
 
 
 /**
@@ -64,12 +35,17 @@ export const createNode = Node.create;
  * Internal use only.
  */
 class Link {
+  shouldRender = false;
+  _oppositeLink = undefined;
+
   constructor(source, target, flow) {
     this.source = source;
     this.target = target;
     this.flow = flow;
-    this.shouldRender = false;
-    this._oppositeLink = undefined;
+    source.outLinks.push(this);
+    target.inLinks.push(this);
+    source.kout++;
+    target.kin++;
   }
 
   get oppositeLink() {
@@ -98,23 +74,25 @@ class Link {
  * Internal use only, @see createNetwork
  */
 class Network {
-  constructor() {
-    this._name = undefined;
-    this._nodes = new Map();
-    this.links = [];
-    this.largest = [];
-    this.visible = false;
-    this.connected = false;
-    this.occurrences = new Map();
-  }
+  kin = 0;
+  kout = 0;
+  inLinks = [];
+  outLinks = [];
+  parent = null;
+  shouldRender = true;
+  flow = 0;
+  exitFlow = 0;
+  visible = false;
+  connected = false;
+  _name = undefined;
+  _nodes = new Map();
+  links = [];
+  largest = [];
+  occurrences = new Map();
 
-  /**
-   * Create a Network of nodes and links.
-   *
-   * @param {number|string} id the id
-   */
-  static create(id) {
-    return Object.assign(new Network(), treeNode(id), node(), hasFlow(), isRenderable);
+  constructor(id) {
+    this.id = id;
+    this.path = new TreePath(id);
   }
 
   addNode(child) {
@@ -292,15 +270,7 @@ class Network {
 }
 
 
-export const createNetwork = Network.create;
-
-/**
- * Factory function for creating node search functions.
- *
- * @param {Network} root the root
- * @return {Function} getNodeByPath
- */
-export const makeGetNodeByPath = root => root.getNodeByPath.bind(root);
+export const createNetwork = id => new Network(id);
 
 /**
  * Pre-order traverse all nodes below.
@@ -351,18 +321,18 @@ export function* ancestors(treeNode) {
  * @param {Network} root the root of the network
  */
 export function connectLinks(root) {
-  for (let node of traverseDepthFirst(root)) {
-    if (node.links) {
-      node.connect();
+  root.connect();
+
+  if (root.nodes) {
+    for (let node of root.nodes) {
+      if (node.links) {
+        node.connect();
+      }
     }
   }
+  //for (let node of traverseDepthFirst(root)) {
+  //  if (node.links) {
+  //    node.connect();
+  //  }
+  //}
 }
-
-/**
- * Search Network name fields for string matching `name`.
- *
- * @param {Network} root the root of the network
- * @param {string} name the name to search for
- */
-export const searchName = (root, name) => root.search(name);
-
