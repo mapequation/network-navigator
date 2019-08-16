@@ -18,7 +18,7 @@ export default class Occurrences extends React.Component {
 
   static propTypes = {
     onChange: PropTypes.func,
-    selectedNode: PropTypes.object,
+    selectedNode: PropTypes.object.isRequired,
     filename: PropTypes.string.isRequired,
     totalNodes: PropTypes.number.isRequired
   };

@@ -5,6 +5,7 @@ import { savePng, saveSvg } from "../io/export";
 import ftreeFromNetwork from "../io/ftree-from-network";
 import Distributions from "./Distributions";
 import MenuHeader from "./MenuHeader";
+import Occurrences from "./Occurrences";
 import SelectedNode from "./SelectedNode";
 import Settings from "./Settings";
 import Dispatch from "../context/Dispatch";
@@ -55,6 +56,17 @@ export default function Sidebar(props) {
       <Distributions
         nodes={selectedNode.nodes || []}
         directed={network.directed}
+      />
+    </Menu.Item>
+    <Menu.Item>
+      <Header as="h4">
+        Occurrences
+      </Header>
+      <Occurrences
+        onChange={value => dispatch({ type: "occurrences", value })}
+        selectedNode={selectedNode}
+        filename={filename}
+        totalNodes={network.totalNodes}
       />
     </Menu.Item>
     <Menu.Item>

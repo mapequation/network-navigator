@@ -25,6 +25,8 @@ function reducer(state, action) {
       return { ...state, searchCallback: action.value };
     case "selectedNodeNameChange":
       return { ...state, selectedNodeNameUpdatedBit: !state.selectedNodeNameUpdatedBit };
+    case "occurrences":
+      return { ...state, occurrences: action.value };
     default:
       throw new Error();
   }
@@ -40,6 +42,7 @@ export default function Layout(props) {
     sidebarVisible: true,
     selectedNode: props.network,
     selectedNodeNameUpdatedBit: true,
+    occurrences: null,
     searchCallback: () => null
   };
 
