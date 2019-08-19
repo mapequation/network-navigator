@@ -1,3 +1,4 @@
+/* eslint no-unused-vars: 0 */
 import { escapeRegExp, flatMap, maxBy } from "lodash";
 import TreePath from "./treepath";
 

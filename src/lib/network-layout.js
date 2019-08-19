@@ -1,3 +1,4 @@
+/* eslint no-unused-vars: 0 */
 import * as d3 from "d3";
 import { minBy, truncate } from "lodash";
 import makeDragHandler from "./drag-handler";

@@ -1,3 +1,4 @@
+/* eslint no-unused-vars: 0 */
 /**
  * @file This file deals with converting a Network to the
  * [FTree format]{@link http://www.mapequation.org/code.html#FTree-format}
