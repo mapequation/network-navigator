@@ -66,7 +66,7 @@ export default function Sidebar(props) {
         onChange={value => dispatch({ type: "occurrences", value })}
         selectedNode={selectedNode}
         filename={filename}
-        totalNodes={network.totalNodes}
+        totalNodes={network.totalChildren}
       />
     </Menu.Item>
     <Menu.Item>

@@ -100,6 +100,8 @@ export default class Occurrences extends React.Component {
 
     const fractionOfNodes = selectedNode.totalChildren / totalNodes;
 
+    const graphVisible = !!selectedNode.occurrences && selectedNode.occurrences.size > 0;
+
     return (
       <React.Fragment>
         <Table celled singleLine compact fixed>
@@ -160,7 +162,7 @@ export default class Occurrences extends React.Component {
             </Table.Row>
           </Table.Footer>
         </Table>
-        {selectedNode != null && selectedNode.occurrences && selectedNode.occurrences.size > 0 &&
+        {graphVisible &&
         <div>
           <p>
             Occurrences in selected module
