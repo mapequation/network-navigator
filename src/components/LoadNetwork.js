@@ -35,11 +35,16 @@ export default class LoadNetwork extends React.Component {
     localforage.config({ name: "infomap" });
     localforage.getItem("ftree")
       .then(ftree => {
+        if (!ftree) {
+          throw new Error("No data found!");
+        }
+
         this.setState({ ftree });
         if (args) {
           this.loadNetwork(ftree, args);
         }
-      });
+      })
+      .catch(err => console.error(err));
   }
 
   componentWillUnmount() {
