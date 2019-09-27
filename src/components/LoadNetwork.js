@@ -45,7 +45,7 @@ export default class LoadNetwork extends React.Component {
           this.loadNetwork(ftree, args);
         }
       })
-      .catch(err => Sentry.captureException(err));
+      .catch(err => console.error(err));
   }
 
   componentWillUnmount() {
