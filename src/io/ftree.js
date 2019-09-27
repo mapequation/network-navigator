@@ -93,7 +93,7 @@ export default function parseFTree(rows) {
       const row = rows[i];
 
       if (row.length !== 4) {
-        result.errors.push(`Malformed ftree data: expected 4 fields, found ${row.length}.`);
+        result.errors.push(`Malformed ftree data: expected 4 fields, found ${row.length} when parsing modules.`);
         continue;
       }
 
@@ -117,7 +117,7 @@ export default function parseFTree(rows) {
     const row = rows[i];
 
     if (row.length !== 4 && row.length !== 5) {
-      result.errors.push(`Malformed ftree data: expected 4 or 5 fields, found ${row.length}.`);
+      result.errors.push(`Malformed ftree data: expected 4 or 5 fields, found ${row.length} when parsing tree.`);
       continue;
     }
 
@@ -144,7 +144,7 @@ export default function parseFTree(rows) {
     result.meta.directed = rows[i][1].trim().toLowerCase() === "directed";
     i++;
   } else {
-    result.errors.push("Expected link type!");
+    result.errors.push("Could not read link type. Expected '*Links [un]directed'.");
   }
 
   let link = {
@@ -158,7 +158,7 @@ export default function parseFTree(rows) {
     // 3a. Parse link header
     if (/^\*Links/i.test(row[0].toString())) {
       if (row.length !== 5) {
-        result.errors.push(`Malformed ftree link header: expected 5 fields, found ${row.length}.`);
+        result.errors.push(`Malformed ftree link header: expected 5 fields, found ${row.length} when parsing links header.`);
         continue;
       }
 
@@ -181,7 +181,7 @@ export default function parseFTree(rows) {
       // 3b. Parse link data
     } else {
       if (row.length !== 3) {
-        result.errors.push(`Malformed ftree link data: expected 3 fields, found ${row.length}.`);
+        result.errors.push(`Malformed ftree link data: expected 3 fields, found ${row.length} when parsing links.`);
         continue;
       }
 
