@@ -37,7 +37,7 @@ export default class LoadNetwork extends React.Component {
     localforage.getItem("ftree")
       .then(ftree => {
         if (!ftree) {
-          throw new Error("No data found!");
+          return;
         }
 
         this.setState({ ftree });
