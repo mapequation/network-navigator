@@ -157,7 +157,7 @@ export default function parseFTree(rows) {
 
     // 3a. Parse link header
     if (/^\*Links/i.test(row[0].toString())) {
-      if (row.length <= 5) {
+      if (row.length < 5) {
         result.errors.push(`Malformed ftree link header: expected at least 5 fields, found ${row.length} when parsing links header.`);
         continue;
       }
