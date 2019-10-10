@@ -144,7 +144,7 @@ export default function parseFTree(rows) {
     result.meta.directed = rows[i][1].trim().toLowerCase() === "directed";
     i++;
   } else {
-    result.errors.push("Could not read link type. Expected '*Links [un]directed'.");
+    result.errors.push("Could not read link type. Expected '*Links [un]directed'. Are you loading a .tree file? The Network Navigator requires .ftree files.");
   }
 
   let link = {
