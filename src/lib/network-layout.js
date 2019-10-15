@@ -42,7 +42,8 @@ export default class NetworkLayout {
                 position,
                 localTransform = {},
                 labelsVisible = true,
-                simulationEnabled = true
+                simulationEnabled = true,
+                lodEnabled = true
               }) {
     this.linkRenderer = linkRenderer;
     this.style = renderStyle;
@@ -65,6 +66,8 @@ export default class NetworkLayout {
     this.onDrag = simulationEnabled ? makeDragHandler(this.simulation) : this.simpleDragHandler;
 
     this._simulationEnabled = simulationEnabled;
+
+    this.lodEnabled = lodEnabled;
   }
 
   get renderStyle() {
@@ -315,10 +318,26 @@ export default class NetworkLayout {
       const dx = k * r + (k > 1 ? 1.4 * (1 - k) * r : 0);
       return Math.max(dx, 0);
     };
-    label.accessors.visibility = n => this.labelsVisible && label.accessors.lod(k)(n) ? "visible" : "hidden";
+    label.accessors.visibility = n => {
+      if (this.labelsVisible) {
+        if (this.lodEnabled) {
+          return label.accessors.lod(k)(n) ? "visible" : "hidden";
+        } else {
+          return "visible"
+        }
+      }
+      return "hidden";
+    };
     label.accessors.text = n => n.visible ? "" : nodeName(n);
-    link.accessors.path = l => (k < 15 || !l.source.nodes) && link.accessors.lod(k)(l)
-      ? this.linkRenderer(l) : "";
+
+    link.accessors.path = l => {
+      if (k < 15 || !l.source.nodes) {
+        if (!this.lodEnabled || link.accessors.lod(k)(l)) {
+          return this.linkRenderer(l);
+        }
+      }
+      return "";
+    };
 
     if (k > 1.5) {
       const zoomNormalized = d3.scaleLinear().domain([1.5, 6.5]).range([0, 1]).clamp(true);
@@ -392,7 +411,8 @@ export default class NetworkLayout {
             position: Point.from(n),
             localTransform: childTransform,
             labelsVisible: this.labelsVisible,
-            simulationEnabled: this.simulationEnabled
+            simulationEnabled: this.simulationEnabled,
+            lodEnabled: this.lodEnabled,
           })
         });
       });

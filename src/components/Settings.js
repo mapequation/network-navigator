@@ -13,7 +13,8 @@ export default function Settings(props) {
     nodeScale,
     linkScale,
     labelsVisible,
-    simulationEnabled
+    simulationEnabled,
+    lodEnabled
   } = props;
   const { dispatch } = useContext(Dispatch);
 
@@ -43,6 +44,11 @@ export default function Settings(props) {
         label="Run simulation"
         checked={simulationEnabled}
         onChange={(e, { checked }) => dispatch({ type: "simulationEnabled", value: checked })}
+      />
+      <MyCheckbox
+        label="Use level of detail"
+        checked={lodEnabled}
+        onChange={(e, { checked }) => dispatch({ type: "lodEnabled", value: checked })}
       />
     </React.Fragment>
   );

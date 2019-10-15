@@ -27,6 +27,8 @@ function reducer(state, action) {
       return { ...state, selectedNodeNameUpdatedBit: !state.selectedNodeNameUpdatedBit };
     case "occurrences":
       return { ...state, occurrences: action.value };
+    case "lodEnabled":
+      return { ...state, lodEnabled: action.value };
     default:
       throw new Error();
   }
@@ -43,6 +45,7 @@ export default function Layout(props) {
     selectedNode: props.network,
     selectedNodeNameUpdatedBit: true,
     occurrences: null,
+    lodEnabled: true,
     searchCallback: () => null
   };
 

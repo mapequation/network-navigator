@@ -30,7 +30,8 @@ export default class NetworkNavigator extends React.Component {
     nodeScale: PropTypes.string,
     linkScale: PropTypes.string,
     labelsVisible: PropTypes.bool,
-    simulationEnabled: PropTypes.bool
+    simulationEnabled: PropTypes.bool,
+    lodEnabled: PropTypes.bool
   };
 
   static contextType = Dispatch;
@@ -64,7 +65,8 @@ export default class NetworkNavigator extends React.Component {
       nodeScale,
       linkScale,
       labelsVisible,
-      simulationEnabled
+      simulationEnabled,
+      lodEnabled
     } = this.props;
 
     if (nodeSize !== prevProps.nodeSize || nodeScale !== prevProps.nodeScale) {
@@ -103,6 +105,7 @@ export default class NetworkNavigator extends React.Component {
       layout.renderStyle = this.renderStyle;
       layout.labelsVisible = labelsVisible;
       layout.simulationEnabled = simulationEnabled;
+      layout.lodEnabled = lodEnabled;
       layout.updateAttributes();
     });
   }
