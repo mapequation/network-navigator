@@ -60,7 +60,7 @@ export default class Occurrences extends React.Component {
         .map((file, fileId) => ({
           fileId,
           name: file.name,
-          physicalIds: file.content,
+          ids: file.content,
           color: this.fileColor(file)
         }))
     );

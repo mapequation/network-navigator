@@ -252,7 +252,7 @@ class Network {
   }
 
   markOccurrences(occurrences) {
-    const physicalIds = new Map(occurrences.physicalIds.map(id => [id, true]));
+    const ids = new Map(occurrences.ids.map(id => [id, true]));
     const { fileId } = occurrences;
 
     for (let node of traverseDepthFirst(this)) {
@@ -262,13 +262,13 @@ class Network {
             count: 0,
             name: occurrences.name,
             color: occurrences.color,
-            totalNodes: occurrences.physicalIds.length
+            totalNodes: occurrences.ids.length
           });
         }
         continue;
       }
 
-      if (physicalIds.has(node.physicalId)) {
+      if (ids.has(node.name)) {
         node.occurred.set(fileId, {
           name: occurrences.name,
           color: occurrences.color
