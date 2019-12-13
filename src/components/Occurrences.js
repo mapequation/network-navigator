@@ -80,13 +80,13 @@ export default class Occurrences extends React.Component {
     this.validFiles().forEach((file, fileId) => {
       for (let node of traverseDepthFirst(selectedNode)) {
         if (node.occurred && node.occurred.has(fileId)) {
-          occurrences.get(file.name).push(node.physicalId);
+          occurrences.get(file.name).push(node.name);
         }
       }
     });
 
     const serializedOccurrences = Array.from(occurrences).map(each =>
-      `"${each[0]}",${each[1].toString()}`)
+      `"${each[0]}",${each[1]}`)
       .join("\n");
 
     const blob = new Blob([serializedOccurrences], { type: "text/csv;charset=utf-8" });
