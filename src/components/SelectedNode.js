@@ -12,6 +12,17 @@ const count = (items) => {
   return <span>{items.length} <span style={{ color: "#999" }}>({visibleCount})</span></span>;
 };
 
+const countLeafNodes = (node) => {
+  const total = node.totalChildren;
+  const visibleModules = node.nodes
+    .filter(node => node.shouldRender);
+  if (visibleModules.length === node.nodes.length) {
+    return total;
+  }
+  const visibleCount = visibleModules.reduce((total, node) => total + node.totalChildren, 0);
+  return <span>{total} <span style={{ color: "#999" }}>({visibleCount})</span></span>;
+};
+
 export default function SelectedNode(props) {
   const { node, directed } = props;
   const [name, setName] = useState(node.name);
@@ -134,11 +145,15 @@ export default function SelectedNode(props) {
         {node.totalChildren != null &&
         <Table.Row>
           <Popup
-            trigger={<Table.Cell content='Children'/>}
+            trigger={<Table.Cell content='Leaf nodes'/>}
             size='tiny'
-            content='The total number of nodes contained within this module and its children.'
+            content='The number of leaf nodes contained within this module and its children.'
           />
-          <Table.Cell content={node.totalChildren}/>
+          <Popup
+            trigger={<Table.Cell content={countLeafNodes(node)}/>}
+            size="tiny"
+            content="Total (Visible)"
+          />
         </Table.Row>
         }
       </Table.Body>
