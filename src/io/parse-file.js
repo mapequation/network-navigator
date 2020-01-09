@@ -11,16 +11,17 @@
  * @param {(File|string)} file The file passed to Papa.parse
  * @return {Promise}
  */
-export default function parseFile(file) {
-  const opts = {
+export default function parseFile(file, opts = {}) {
+  const defaultOpts = {
     comments: "#",
     delimiter: " ",
     quoteChar: "\"",
     dynamicTyping: true,
     skipEmptyLines: true,
-    worker: true
+    worker: true,
+    ...opts
   };
 
   return new Promise((complete, error) =>
-    Papa.parse(file, Object.assign(opts, { complete, error }))); // eslint-disable-line no-undef
+    Papa.parse(file, Object.assign(defaultOpts, { complete, error }))); // eslint-disable-line no-undef
 }

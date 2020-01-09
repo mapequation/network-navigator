@@ -30,7 +30,7 @@ export default class Occurrences extends React.Component {
   fileColor = file => this.colors[this.state.files.indexOf(file) % this.colors.length];
 
   loadFile = (file) =>
-    parseFile(file)
+    parseFile(file, { dynamicTyping: false })
       .then((parsed) => {
         this.setState(state => ({
           files: [
