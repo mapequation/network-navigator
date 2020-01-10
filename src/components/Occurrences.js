@@ -78,7 +78,7 @@ export default class Occurrences extends React.Component {
     const occurrences = new Map(this.validFiles().map(file => [file.name, []]));
 
     this.validFiles().forEach((file, fileId) => {
-      for (let node of traverseDepthFirst(selectedNode)) {
+      for (let node of traverseDepthFirst(selectedNode)) {  // eslint-disable-line no-unused-vars
         if (node.occurred && node.occurred.has(fileId)) {
           occurrences.get(file.name).push(node.name);
         }
