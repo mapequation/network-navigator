@@ -3,7 +3,6 @@ import React from "react";
 import { hydrate, render } from "react-dom";
 import App from "./components/App";
 import "./index.css";
-import { unregister } from "./registerServiceWorker";
 
 
 Sentry.init({
@@ -25,11 +24,4 @@ if (rootElement.hasChildNodes()) {
   hydrate(<App/>, rootElement);
 } else {
   render(<App/>, rootElement);
-}
-
-try {
-  unregister();
-} catch (e) {
-  // this might fail on some browsers, don't throw exception
-  console.warn(e);
 }
