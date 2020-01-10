@@ -1,4 +1,3 @@
-import * as Sentry from '@sentry/browser';
 import localforage from "localforage";
 import PropTypes from "prop-types";
 import React from "react";
@@ -100,7 +99,6 @@ export default class LoadNetwork extends React.Component {
         clearTimeout(this.progressTimeout);
         this.setState(errorState(err));
         console.log(err);
-        Sentry.captureException(err);
       });
   };
 
@@ -120,7 +118,6 @@ export default class LoadNetwork extends React.Component {
       .catch((err) => {
         this.setState(errorState(err));
         console.log(err);
-        Sentry.captureException(err);
       });
   };
 
