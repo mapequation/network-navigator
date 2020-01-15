@@ -1,3 +1,4 @@
+import "core-js";
 import * as Sentry from "@sentry/browser";
 import React from "react";
 import { hydrate, render } from "react-dom";
