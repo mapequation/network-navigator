@@ -52,7 +52,7 @@ export default class LoadNetwork extends React.Component {
   }
 
   loadNetwork = (file, name) => {
-    if (!name && file.name) {
+    if (!name && file && file.name) {
       name = file.name;
     }
 
