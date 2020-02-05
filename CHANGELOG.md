@@ -1,0 +1,22 @@
+# Changelog
+
+All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
+
+## 1.0.0 (2020-02-05)
+
+
+### Features
+
+* Display number of visible leaf nodes ([f33fbe9](https://github.com/mapequation/network-navigator/commit/f33fbe986036b653ccdd7f00e027a0dd6f0d524f))
+* Occurrences csv download now contains node names instead of ids ([c724a41](https://github.com/mapequation/network-navigator/commit/c724a41cc4a3035a720b269bf4cb80d41ac3e396))
+
+
+### Bug Fixes
+
+* Accept numbers as node names when reading occurrences lists ([a286dac](https://github.com/mapequation/network-navigator/commit/a286dac97dab0c240e6daec1bda47533fbc08bda))
+* Add core-js for supporing older browsers ([387c198](https://github.com/mapequation/network-navigator/commit/387c1982d5d5b8ba75e9653fae266b246f571ef5))
+* Check if 'file' is defined before accessing name property ([d2f35ac](https://github.com/mapequation/network-navigator/commit/d2f35ac87d10594f8e95fcf5d705ef623828cfbf))
+* Don't let Sentry capture parsing exceptions ([3519eda](https://github.com/mapequation/network-navigator/commit/3519eda7a9e19b445f7a0957bb5585716b0ec8a6))
+* Don't unregister serviceworker as this fails on Firefox ([8beea62](https://github.com/mapequation/network-navigator/commit/8beea62ae04980ab1a93df2bea7105c0021f3f96))
+* Return 0 if we calculate max flow/node count on an empty array ([c07aa4c](https://github.com/mapequation/network-navigator/commit/c07aa4cb87740ddee175d1895d2a8a45425b3527))
+* Silence eslint warning ([b3aa93a](https://github.com/mapequation/network-navigator/commit/b3aa93ac767b6e39189df93faccfcbb3c4bfa70c))
