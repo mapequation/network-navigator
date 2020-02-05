@@ -158,7 +158,8 @@ class Network {
     }
 
     const children = Array.from(traverseDepthFirst(this));
-    this._maxNodeFlow = maxBy(children, node => node.flow).flow;
+    const maxNode = maxBy(children, node => node.flow);
+    this._maxNodeFlow = maxNode && maxNode.flow ? maxNode.flow : 0;
     return this._maxNodeFlow;
   }
 
@@ -168,7 +169,8 @@ class Network {
     }
 
     const children = Array.from(traverseDepthFirst(this));
-    this._maxNodeExitFlow = maxBy(children, node => node.exitFlow).exitFlow;
+    const maxNode = maxBy(children, node => node.exitFlow);
+    this._maxNodeExitFlow = maxNode && maxNode.exitFlow ? maxNode.exitFlow : 0;
     return this._maxNodeExitFlow;
   }
 
@@ -178,7 +180,8 @@ class Network {
     }
 
     const children = Array.from(traverseDepthFirst(this));
-    this._maxLinkFlow = maxBy(flatMap(children, node => node.links || []), link => link.flow).flow;
+    const maxLink = maxBy(flatMap(children, node => node.links || []), link => link.flow);
+    this._maxLinkFlow = maxLink && maxLink.flow ? maxLink.flow : 0;
     return this._maxLinkFlow;
   }
 
@@ -187,7 +190,8 @@ class Network {
       return this._maxNodeCount;
     }
     const children = Array.from(traverseDepthFirst(this));
-    this._maxNodeCount = maxBy(children, node => (node.nodes || []).length).nodes.length;
+    const maxNode = maxBy(children, node => (node.nodes || []).length);
+    this._maxNodeCount = maxNode && maxNode.nodes ? maxNode.nodes.length : 0;
     return this._maxNodeCount;
   }
 
