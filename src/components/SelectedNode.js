@@ -72,7 +72,7 @@ export default function SelectedNode(props) {
             size='tiny'
             content='The flow contained in this node.'
           />
-          <Table.Cell content={node.flow.toPrecision(4)}/>
+          <Table.Cell content={(+node.flow).toPrecision(4)}/>
         </Table.Row>
         {node.exitFlow > 0 &&
         <Table.Row>
@@ -81,7 +81,7 @@ export default function SelectedNode(props) {
             size='tiny'
             content='The module exit flow.'
           />
-          <Table.Cell content={node.exitFlow.toPrecision(4)}/>
+          <Table.Cell content={(+node.exitFlow).toPrecision(4)}/>
         </Table.Row>
         }
         {isRoot && directed &&
