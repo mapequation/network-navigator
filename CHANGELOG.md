@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.1.0](https://github.com/mapequation/network-navigator/compare/v1.0.0...v1.1.0) (2020-02-05)
+
+
+### Features
+
+* Display version information on landing page ([a09735d](https://github.com/mapequation/network-navigator/commit/a09735dbf671f6004b6b9c6143a7677703121087))
+
+
+### Bug Fixes
+
+* Alert user if canvas.toBlob is not supported ([5730a6c](https://github.com/mapequation/network-navigator/commit/5730a6c41157af23a45f6aa9ddec529985646a31))
+* Make sure flow and exitFlow are numbers before calling toPrecision ([dee3e00](https://github.com/mapequation/network-navigator/commit/dee3e00d59e1542391aa66889e6d690e28455285))
+
 ## 1.0.0 (2020-02-05)
 
 
