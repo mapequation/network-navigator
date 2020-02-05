@@ -16,7 +16,8 @@
     "react-scripts": "^3.3.0",
     "recharts": "^1.7.1",
     "semantic-ui-css": "^2.4.1",
-    "semantic-ui-react": "^0.80.2"
+    "semantic-ui-react": "^0.80.2",
+    "standard-version": "^7.1.0"
   },
   "devDependencies": {
     "prettier": "^1.18.2",
@@ -28,7 +29,8 @@
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "deploy": "react-scripts build && react-snap && scp -r build/* mapequation:/var/www/network-navigator",
-    "postbuild": "react-snap"
+    "postbuild": "react-snap",
+    "release": "standard-version"
   },
   "browserslist": {
     "production": [
