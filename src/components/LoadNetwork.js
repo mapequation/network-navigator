@@ -1,11 +1,11 @@
 import localforage from "localforage";
 import PropTypes from "prop-types";
 import React from "react";
-import { Container, Divider, Image, Progress, Segment, Step } from "semantic-ui-react";
+import { Container, Divider, Image, Label, Progress, Segment, Step } from "semantic-ui-react";
 import Background from "../images/Background.svg";
-import parseFile from "../io/parse-file";
 import parseFTree from "../io/ftree";
 import networkFromFTree from "../io/network-from-ftree";
+import parseFile from "../io/parse-file";
 
 
 const errorState = err => ({
@@ -142,6 +142,7 @@ export default class LoadNetwork extends React.Component {
           style={{ padding: "50px 0px" }}
           padded='very'
         >
+          <Label attached="top right">v {process.env.REACT_APP_VERSION}</Label>
 
           <Step.Group>
             <Step
