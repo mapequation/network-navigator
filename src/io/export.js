@@ -26,8 +26,12 @@ export const savePng = (elementId, filename) => {
 
   const image = new Image(width, height);
   image.onload = () => {
-    context.drawImage(image, 0, 0);
-    canvas.toBlob(blob => FileSaver.saveAs(blob, filename));
+    try {
+      context.drawImage(image, 0, 0);
+      canvas.toBlob(blob => FileSaver.saveAs(blob, filename));
+    } catch (err) {
+      alert('This feature is not supported in your browser.')
+    }
   };
 
   image.onerror = (err) => {
