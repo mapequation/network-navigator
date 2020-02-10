@@ -6,8 +6,10 @@ import App from "./components/App";
 import "./index.css";
 
 
+const dsn = process.env.NODE_ENV === "production" ? "https://a095cdb615de4acfaa7fce76eb9c60da@sentry.io/1763309" : "";
+
 Sentry.init({
-  dsn: "https://a095cdb615de4acfaa7fce76eb9c60da@sentry.io/1763309",
+  dsn,
   beforeSend(event) {
     // Check if it is an exception, and if so, show the report dialog
     if (event.exception) {
