@@ -8,7 +8,8 @@ import TreePath from "./treepath";
  ******************************************/
 const hasFlow = (flow = 0) => ({
   flow,
-  exitFlow: 0
+  enterFlow: 0,
+  exitFlow: 0,
 });
 
 const isRenderable = {
@@ -161,6 +162,17 @@ class Network {
     const maxNode = maxBy(children, node => node.flow);
     this._maxNodeFlow = maxNode && maxNode.flow ? maxNode.flow : 0;
     return this._maxNodeFlow;
+  }
+
+  get maxNodeEnterFlow() {
+    if (this._maxNodeEnterFlow) {
+      return this._maxNodeEnterFlow;
+    }
+
+    const children = Array.from(traverseDepthFirst(this));
+    const maxNode = maxBy(children, node => node.enterFlow);
+    this._maxNodeEnterFlow = maxNode && maxNode.enterFlow ? maxNode.enterFlow : 0;
+    return this._maxNodeEnterFlow;
   }
 
   get maxNodeExitFlow() {

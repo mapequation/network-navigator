@@ -74,7 +74,14 @@ export default function SelectedNode(props) {
           />
           <Table.Cell content={(+node.flow).toPrecision(4)}/>
         </Table.Row>
-        {node.exitFlow > 0 &&
+        <Table.Row>
+          <Popup
+            trigger={<Table.Cell content='Enter flow'/>}
+            size='tiny'
+            content='The module enter flow.'
+          />
+          <Table.Cell content={(+node.enterFlow).toPrecision(4)}/>
+        </Table.Row>
         <Table.Row>
           <Popup
             trigger={<Table.Cell content='Exit flow'/>}
@@ -83,7 +90,6 @@ export default function SelectedNode(props) {
           />
           <Table.Cell content={(+node.exitFlow).toPrecision(4)}/>
         </Table.Row>
-        }
         {isRoot && directed &&
         <Table.Row>
           <Popup

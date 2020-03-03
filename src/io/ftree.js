@@ -25,7 +25,7 @@
  *      ["1:1:4", 0.0024595, "Name 4", 155],
  *      // ...
  *      ["*Links", "directed"],
- *      ["*Links", "root", 0, 68, 208],
+ *      ["*Links", "root", 0, 0, 68, 208],
  *      [2, 1, 0.000107451],
  *      [1, 2, 0.0000830222],
  *      [3, 1, 0.00000900902],
@@ -45,6 +45,7 @@
  *              {
  *                  path,
  *                  name, // optional
+ *                  enterFlow,
  *                  exitFlow,
  *                  numEdges,
  *                  numChildren,
@@ -155,18 +156,23 @@ export default function parseFTree(rows) {
   for (; i < rows.length; i++) {
     const row = rows[i];
 
-    // 3a. Parse link header
+    // 3a. Parse link header #*Links path enterFlow exitFlow numEdges numChildren
     if (/^\*Links/i.test(row[0].toString())) {
-      if (row.length < 5) {
-        result.errors.push(`Malformed ftree link header: expected at least 5 fields, found ${row.length} when parsing links header.`);
+      if (row.length < 6) {
+        if (row.length === 5) {
+          result.errors.push(`The ftree link header is missing one field, the required six fields are available from Infomap v1.0.`);
+        } else {
+          result.errors.push(`Malformed ftree link header: expected 6 fields, found ${row.length} when parsing links header.`);
+        }
         continue;
       }
 
       link = {
         path: row[1],
-        exitFlow: row[2],
-        numEdges: row[3],
-        numChildren: row[4],
+        enterFlow: row[2],
+        exitFlow: row[3],
+        numEdges: row[4],
+        numChildren: row[5],
         links: []
       };
 

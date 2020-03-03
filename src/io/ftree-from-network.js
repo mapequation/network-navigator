@@ -40,7 +40,7 @@ export default function ftreeFromNetwork(network) {
     if (!node.nodes) {
       nodes += `${node.path} ${flowFormat(node.flow)} "${node.name}" ${node.physicalId}\n`;
     } else {
-      links += `*Links ${node.path} ${flowFormat(node.exitFlow)} ${node.links.length} ${node.nodes.length}\n`;
+      links += `*Links ${node.path} ${flowFormat(node.enterFlow)} ${flowFormat(node.exitFlow)} ${node.links.length} ${node.nodes.length}\n`;
       for (let link of node.links.sort(byFlow)) {
         links += `${link.source.id} ${link.target.id} ${flowFormat(link.flow)}\n`;
       }
@@ -55,7 +55,7 @@ export default function ftreeFromNetwork(network) {
     "# path flow name node\n",
     nodes,
     `*Links ${network.directed ? "directed" : "undirected"}\n`,
-    "#*Links path exitFlow numEdges numChildren\n",
+    "#*Links path enterFlow exitFlow numEdges numChildren\n",
     links
   ].join("");
 }
