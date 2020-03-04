@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.1.1](https://github.com/mapequation/network-navigator/compare/v1.1.0...v1.1.1) (2020-03-04)
+
+
+### Bug Fixes
+
+* Support new ftree format in Infomap v1.0 ([#10](https://github.com/mapequation/network-navigator/issues/10)) ([87d8716](https://github.com/mapequation/network-navigator/commit/87d8716c19174f73bb69fec1349b55d2e4c28a4d))
+
 ## [1.1.0](https://github.com/mapequation/network-navigator/compare/v1.0.0...v1.1.0) (2020-02-05)
 
 
