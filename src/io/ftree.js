@@ -153,6 +153,7 @@ export default function parseFTree(rows) {
   };
 
   // 3. Parse links section
+  let isOldFormat = false; // missing enterFlow before Infomap v1.0.0
   for (; i < rows.length; i++) {
     const row = rows[i];
 
@@ -160,19 +161,25 @@ export default function parseFTree(rows) {
     if (/^\*Links/i.test(row[0].toString())) {
       if (row.length < 6) {
         if (row.length === 5) {
-          result.errors.push(`The ftree link header is missing one field, the required six fields are available from Infomap v1.0.`);
+          // result.errors.push(`The ftree link header is missing one field, the required six fields are available from Infomap v1.0.`);
+          if (!isOldFormat) {
+            console.warn('Detected old ftree format (missing enterFlow on modules). Use Infomap v1.0+ for the latest format.');
+          }
+          isOldFormat = true;
         } else {
           result.errors.push(`Malformed ftree link header: expected 6 fields, found ${row.length} when parsing links header.`);
+          continue;
         }
-        continue;
       }
+
+      const enterFlowOffset = row.length === 5 ? -1 : 0;
 
       link = {
         path: row[1],
         enterFlow: row[2],
-        exitFlow: row[3],
-        numEdges: row[4],
-        numChildren: row[5],
+        exitFlow: row[3 + enterFlowOffset],
+        numEdges: row[4 + enterFlowOffset],
+        numChildren: row[5 + enterFlowOffset],
         links: []
       };
 
