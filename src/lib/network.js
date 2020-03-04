@@ -8,8 +8,6 @@ import TreePath from "./treepath";
  ******************************************/
 const hasFlow = (flow = 0) => ({
   flow,
-  enterFlow: 0,
-  exitFlow: 0,
 });
 
 const isRenderable = {
