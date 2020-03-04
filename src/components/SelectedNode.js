@@ -74,6 +74,7 @@ export default function SelectedNode(props) {
           />
           <Table.Cell content={(+node.flow).toPrecision(4)}/>
         </Table.Row>
+        {node.enterFlow != null &&
         <Table.Row>
           <Popup
             trigger={<Table.Cell content='Enter flow'/>}
@@ -82,6 +83,8 @@ export default function SelectedNode(props) {
           />
           <Table.Cell content={(+node.enterFlow).toPrecision(4)}/>
         </Table.Row>
+        }
+        {node.exitFlow != null &&
         <Table.Row>
           <Popup
             trigger={<Table.Cell content='Exit flow'/>}
@@ -90,6 +93,7 @@ export default function SelectedNode(props) {
           />
           <Table.Cell content={(+node.exitFlow).toPrecision(4)}/>
         </Table.Row>
+        }
         {isRoot && directed &&
         <Table.Row>
           <Popup
