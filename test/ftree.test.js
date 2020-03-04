@@ -8,7 +8,7 @@ describe('parseFTree', function () {
             ['1:1', 0.1, 'Name 1', 1],
             ['1:2', 0.1, 'Name 2', 2],
             ['*Links', 'directed'],
-            ['*Links', 'root', 0, 2, 2],
+            ['*Links', 'root', 0, 0, 2, 2],
             [1, 2, 0.1],
             [2, 1, 0.1],
         ];
@@ -21,6 +21,7 @@ describe('parseFTree', function () {
                 links: [
                     {
                         path: 'root',
+                        enterFlow: 0,
                         exitFlow: 0,
                         numEdges: 2,
                         numChildren: 2,
