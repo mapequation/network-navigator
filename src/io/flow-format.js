@@ -5,7 +5,9 @@
  * @return {string} formatted number as string
  */
 export default function(flow) {
-  if (flow < 1e-4 && flow > Number.EPSILON) {
+  if (!flow) return "0";
+
+  if (flow > 0 && flow < 1e-4 && flow > Number.EPSILON) {
     let [significand, exponent] = flow
       .toExponential()
       .split("e");
@@ -20,7 +22,7 @@ export default function(flow) {
       significand.substr(0, Math.min(significand.length + 2, 7)),
       exponent
     ].join("e");
-  } else if (flow < 10 && flow.toString().length > 11) {
+  } else if (flow > 0 && flow < 10 && flow.toString().length > 11) {
     return flow.toFixed(9);
   }
 
