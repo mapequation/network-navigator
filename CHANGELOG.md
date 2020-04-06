@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.1.2](https://github.com/mapequation/network-navigator/compare/v1.1.1...v1.1.2) (2020-04-06)
+
+
+### Bug Fixes
+
+* Export network causes crash due to missing root enterflow ([7b077b0](https://github.com/mapequation/network-navigator/commit/7b077b0d37860268b4131cce8655434f884f1b69))
+
 ### [1.1.1](https://github.com/mapequation/network-navigator/compare/v1.1.0...v1.1.1) (2020-03-04)
 
 
