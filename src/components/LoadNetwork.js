@@ -1,4 +1,5 @@
 import localforage from "localforage";
+import "whatwg-fetch";
 import PropTypes from "prop-types";
 import React from "react";
 import { Container, Divider, Image, Label, Progress, Segment, Step } from "semantic-ui-react";
