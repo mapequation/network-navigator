@@ -9,7 +9,7 @@
     "d3": "^5.15.1",
     "file-saver": "^1.3.8",
     "localforage": "^1.7.3",
-    "lodash": "^4.17.15",
+    "lodash": "^4.17.19",
     "prop-types": "^15.7.2",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
