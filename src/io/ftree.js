@@ -117,8 +117,8 @@ export default function parseFTree(rows) {
   for (; i < rows.length && !/\*Links/i.test(rows[i][0].toString()); i++) {
     const row = rows[i];
 
-    if (row.length !== 4 && row.length !== 5) {
-      result.errors.push(`Malformed ftree data: expected 4 or 5 fields, found ${row.length} when parsing tree.`);
+    if (row.length < 4 || row.length > 6) {
+      result.errors.push(`Malformed ftree data: expected 4 to 6 fields, found ${row.length} when parsing tree.`);
       continue;
     }
 
