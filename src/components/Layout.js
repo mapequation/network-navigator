@@ -4,9 +4,10 @@ import NetworkNavigator from "./NetworkNavigator";
 import Sidebar from "./Sidebar";
 import Dispatch from "../context/Dispatch";
 
-
 function reducer(state, action) {
   switch (action.type) {
+    case "nodeLimit":
+      return { ...state, nodeLimit: action.value };
     case "nodeSize":
       return { ...state, nodeSize: action.value };
     case "nodeScale":
@@ -24,7 +25,10 @@ function reducer(state, action) {
     case "searchCallback":
       return { ...state, searchCallback: action.value };
     case "selectedNodeNameChange":
-      return { ...state, selectedNodeNameUpdatedBit: !state.selectedNodeNameUpdatedBit };
+      return {
+        ...state,
+        selectedNodeNameUpdatedBit: !state.selectedNodeNameUpdatedBit,
+      };
     case "occurrences":
       return { ...state, occurrences: action.value };
     case "lodEnabled":
@@ -36,6 +40,7 @@ function reducer(state, action) {
 
 export default function Layout(props) {
   const initialState = {
+    nodeLimit: 20,
     nodeSize: "flow",
     nodeScale: "root",
     linkScale: "root",
@@ -46,7 +51,7 @@ export default function Layout(props) {
     selectedNodeNameUpdatedBit: true,
     occurrences: null,
     lodEnabled: true,
-    searchCallback: () => null
+    searchCallback: () => null,
   };
 
   const [state, dispatch] = useReducer(reducer, initialState);
@@ -56,12 +61,18 @@ export default function Layout(props) {
       <SemanticSidebar.Pushable style={{ height: "100vh", overflow: "hidden" }}>
         <Sidebar {...state} {...props} />
         <SemanticSidebar.Pusher>
-          <Rail internal position="right" style={{ padding: 0, margin: 0, height: 0, width: "182px" }}>
+          <Rail
+            internal
+            position="right"
+            style={{ padding: 0, margin: 0, height: 0, width: "182px" }}
+          >
             <Menu vertical size="small">
               <Menu.Item
                 icon="sidebar"
                 content="Show sidebar"
-                onClick={() => dispatch({ type: "sidebarVisible", value: true })}
+                onClick={() =>
+                  dispatch({ type: "sidebarVisible", value: true })
+                }
               />
             </Menu>
           </Rail>

@@ -2,16 +2,23 @@ import localforage from "localforage";
 import "whatwg-fetch";
 import PropTypes from "prop-types";
 import React from "react";
-import { Container, Divider, Image, Label, Progress, Segment, Step } from "semantic-ui-react";
+import {
+  Container,
+  Divider,
+  Image,
+  Label,
+  Progress,
+  Segment,
+  Step,
+} from "semantic-ui-react";
 import Background from "../images/Background.svg";
 import parseFTree from "../io/ftree";
 import networkFromFTree from "../io/network-from-ftree";
 import parseFile from "../io/parse-file";
 
-
-const errorState = err => ({
+const errorState = (err) => ({
   progressError: true,
-  progressLabel: err.toString()
+  progressLabel: err.toString(),
 });
 
 export default class LoadNetwork extends React.Component {
@@ -20,11 +27,11 @@ export default class LoadNetwork extends React.Component {
     progressLabel: "",
     progressValue: 0,
     progressError: false,
-    ftree: null
+    ftree: null,
   };
 
   static propTypes = {
-    onLoad: PropTypes.func.isRequired
+    onLoad: PropTypes.func.isRequired,
   };
 
   progressTimeout = null;
@@ -34,8 +41,9 @@ export default class LoadNetwork extends React.Component {
     const args = urlParams.get("infomap");
 
     localforage.config({ name: "infomap" });
-    localforage.getItem("ftree")
-      .then(ftree => {
+    localforage
+      .getItem("ftree")
+      .then((ftree) => {
         if (!ftree) {
           return;
         }
@@ -45,7 +53,11 @@ export default class LoadNetwork extends React.Component {
           this.loadNetwork(ftree, args);
         }
       })
-      .catch(err => console.error(err));
+      .catch((err) => console.error(err));
+
+    if (process.env.NODE_ENV === "development") {
+      this.loadExampleData();
+    }
   }
 
   componentWillUnmount() {
@@ -61,14 +73,17 @@ export default class LoadNetwork extends React.Component {
       progressVisible: true,
       progressValue: 1,
       progressLabel: "Reading file",
-      progressError: false
+      progressError: false,
     });
 
-    this.progressTimeout = setTimeout(() =>
-      this.setState({
-        progressValue: 2,
-        progressLabel: "Parsing"
-      }), 400);
+    this.progressTimeout = setTimeout(
+      () =>
+        this.setState({
+          progressValue: 2,
+          progressLabel: "Parsing",
+        }),
+      400,
+    );
 
     return parseFile(file)
       .then((parsed) => {
@@ -88,7 +103,7 @@ export default class LoadNetwork extends React.Component {
 
         this.setState({
           progressValue: 3,
-          progressLabel: "Success"
+          progressLabel: "Success",
         });
 
         this.progressTimeout = setTimeout(() => {
@@ -110,12 +125,12 @@ export default class LoadNetwork extends React.Component {
       progressVisible: true,
       progressValue: 1,
       progressLabel: "Reading file",
-      progressError: false
+      progressError: false,
     });
 
     fetch(`/navigator/${filename}`)
-      .then(res => res.text())
-      .then(file => this.loadNetwork(file, filename))
+      .then((res) => res.text())
+      .then((file) => this.loadNetwork(file, filename))
       .catch((err) => {
         this.setState(errorState(err));
         console.log(err);
@@ -123,7 +138,13 @@ export default class LoadNetwork extends React.Component {
   };
 
   render() {
-    const { progressError, progressLabel, progressValue, progressVisible, ftree } = this.state;
+    const {
+      progressError,
+      progressLabel,
+      progressValue,
+      progressVisible,
+      ftree,
+    } = this.state;
 
     const disabled = progressVisible && !progressError;
 
@@ -131,7 +152,7 @@ export default class LoadNetwork extends React.Component {
       padding: "100px 0 100px 0",
       background: `linear-gradient(hsla(0, 0%, 100%, 0.5), hsla(0, 0%, 100%, 0.5)), url(${Background}) no-repeat`,
       backgroundSize: "cover, cover",
-      backgroundPosition: "center top"
+      backgroundPosition: "center top",
     };
 
     return (
@@ -141,7 +162,7 @@ export default class LoadNetwork extends React.Component {
           text
           textAlign="center"
           style={{ padding: "50px 0px" }}
-          padded='very'
+          padded="very"
         >
           <Label attached="top right">v {process.env.REACT_APP_VERSION}</Label>
 
@@ -156,36 +177,41 @@ export default class LoadNetwork extends React.Component {
             />
           </Step.Group>
 
-          {!!ftree &&
-          <React.Fragment>
-            <Divider hidden/>
+          {!!ftree && (
+            <React.Fragment>
+              <Divider hidden />
 
-            <Step.Group>
-              <Step
-                disabled={disabled}
-                link
-                onClick={() => this.loadNetwork(ftree, "infomap.ftree")}
-              >
-                <Image
-                  spaced="right"
-                  size="tiny"
+              <Step.Group>
+                <Step
                   disabled={disabled}
-                  verticalAlign="middle"
-                  src="//www.mapequation.org/assets/img/twocolormapicon_whiteboarder.svg"
-                  alt="mapequation-icon"
-                />
-                <Step.Content>
-                  <Step.Title>
-                    Open from <span className="brand brand-infomap">Infomap</span> <span
-                    className="brand brand-nn">Online</span>
-                  </Step.Title>
-                </Step.Content>
-              </Step>
-            </Step.Group>
-          </React.Fragment>
-          }
+                  link
+                  onClick={() => this.loadNetwork(ftree, "infomap.ftree")}
+                >
+                  <Image
+                    spaced="right"
+                    size="tiny"
+                    disabled={disabled}
+                    verticalAlign="middle"
+                    src="//www.mapequation.org/assets/img/twocolormapicon_whiteboarder.svg"
+                    alt="mapequation-icon"
+                  />
+                  <Step.Content>
+                    <Step.Title>
+                      Open from{" "}
+                      <span className="brand brand-infomap">Infomap</span>{" "}
+                      <span className="brand brand-nn">Online</span>
+                    </Step.Title>
+                  </Step.Content>
+                </Step>
+              </Step.Group>
+            </React.Fragment>
+          )}
 
-          <Divider horizontal style={{ margin: "20px 100px 30px 100px" }} content="Or"/>
+          <Divider
+            horizontal
+            style={{ margin: "20px 100px 30px 100px" }}
+            content="Or"
+          />
 
           <Step.Group ordered>
             <Step
@@ -197,8 +223,9 @@ export default class LoadNetwork extends React.Component {
               <Step.Content>
                 <Step.Title>Cluster network with Infomap</Step.Title>
                 <Step.Description>
-                  Command line version or <span className="brand brand-infomap">Infomap</span> <span
-                  className="brand brand-nn">Online</span>
+                  Command line version or{" "}
+                  <span className="brand brand-infomap">Infomap</span>{" "}
+                  <span className="brand brand-nn">Online</span>
                 </Step.Description>
               </Step.Content>
             </Step>
@@ -213,25 +240,25 @@ export default class LoadNetwork extends React.Component {
           </Step.Group>
           <input
             style={{ visibility: "hidden" }}
-            type='file'
-            id='upload'
+            type="file"
+            id="upload"
             onChange={() => this.loadNetwork(this.input.files[0])}
             accept=".ftree"
-            ref={input => this.input = input}
+            ref={(input) => (this.input = input)}
           />
 
-          {progressVisible &&
-          <div style={{ padding: "50px 100px 0" }}>
-            <Progress
-              align='left'
-              indicating
-              total={3}
-              error={progressError}
-              label={progressLabel}
-              value={progressValue}
-            />
-          </div>
-          }
+          {progressVisible && (
+            <div style={{ padding: "50px 100px 0" }}>
+              <Progress
+                align="left"
+                indicating
+                total={3}
+                error={progressError}
+                label={progressLabel}
+                value={progressValue}
+              />
+            </div>
+          )}
         </Segment>
       </div>
     );
