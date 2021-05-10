@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [1.2.0](https://github.com/mapequation/network-navigator/compare/v1.1.2...v1.2.0) (2021-05-10)
+
+
+### Features
+
+* Expose node limit to user ([e06d086](https://github.com/mapequation/network-navigator/commit/e06d086a62b92346f9778627f6333649744287f7))
+
+
+### Bug Fixes
+
+* Add fetch polyfill ([fe93720](https://github.com/mapequation/network-navigator/commit/fe937209bdf8263225ab6bdb3ef0fd6a7cc81b8d)), closes [#NETWORK-NAVIGATOR-15](https://github.com/mapequation/network-navigator/issues/NETWORK-NAVIGATOR-15)
+* Support new multilayer input ([c073d7c](https://github.com/mapequation/network-navigator/commit/c073d7ca9c937e40abf6969930926b3cc1d2d1f2))
+
 ### [1.1.2](https://github.com/mapequation/network-navigator/compare/v1.1.1...v1.1.2) (2020-04-06)
 
 
