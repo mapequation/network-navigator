@@ -1,5 +1,4 @@
 import localforage from "localforage";
-import "whatwg-fetch";
 import PropTypes from "prop-types";
 import React from "react";
 import {
@@ -55,10 +54,6 @@ export default class LoadNetwork extends React.Component {
         }
       })
       .catch((err) => console.error(err));
-
-    if (process.env.NODE_ENV === "development") {
-      this.loadExampleData();
-    }
   }
 
   componentWillUnmount() {
