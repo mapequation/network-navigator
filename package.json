@@ -28,7 +28,6 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject",
     "deploy": "react-scripts build && react-snap && scp -r build/* mapequation:/var/www/network-navigator",
     "postbuild": "react-snap",
     "release": "standard-version"
