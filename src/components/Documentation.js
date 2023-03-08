@@ -73,7 +73,7 @@ const Documentation = () =>
           publication</a> or use the following format:
         </p>
         <p>
-          D. Edler, A. Eriksson and M. Rosvall, The MapEquation software package,
+          D. Edler, A. Holmgren and M. Rosvall, The MapEquation software package,
           available online at <a href="https://www.mapequation.org">mapequation.org</a>.
         </p>
 
