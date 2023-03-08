@@ -66,16 +66,53 @@ const Documentation = () =>
           issues</a>.
         </p>
 
-        <Header as="h1">References</Header>
-        <p>
-          If you are using the software at mapequation.org in one of your research articles or otherwise
-          want to refer to it, please cite <a href="https://www.mapequation.org/publications.html">relevant
-          publication</a> or use the following format:
-        </p>
-        <p>
-          D. Edler, A. Holmgren and M. Rosvall, The MapEquation software package,
-          available online at <a href="https://www.mapequation.org">mapequation.org</a>.
-        </p>
+        <Header as="h1">How to cite</Header>
+
+        The Network Navigator was originally described in the thesis<br/>
+        <a href="http://urn.kb.se/resolve?urn=urn:nbn:se:umu:diva-148551">Interactive visualization of community structure in complex networks (2018)</a>.
+
+        <code>
+          <pre>
+          {`@thesis{eriksson2018interactive,
+  title = {Interactive visualization of community structure in complex networks},
+  author = {Eriksson, Anton},
+  institution = {Department of Physics, Ume{\\aa} University},
+  url = {http://urn.kb.se/resolve?urn=urn\\%3Anbn\\%3Ase\\%3Aumu\\%3Adiva-148551},
+  eprint = {1215352},
+  eprinttype = {diva2},
+  archivePrefix = {DIvA},
+  year = {2018}
+}`}
+          </pre>
+        </code>
+
+        <p>BibTeX for Infomap Network Navigator:</p>
+        <code>
+          <pre>
+          {`@software{mapequation2018navigator,
+  author = {Holmgren, Anton and Edler, Daniel and Rosvall, Martin},
+  title = {{Infomap Network Navigator}},
+  url = {https://mapequation.org/navigator},
+  license = {MIT},
+  version = {${process.env.REACT_APP_VERSION}},
+  month = {6},
+  year = {2018}
+}`}
+          </pre>
+        </code>
+
+        <p>BibTeX for all Map Equation software</p>
+        <code>
+          <pre>
+            {`@software{mapequation2022software,
+  author = {Edler, Daniel and Holmgren, Anton and Rosvall, Martin},
+  title = {{The MapEquation software package}},
+  url = {https://mapequation.org},
+  year = {2022}
+}`}
+          </pre>
+        </code>
+
 
         <Header as="h1">Supported formats</Header>
         <p>

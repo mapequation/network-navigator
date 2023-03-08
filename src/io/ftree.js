@@ -4,7 +4,7 @@
  * to an object representation.
  * The data should be split into lines and fields.
  *
- * @author Anton Eriksson
+ * @author Anton Holmgren
  */
 
 /**

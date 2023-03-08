@@ -1,7 +1,7 @@
 /**
  * @file This file dictates the appearance of the rendered network.
  *
- * @author Anton Eriksson
+ * @author Anton Holmgren
  */
 
 import { interpolateGreens, scaleLinear, scaleSqrt } from "d3";

@@ -10,7 +10,7 @@
  * @see Network
  * @see networkFromFTree
  *
- * @author Anton Eriksson
+ * @author Anton Holmgren
  */
 
 import { byFlow } from "../lib/filter";

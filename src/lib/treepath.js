@@ -1,7 +1,7 @@
 /**
  * Class that represents a path in a tree
  *
- * @author Anton Eriksson
+ * @author Anton Holmgren
  */
 export default class TreePath {
   /**

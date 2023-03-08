@@ -5,7 +5,7 @@
  * @see parseFTree
  * @see Network
  *
- * @author Anton Eriksson
+ * @author Anton Holmgren
  */
 
 import { byFlow } from "../lib/filter";

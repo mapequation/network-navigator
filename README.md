@@ -6,4 +6,4 @@ Described in [Eriksson, Anton. "Interactive visualization of community structure
 
 ## Author
 
-Anton Eriksson
+Anton Holmgren

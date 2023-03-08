@@ -5,7 +5,7 @@
  * The exception is the functions for filtering disconnected nodes
  * and links which both need a set of nodes and links to work.
  *
- * @author Anton Eriksson
+ * @author Anton Holmgren
  */
 
 /**
