@@ -1,16 +1,25 @@
 import React from "react";
 import { Container, Grid, Header, Icon, Image } from "semantic-ui-react";
 import Legend from "./Legend";
+import MapEquationBibTeX from "./MapEquationBibTeX";
 
 
-const Documentation = () =>
-  <Container style={{ padding: "40px 0 100px 0" }}>
+const Documentation = () => {
+  const citeStyle = {
+    backgroundColor: "#fff",
+    fontSize: "0.85em",
+    whiteSpace: "pre-wrap",
+    padding: 5,
+    lineHeight: 1.5
+  };
+
+  return <Container style={{ padding: "40px 0 100px 0" }}>
     <Grid columns={2}>
       <Grid.Column>
         <Header as="h1">Network Navigator</Header>
         <p>
           This is an interactive zoomable map for networks clustered with <a
-          href='http://www.mapequation.org/code.html'>Infomap</a>. Think of it like Google Maps for
+          href="//www.mapequation.org/code.html">Infomap</a>. Think of it like Google Maps for
           hierarchical networks. Everything runs locally on your computer; no data is uploaded to any server.
         </p>
 
@@ -21,7 +30,7 @@ const Documentation = () =>
           their thickness are proportional to the flow between modules.
         </p>
         <Image size="large">
-          <Legend/>
+          <Legend />
         </Image>
 
         <Header>Requirements</Header>
@@ -62,54 +71,40 @@ const Documentation = () =>
         <Header as="h1">Feedback</Header>
         <p>
           If you have any questions, suggestions or issues regarding the software, please add them to <a
-          href="https://github.com/mapequation/network-navigator/issues"><Icon name="github"/>GitHub
+          href="//github.com/mapequation/network-navigator/issues"><Icon name="github" />GitHub
           issues</a>.
         </p>
 
         <Header as="h1">How to cite</Header>
 
-        The Network Navigator was originally described in the thesis<br/>
-        <a href="http://urn.kb.se/resolve?urn=urn:nbn:se:umu:diva-148551">Interactive visualization of community structure in complex networks (2018)</a>.
+        The Network Navigator is described in the thesis<br />
+        <a href="//urn.kb.se/resolve?urn=urn:nbn:se:umu:diva-148551">Interactive visualization of community structure in complex networks (2018)</a>.
+
+        <p style={{ marginTop: 10 }}>Please cite</p>
 
         <code>
-          <pre>
-          {`@thesis{eriksson2018interactive,
-  title = {Interactive visualization of community structure in complex networks},
-  author = {Eriksson, Anton},
-  institution = {Department of Physics, Ume{\\aa} University},
-  url = {http://urn.kb.se/resolve?urn=urn\\%3Anbn\\%3Ase\\%3Aumu\\%3Adiva-148551},
-  eprint = {1215352},
-  eprinttype = {diva2},
-  archivePrefix = {DIvA},
-  year = {2018}
-}`}
+          <pre style={citeStyle}>
+          {`@mastersthesis{eriksson2018interactive,
+    title = {Interactive visualization of community structure in complex networks},
+    author = {Eriksson, Anton},
+    publisher = {Ume\\aa University},
+    school = {Department of Physics, Ume{\\aa} University},
+    url = {http://urn.kb.se/resolve?urn=urn\\%3Anbn\\%3Ase\\%3Aumu\\%3Adiva-148551},
+    eprint = {1215352},
+    eprinttype = {diva2},
+    archivePrefix = {DIvA},
+    year = {2018},
+    note = {\\href{http://urn.kb.se/resolve?urn=urn\\%3Anbn\\%3Ase\\%3Aumu\\%3Adiva-148551}{diva2:1215352}}
+}
+`}
           </pre>
         </code>
 
-        <p>BibTeX for Infomap Network Navigator:</p>
-        <code>
-          <pre>
-          {`@software{mapequation2018navigator,
-  author = {Holmgren, Anton and Edler, Daniel and Rosvall, Martin},
-  title = {{Infomap Network Navigator}},
-  url = {https://mapequation.org/navigator},
-  license = {MIT},
-  version = {${process.env.REACT_APP_VERSION}},
-  month = {6},
-  year = {2018}
-}`}
-          </pre>
-        </code>
+        <p>and</p>
 
-        <p>BibTeX for all Map Equation software</p>
         <code>
-          <pre>
-            {`@software{mapequation2022software,
-  author = {Edler, Daniel and Holmgren, Anton and Rosvall, Martin},
-  title = {{The MapEquation software package}},
-  url = {https://mapequation.org},
-  year = {2022}
-}`}
+          <pre style={citeStyle}>
+            <MapEquationBibTeX />
           </pre>
         </code>
 
@@ -127,5 +122,6 @@ const Documentation = () =>
       </Grid.Column>
     </Grid>
   </Container>;
+};
 
 export default Documentation;
