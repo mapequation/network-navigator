@@ -15,30 +15,16 @@
     "recharts": "^1.8.5",
     "semantic-ui-css": "^2.4.1",
     "semantic-ui-react": "^0.80.2",
-    "standard-version": "^8.0.1"
   },
   "devDependencies": {
+    "standard-version": "^8.0.1"
     "prettier": "^1.19.1",
-    "react-snap": "^1.23.0"
   },
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "deploy": "react-scripts build && react-snap && scp -r build/* mapequation:/var/www/network-navigator",
-    "postbuild": "react-snap",
+    "deploy": "react-scripts build",
     "release": "standard-version"
-  },
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
   }
 }
