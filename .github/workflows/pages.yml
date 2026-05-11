@@ -29,6 +29,8 @@ jobs:
       - run: npm ci
 
       - run: npm run build
+        env:
+          NODE_OPTIONS: --openssl-legacy-provider
 
       - run: touch build/.nojekyll
 
