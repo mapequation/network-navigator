@@ -1,9 +1,63 @@
-import { Button } from "@heroui/react";
+import { observer } from "mobx-react-lite";
+import { useEffect } from "react";
+import { Breadcrumb } from "./components/Breadcrumb";
+import { EmptyState } from "./components/EmptyState";
+import { HelpModal } from "./components/HelpModal";
+import { LoadModal } from "./components/LoadModal";
+import { NetworkView } from "./components/NetworkView";
+import { Sidebar } from "./components/Sidebar/Sidebar";
+import { ftreeToNetwork } from "./lib/ftree-graph";
+import { loadInfomapOnline } from "./lib/infomap-online";
+import { useStores } from "./stores";
 
-export default function App() {
+const App = observer(function App() {
+  const { network: store, ui } = useStores();
+
+  useEffect(() => {
+    const onKey = (ev: KeyboardEvent): void => {
+      const target = ev.target as HTMLElement | null;
+      if (
+        target &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.isContentEditable)
+      )
+        return;
+      if (ev.key === "l" && !ui.loadOpen) ui.openLoad();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [ui]);
+
+  useEffect(() => {
+    // v1 behavior: ?infomap in the URL auto-loads the Infomap Online handover.
+    if (!new URLSearchParams(window.location.search).has("infomap")) return;
+    loadInfomapOnline()
+      .then((item) => {
+        if (!item) return;
+        store.setNetwork(ftreeToNetwork(item.text, item.filename));
+        ui.setLoadOpen(false);
+      })
+      .catch((err) => ui.setLoadError(String(err)));
+  }, [store, ui]);
+
   return (
-    <div className="flex h-screen items-center justify-center">
-      <Button>Network Navigator 2.0 scaffold</Button>
+    <div className="flex h-screen w-screen overflow-hidden">
+      <main className="relative min-w-0 flex-1">
+        {store.current ? (
+          <>
+            <NetworkView />
+            <Breadcrumb />
+          </>
+        ) : (
+          <EmptyState />
+        )}
+      </main>
+      <Sidebar />
+      <LoadModal />
+      <HelpModal />
     </div>
   );
-}
+});
+
+export default App;
