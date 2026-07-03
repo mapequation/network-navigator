@@ -35,7 +35,9 @@ export function withClustering(
   let covered = 0;
   for (const n of nodes) {
     const idx = denseIndex.get(keyOf(n));
-    if (idx === undefined) continue;
+    // Skip unknown and duplicate keys (first write wins) so `covered`
+    // counts distinct filled indices and the guard below stays sound.
+    if (idx === undefined || modules[idx] !== undefined) continue;
     modules[idx] = { id: idx, path: parseNodePath(n.path) };
     nodeFlow[idx] = n.flow ?? 0;
     if (n.name) names[idx] = n.name;

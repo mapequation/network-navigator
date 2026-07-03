@@ -52,6 +52,15 @@ describe("withClustering", () => {
     ).toThrow(/missing/i);
   });
 
+  it("throws when duplicate ids leave a node uncovered", () => {
+    const duplicated = `# path flow name node_id
+1:1 0.5 "n1" 1
+1:2 0.3 "n1b" 1
+2:1 0.2 "n2" 2
+`;
+    expect(() => withClustering(raw, duplicated)).toThrow(/missing/i);
+  });
+
   it("does not mutate the input", () => {
     expect(raw.kind).toBe("raw");
     expect(raw.modules).toBeUndefined();
