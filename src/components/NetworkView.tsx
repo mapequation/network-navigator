@@ -82,7 +82,7 @@ export const NetworkView = observer(function NetworkView() {
     const graph = store.built;
     if (!host || !current || !graph) return;
 
-    const net = network(host, backend === "auto" ? {} : { backend });
+    const net = network(host, { backend });
     store.engine = net;
     const colors = current.modules ? moduleColors(current.modules) : null;
 
