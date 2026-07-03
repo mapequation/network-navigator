@@ -63,6 +63,28 @@ describe("NetworkStore", () => {
     expect(store.breadcrumb).toEqual([2]);
   });
 
+  it("keeps actions bound when passed as bare callbacks", () => {
+    const store = new NetworkStore();
+    store.setNetwork(toy());
+    store.selectFromHit(0, false, null);
+    const clear = store.clearSelection;
+    clear();
+    expect(store.selection).toBeNull();
+  });
+
+  it("tolerates a leaf hit without a module record", () => {
+    const store = new NetworkStore();
+    store.setNetwork(toy());
+    store.selectFromHit(99, false, null);
+    expect(store.selection).toMatchObject({ ids: [99], path: null });
+  });
+
+  it("returns an empty module name for empty members", () => {
+    const store = new NetworkStore();
+    store.setNetwork(toy());
+    expect(store.moduleName(null, [])).toBe("");
+  });
+
   it("matches search queries case-insensitively", () => {
     const store = new NetworkStore();
     store.setNetwork(toy());

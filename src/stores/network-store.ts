@@ -22,7 +22,6 @@ export interface SelectionInfo {
 
 export interface OccurrenceFile {
   name: string;
-  values: string[];
   ids: number[];
   idSet: Set<number>;
   color: string;
@@ -61,19 +60,24 @@ export class NetworkStore {
   /** Set by NetworkView; null ids = fit whole network. Placeholder for d3gl fitToNodes (d3gl#197). */
   zoomTo: ((ids: number[] | null) => void) | null = null;
 
-  private moduleLeafCache = new Map<string, number[]>();
+  private moduleLeafCache = new Map<string, readonly number[]>();
 
   constructor() {
     // `moduleLeafCache` is private; TS's homomorphic AnnotationsMap mapped type drops private
     // members from `keyof this`, so it must be threaded through as an explicit AdditionalKeys
     // type argument rather than inferred from the overrides object literal.
-    makeAutoObservable<this, "moduleLeafCache">(this, {
-      built: false,
-      builtState: false,
-      engine: false,
-      zoomTo: false,
-      moduleLeafCache: false,
-    });
+    makeAutoObservable<this, "moduleLeafCache">(
+      this,
+      {
+        built: false,
+        builtState: false,
+        engine: false,
+        zoomTo: false,
+        moduleLeafCache: false,
+      },
+      // autoBind: actions are handed bare to d3gl event callbacks (e.g. onClick: store.selectFromHit).
+      { autoBind: true },
+    );
   }
 
   setNetwork(net: LoadedNetwork): void {
@@ -119,7 +123,8 @@ export class NetworkStore {
     if (!cur) return;
     const nodeFlow = cur.graph.nodeFlow as Float32Array | undefined;
     if (!aggregate) {
-      const path = cur.modules ? Array.from(cur.modules[id].path) : null;
+      const record = cur.modules?.[id];
+      const path = record ? Array.from(record.path) : null;
       this.selection = {
         ids: [id],
         aggregate: false,
@@ -154,6 +159,7 @@ export class NetworkStore {
       const curated = cur.moduleNames?.get(pathKey(path));
       if (curated) return curated;
     }
+    if (memberIds.length === 0) return "";
     const nodeFlow = cur.graph.nodeFlow as Float32Array | undefined;
     let best = memberIds[0] ?? 0;
     if (nodeFlow)
@@ -161,7 +167,7 @@ export class NetworkStore {
     return cur.names[best] ?? "";
   }
 
-  leavesOfModule(path: number[]): number[] {
+  leavesOfModule(path: number[]): readonly number[] {
     const cur = this.current;
     if (!cur?.modules) return [];
     const key = pathKey(path);
@@ -201,7 +207,6 @@ export class NetworkStore {
     });
     this.occurrenceFiles.push({
       name,
-      values,
       ids,
       idSet: new Set(ids),
       color:
