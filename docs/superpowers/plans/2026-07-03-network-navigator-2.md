@@ -611,7 +611,7 @@ export interface ClusterOptions {
 
 ```ts
 import { describe, expect, it } from "vitest";
-import { normalizeModulePath, pathKey } from "./path-key";
+import { normalizeModulePath, parseNodePath, pathKey } from "./path-key";
 
 describe("pathKey", () => {
   it("joins with colons", () => {
@@ -626,6 +626,15 @@ describe("normalizeModulePath", () => {
   });
   it("passes real paths through", () => {
     expect(normalizeModulePath([1, 4])).toEqual([1, 4]);
+  });
+});
+
+describe("parseNodePath", () => {
+  it("splits string paths from tree files", () => {
+    expect(parseNodePath("1:2:3")).toEqual([1, 2, 3]);
+  });
+  it("passes arrays through", () => {
+    expect(parseNodePath([1, 2])).toEqual([1, 2]);
   });
 });
 ```
@@ -646,6 +655,15 @@ export function pathKey(path: ArrayLike<number>): string {
 export function normalizeModulePath(path: ArrayLike<number>): number[] {
   const arr = Array.from(path);
   return arr.length === 1 && arr[0] === 0 ? [] : arr;
+}
+
+/**
+ * infomap-parser v1 returns NODE paths as "1:2:3" strings for tree files
+ * (module paths, in contrast, are number[]) — verified against the parser
+ * source. Normalize before use.
+ */
+export function parseNodePath(path: number[] | string): number[] {
+  return typeof path === "string" ? path.split(":").map(Number) : path;
 }
 ```
 
@@ -817,7 +835,7 @@ describe("ftreeToNetwork", () => {
 
 ```ts
 import { parseTree } from "@mapequation/infomap-parser";
-import { normalizeModulePath, pathKey } from "./path-key";
+import { normalizeModulePath, parseNodePath, pathKey } from "./path-key";
 import type { LoadedNetwork } from "./types";
 
 interface ParsedNode {
@@ -850,7 +868,7 @@ export function ftreeToNetwork(text: string, filename: string): LoadedNetwork {
   const bestLeaf = new Map<string, number>(); // module pathKey → highest-flow leaf index
 
   nodes.forEach((node, i) => {
-    const path = node.path as number[];
+    const path = parseNodePath(node.path);
     names.push(node.name ?? String(node.id));
     physicalIds.push(node.id);
     if (node.stateId !== undefined) stateIds.push(node.stateId);
@@ -889,7 +907,7 @@ export function ftreeToNetwork(text: string, filename: string): LoadedNetwork {
     graph: { nodeCount: nodes.length, source, target, weight, nodeFlow, directed },
     names,
     physicalIds,
-    modules: nodes.map((n, i) => ({ id: i, path: n.path as number[] })),
+    modules: nodes.map((n, i) => ({ id: i, path: parseNodePath(n.path) })),
     ftree: text,
   };
 
@@ -1180,6 +1198,7 @@ describe("withClustering", () => {
 ```ts
 import type { ModuleNode } from "@mapequation/d3gl/network";
 import { parseTree } from "@mapequation/infomap-parser";
+import { parseNodePath } from "./path-key";
 import type { LoadedNetwork } from "./types";
 
 interface ParsedNode {
@@ -1207,7 +1226,7 @@ export function withClustering(net: LoadedNetwork, ftreeText: string): LoadedNet
   for (const n of nodes) {
     const idx = denseIndex.get(keyOf(n));
     if (idx === undefined) continue;
-    modules[idx] = { id: idx, path: n.path as number[] };
+    modules[idx] = { id: idx, path: parseNodePath(n.path) };
     nodeFlow[idx] = n.flow ?? 0;
     if (n.name) names[idx] = n.name;
     covered++;
