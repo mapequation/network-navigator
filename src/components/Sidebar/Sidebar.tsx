@@ -6,8 +6,8 @@ import { Header } from "./Header";
 import { Occurrences } from "./Occurrences";
 import { Search } from "./Search";
 import { SelectedNode } from "./SelectedNode";
+import { SettingsPanel } from "./SettingsPanel";
 // Uncomment as Task 19 lands:
-// import { SettingsPanel } from "./SettingsPanel";
 // import { Export } from "./Export";
 
 export function Section({
@@ -46,7 +46,9 @@ export const Sidebar = observer(function Sidebar() {
           <Section title="Occurrences">
             <Occurrences />
           </Section>
-          {/* <Section title="Settings"><SettingsPanel /></Section> */}
+          <Section title="Settings">
+            <SettingsPanel />
+          </Section>
           {/* <Section title="Export"><Export /></Section> */}
         </>
       )}
