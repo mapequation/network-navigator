@@ -11,6 +11,7 @@ import type { ReactNode } from "react";
 import { buildInfomapArgs } from "../../lib/infomap-args";
 import { runInfomap } from "../../lib/run-infomap";
 import { useStores } from "../../stores";
+import type { LodMode } from "../../stores/settings-store";
 
 // `label` is not a native <label> here: several controls (Switch, Select) render their own
 // internal <label>/button structure, so wrapping them in a second <label> would nest labels
@@ -153,23 +154,29 @@ export const SettingsPanel = observer(function SettingsPanel() {
       <p className="mt-2 text-xs font-semibold text-neutral-700">
         Level of detail (d3gl)
       </p>
-      <Row label="LOD enabled">
-        <Switch
-          aria-label="LOD enabled"
-          isSelected={settings.lodEnabled}
-          onChange={(on) => settings.set("lodEnabled", on)}
+      <Row label="Aggregate by">
+        <Select
+          aria-label="LOD mode"
+          selectedKey={settings.lodMode}
+          onSelectionChange={(k) => settings.set("lodMode", k as LodMode)}
+          className="w-32"
         >
-          <Switch.Content>
-            <Switch.Control>
-              <Switch.Thumb />
-            </Switch.Control>
-          </Switch.Content>
-        </Switch>
+          <Select.Trigger>
+            <Select.Value />
+          </Select.Trigger>
+          <Select.Popover>
+            <ListBox>
+              <ListBox.Item id="modules">modules</ListBox.Item>
+              <ListBox.Item id="spatial">spatial</ListBox.Item>
+              <ListBox.Item id="off">off</ListBox.Item>
+            </ListBox>
+          </Select.Popover>
+        </Select>
       </Row>
       <Row label={`Expand at ${settings.expandPx}px`}>
         <Slider
           aria-label="Expand threshold"
-          isDisabled={!settings.lodEnabled}
+          isDisabled={settings.lodMode === "off"}
           minValue={16}
           maxValue={200}
           step={4}
@@ -186,7 +193,7 @@ export const SettingsPanel = observer(function SettingsPanel() {
       <Row label={`Max aggregate radius ${settings.maxAggregateRadius}px`}>
         <Slider
           aria-label="Max aggregate radius"
-          isDisabled={!settings.lodEnabled}
+          isDisabled={settings.lodMode === "off"}
           minValue={8}
           maxValue={64}
           step={2}
@@ -203,7 +210,7 @@ export const SettingsPanel = observer(function SettingsPanel() {
       <Row label="Declutter">
         <Switch
           aria-label="Declutter"
-          isDisabled={!settings.lodEnabled}
+          isDisabled={settings.lodMode === "off"}
           isSelected={settings.declutter}
           onChange={(on) => settings.set("declutter", on)}
         >
@@ -217,7 +224,7 @@ export const SettingsPanel = observer(function SettingsPanel() {
       <Row label="Super-edges">
         <Switch
           aria-label="Super-edges"
-          isDisabled={!settings.lodEnabled}
+          isDisabled={settings.lodMode === "off"}
           isSelected={settings.superEdges}
           onChange={(on) => settings.set("superEdges", on)}
         >
@@ -231,7 +238,7 @@ export const SettingsPanel = observer(function SettingsPanel() {
       <Row label={`Cross-fade ${settings.crossFade.toFixed(1)}`}>
         <Slider
           aria-label="Cross-fade"
-          isDisabled={!settings.lodEnabled}
+          isDisabled={settings.lodMode === "off"}
           minValue={0}
           maxValue={1}
           step={0.1}

@@ -14,6 +14,7 @@ import type { NetworkStore } from "../stores/network-store";
 import type { ScaleKind, SettingsStore } from "../stores/settings-store";
 
 const DEFAULT_NODE_FILL = "#4878d0";
+const ZOOM_EXTENT: [number, number] = [0.002, 200];
 
 const makeScale = (kind: ScaleKind) =>
   kind === "root" ? scaleSqrt() : scaleLinear();
@@ -60,7 +61,7 @@ function buildLod(
   store: NetworkStore,
   settings: SettingsStore,
 ): NetworkLODOptions | false {
-  if (!settings.lodEnabled) return false;
+  if (settings.lodMode === "off") return false;
   const cur = store.current;
   // `modules` is dense-indexed by node id in `cur.graph` (buildGraph's space).
   // For a *States network that's state-indexed (one record per state node),
@@ -70,7 +71,8 @@ function buildLod(
   // throw on every LOD recompute (mapequation/d3gl#197 territory: no
   // physical/state module remapping exists yet). State networks fall back to
   // spatial (non-module) LOD grouping until that mapping is built.
-  const modules = cur?.isStates ? undefined : cur?.modules;
+  const modules =
+    settings.lodMode === "modules" && !cur?.isStates ? cur?.modules : undefined;
   return {
     ...(modules ? { modules } : {}),
     expandPx: settings.expandPx,
@@ -96,7 +98,7 @@ export const NetworkView = observer(function NetworkView() {
     store.engine = net;
     const colors = current.modules ? moduleColors(current.modules) : null;
 
-    net.enableZoom([0.002, 200]);
+    net.enableZoom(ZOOM_EXTENT);
     net.interactive({
       selectable: { multi: true },
       draggable: true,
@@ -133,7 +135,13 @@ export const NetworkView = observer(function NetworkView() {
         host.clientWidth,
         host.clientHeight,
       );
-      if (t) net.setTransform(t);
+      if (!t) return;
+      net.setTransform(t);
+      // enableZoom seeds d3-zoom's internal transform only at call time, so a
+      // programmatic setTransform leaves it stale and the next wheel gesture
+      // snaps back to the old view (mapequation/d3gl#202). Re-calling
+      // enableZoom re-seeds it from the engine's current transform.
+      net.enableZoom(ZOOM_EXTENT);
     };
 
     const onDblClick = (ev: MouseEvent) => {

@@ -2,6 +2,8 @@ import { makeAutoObservable } from "mobx";
 
 export type NodeSizeBy = "flow" | "degree";
 export type ScaleKind = "linear" | "root";
+/** LOD aggregation source: Infomap modules, d3gl's spatial coarsening, or none. */
+export type LodMode = "modules" | "spatial" | "off";
 
 /** Every d3gl option exposed in the Settings UI. */
 export class SettingsStore {
@@ -11,7 +13,7 @@ export class SettingsStore {
   labelsVisible = true;
   maxLabels = 50;
   simulation = true;
-  lodEnabled = true;
+  lodMode: LodMode = "modules";
   expandPx = 48;
   maxAggregateRadius = 26;
   declutter = true;
