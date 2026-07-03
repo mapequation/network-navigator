@@ -61,6 +61,12 @@ export const SettingsPanel = observer(function SettingsPanel() {
             : "Cluster with Infomap"}
         </Button>
       )}
+      {/* ui.loadError otherwise only renders inside the (closed) load modal. */}
+      {ui.loadError && !ui.loadOpen && (
+        <p role="alert" className="text-xs text-red-600">
+          {ui.loadError}
+        </p>
+      )}
 
       <Row label={`Node size by ${settings.nodeSizeBy}`}>
         <Switch

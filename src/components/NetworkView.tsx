@@ -29,7 +29,8 @@ function buildStyle(
   return {
     directed: cur?.directed,
     sizeMode: settings.sizeMode,
-    linkStyle: settings.linkStyle,
+    // half-arrow only makes sense with direction; undirected graphs render lines.
+    linkStyle: cur?.directed ? settings.linkStyle : "line",
     nodeBorder: { width: 1, color: "#ffffff" },
     nodeRadius: {
       by: byFlow ? "flow" : "degree",

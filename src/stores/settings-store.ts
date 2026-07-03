@@ -17,7 +17,7 @@ export class SettingsStore {
   declutter = true;
   superEdges = true;
   crossFade = 0;
-  linkStyle: "line" | "half-arrow" = "line";
+  linkStyle: "line" | "half-arrow" = "half-arrow";
   sizeMode: "screen" | "world" = "screen";
   backend: "auto" | "webgl" | "canvas" | "svg" = "auto";
   pickLinks = false;
