@@ -21,6 +21,8 @@ export interface SelectionInfo {
 }
 
 export interface OccurrenceFile {
+  /** Stable identity for React keys — files may share a name. */
+  id: string;
   name: string;
   ids: number[];
   idSet: Set<number>;
@@ -209,6 +211,7 @@ export class NetworkStore {
       if (wanted.has(n)) ids.push(i);
     });
     this.occurrenceFiles.push({
+      id: crypto.randomUUID(),
       name,
       ids,
       idSet: new Set(ids),
