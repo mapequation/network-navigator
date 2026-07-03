@@ -2,13 +2,12 @@ import { observer } from "mobx-react-lite";
 import type { ReactNode } from "react";
 import { useStores } from "../../stores";
 import { Distributions } from "./Distributions";
+import { Export } from "./Export";
 import { Header } from "./Header";
 import { Occurrences } from "./Occurrences";
 import { Search } from "./Search";
 import { SelectedNode } from "./SelectedNode";
 import { SettingsPanel } from "./SettingsPanel";
-// Uncomment as Task 19 lands:
-// import { Export } from "./Export";
 
 export function Section({
   title,
@@ -49,7 +48,9 @@ export const Sidebar = observer(function Sidebar() {
           <Section title="Settings">
             <SettingsPanel />
           </Section>
-          {/* <Section title="Export"><Export /></Section> */}
+          <Section title="Export">
+            <Export />
+          </Section>
         </>
       )}
     </aside>
