@@ -1,9 +1,10 @@
 import type { ClusterOptions } from "./types";
 
 // The Arguments type lives in @mapequation/infomap; keep the subset we use
-// structural so the exact type-export path never bites us.
+// structural so the exact type-export path never bites us. output stays a
+// literal type so the whole object is assignable to the library's Arguments.
 export interface InfomapArguments {
-  output: string[];
+  output: "ftree"[];
   silent: boolean;
   directed?: boolean;
   twoLevel?: boolean;
