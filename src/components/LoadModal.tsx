@@ -20,12 +20,13 @@ export const LoadModal = observer(function LoadModal() {
   const [twoLevel, setTwoLevel] = useState(false);
   const [noInfomap, setNoInfomap] = useState(false);
   const [onlineAvailable, setOnlineAvailable] = useState(false);
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     if (ui.loadOpen)
-      void loadInfomapOnline().then((item) =>
-        setOnlineAvailable(item !== null),
-      );
+      void loadInfomapOnline()
+        .then((item) => setOnlineAvailable(item !== null))
+        .catch(() => setOnlineAvailable(false));
   }, [ui.loadOpen]);
 
   const onDrop = useCallback(async (accepted: File[]) => {
@@ -48,16 +49,26 @@ export const LoadModal = observer(function LoadModal() {
     ui.setLoadOpen(false);
     ui.setLoadError(null);
     setFiles([]);
+    setDirected(false);
+    setTwoLevel(false);
+    setNoInfomap(false);
   };
   const fail = (err: unknown): void =>
     ui.setLoadError(err instanceof Error ? err.message : String(err));
 
+  const fetchOk = async (url: string): Promise<Response> => {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`Failed to load ${url}: ${res.status}`);
+    return res;
+  };
+
   const loadExample = async (): Promise<void> => {
+    setBusy(true);
     try {
       const base = import.meta.env.BASE_URL;
       const [ftree, names] = await Promise.all([
-        fetch(`${base}citation_data.ftree`).then((r) => r.text()),
-        fetch(`${base}citation_module_names.json`).then(
+        fetchOk(`${base}citation_data.ftree`).then((r) => r.text()),
+        fetchOk(`${base}citation_module_names.json`).then(
           (r) => r.json() as Promise<Record<string, string>>,
         ),
       ]);
@@ -66,20 +77,26 @@ export const LoadModal = observer(function LoadModal() {
       finish(net);
     } catch (err) {
       fail(err);
+    } finally {
+      setBusy(false);
     }
   };
 
   const loadOnline = async (): Promise<void> => {
+    setBusy(true);
     try {
       const item = await loadInfomapOnline();
       if (!item) throw new Error("No network stored by Infomap Online");
       finish(ftreeToNetwork(item.text, item.filename));
     } catch (err) {
       fail(err);
+    } finally {
+      setBusy(false);
     }
   };
 
   const loadDropped = async (): Promise<void> => {
+    setBusy(true);
     try {
       ui.startInfomap();
       const net = await loadFiles(
@@ -92,6 +109,7 @@ export const LoadModal = observer(function LoadModal() {
       fail(err);
     } finally {
       ui.finishInfomap();
+      setBusy(false);
     }
   };
 
@@ -99,20 +117,21 @@ export const LoadModal = observer(function LoadModal() {
     ["tree", "clu"].includes(fileKind(f.name)),
   );
   const hasNetwork = Boolean(store.current);
+  const canDismiss = hasNetwork && !ui.infomapRunning && !busy;
 
   return (
     <Modal.Backdrop
       isOpen={ui.loadOpen}
-      isDismissable={hasNetwork}
-      isKeyboardDismissDisabled={!hasNetwork}
+      isDismissable={canDismiss}
+      isKeyboardDismissDisabled={!canDismiss}
       onOpenChange={(nextOpen) => {
-        if (!nextOpen && !hasNetwork) return; // nothing loaded yet — modal stays
+        if (!nextOpen && !canDismiss) return; // nothing loaded yet or run in flight — modal stays
         ui.setLoadOpen(nextOpen);
       }}
     >
       <Modal.Container size="lg">
         <Modal.Dialog>
-          {hasNetwork && <Modal.CloseTrigger />}
+          {canDismiss && <Modal.CloseTrigger />}
           <Modal.Header>
             <Modal.Heading>Load network</Modal.Heading>
           </Modal.Header>
@@ -182,6 +201,9 @@ export const LoadModal = observer(function LoadModal() {
                 </Switch.Content>
               </Switch>
             </div>
+            <p className="text-neutral-500 text-xs">
+              Directed forces link direction; off lets the file format decide.
+            </p>
 
             {ui.infomapRunning && (
               <div className="flex flex-col gap-1">
@@ -208,12 +230,18 @@ export const LoadModal = observer(function LoadModal() {
             )}
           </Modal.Body>
           <Modal.Footer className="flex flex-wrap gap-2">
-            <Button variant="secondary" onPress={loadExample}>
+            <Button
+              variant="secondary"
+              isPending={busy}
+              isDisabled={ui.infomapRunning}
+              onPress={loadExample}
+            >
               Load example
             </Button>
             <Button
               variant="secondary"
-              isDisabled={!onlineAvailable}
+              isPending={busy}
+              isDisabled={!onlineAvailable || ui.infomapRunning}
               onPress={loadOnline}
             >
               Open from Infomap Online
@@ -222,7 +250,7 @@ export const LoadModal = observer(function LoadModal() {
               Add files…
             </Button>
             <Button
-              isDisabled={files.length === 0 || ui.infomapRunning}
+              isDisabled={files.length === 0 || busy || ui.infomapRunning}
               onPress={loadDropped}
             >
               Load

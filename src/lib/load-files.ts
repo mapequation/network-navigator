@@ -12,7 +12,12 @@ export interface NamedText {
   text: string;
 }
 
-/** Parse a raw network file (Pajek, edge list, or *States) into a LoadedNetwork. */
+/**
+ * Parse a raw network file (Pajek, edge list, or *States) into a LoadedNetwork.
+ * `directedOverride: true` forces directed links (mirroring Infomap's `-d` flag);
+ * undefined defers to the file format (Pajek *Arcs directed, *Edges undirected,
+ * states default directed).
+ */
 export function networkToLoaded(
   text: string,
   filename: string,
