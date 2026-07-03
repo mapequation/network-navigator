@@ -1,13 +1,12 @@
 import { observer } from "mobx-react-lite";
 import type { ReactNode } from "react";
 import { useStores } from "../../stores";
+// Uncomment as Tasks 18–19 land:
+import { Distributions } from "./Distributions";
 import { Header } from "./Header";
-
-// Uncomment as Tasks 16–19 land:
-// import { Search } from "./Search";
-// import { SelectedNode } from "./SelectedNode";
-// import { Distributions } from "./Distributions";
 // import { Occurrences } from "./Occurrences";
+import { Search } from "./Search";
+import { SelectedNode } from "./SelectedNode";
 // import { SettingsPanel } from "./SettingsPanel";
 // import { Export } from "./Export";
 
@@ -33,11 +32,17 @@ export const Sidebar = observer(function Sidebar() {
       <Header />
       {store.current && (
         <>
-          {/* <Section title="Search"><Search /></Section> */}
-          {/* <Section title={store.selection?.aggregate ? "Selected module" : "Selected node"}>
+          <Section title="Search">
+            <Search />
+          </Section>
+          <Section
+            title={
+              store.selection?.aggregate ? "Selected module" : "Selected node"
+            }
+          >
             <SelectedNode />
             <Distributions />
-          </Section> */}
+          </Section>
           {/* <Section title="Occurrences"><Occurrences /></Section> */}
           {/* <Section title="Settings"><SettingsPanel /></Section> */}
           {/* <Section title="Export"><Export /></Section> */}
