@@ -37,7 +37,7 @@ export const Breadcrumb = observer(function Breadcrumb() {
             onPress={() => store.zoomTo?.(store.leavesOfModule(path))}
           >
             {cur.moduleNames?.get(pathKey(path)) ??
-              store.moduleName(path, [...store.leavesOfModule(path)])}
+              store.moduleName(path, store.leavesOfModule(path))}
           </Button>
         </span>
       ))}

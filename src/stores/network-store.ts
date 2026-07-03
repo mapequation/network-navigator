@@ -5,7 +5,7 @@ import {
   type NetworkGraph,
   type StateNetworkGraph,
 } from "@mapequation/d3gl/network";
-import { makeAutoObservable } from "mobx";
+import { makeAutoObservable, observable } from "mobx";
 import { withClustering } from "../lib/apply-ftree";
 import { OCCURRENCE_COLORS } from "../lib/occurrence-colors";
 import { pathKey } from "../lib/path-key";
@@ -69,6 +69,9 @@ export class NetworkStore {
     makeAutoObservable<this, "moduleLeafCache">(
       this,
       {
+        // The loaded network is replaced wholesale, never mutated internally —
+        // observable.ref avoids deep-proxying its ~10k-element arrays.
+        current: observable.ref,
         built: false,
         builtState: false,
         engine: false,
@@ -152,7 +155,7 @@ export class NetworkStore {
     if (path) this.breadcrumb = path;
   }
 
-  moduleName(path: number[] | null, memberIds: number[]): string {
+  moduleName(path: number[] | null, memberIds: readonly number[]): string {
     const cur = this.current;
     if (!cur) return "";
     if (path) {
