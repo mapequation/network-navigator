@@ -15,8 +15,8 @@ importers:
         specifier: ^3.2.1
         version: 3.2.1(tailwind-merge@3.4.0)(tailwindcss@4.3.2)
       '@mapequation/d3gl':
-        specifier: ^0.8.0
-        version: 0.8.0(@luma.gl/shadertools@9.3.5(@luma.gl/core@9.3.5))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+        specifier: ^0.9.0
+        version: 0.9.0(@luma.gl/shadertools@9.3.5(@luma.gl/core@9.3.5))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       '@mapequation/infomap':
         specifier: ^2.14.0
         version: 2.14.0(react@19.2.7)
@@ -246,8 +246,8 @@ packages:
     peerDependencies:
       '@luma.gl/core': ~9.3.0
 
-  '@mapequation/d3gl@0.8.0':
-    resolution: {integrity: sha512-gOd/qgkrv9YOWp9V2R5fA4ATgDVVkhPqz3EhQ5JEL8gsXnscWLEB/xylUY9Rqq6rClGAP7QChfnc/Ci2pR8IDA==, tarball: https://registry.npmjs.org/@mapequation/d3gl/-/d3gl-0.8.0.tgz}
+  '@mapequation/d3gl@0.9.0':
+    resolution: {integrity: sha512-BcM9VA5btezEDf4wblUkVIv1aMmyypPG8dnmhuAD2eoaPo0j64Ay6abSVsrG5R/tBg1YMSrca7vSvl2+46m5TA==, tarball: https://registry.npmjs.org/@mapequation/d3gl/-/d3gl-0.9.0.tgz}
     peerDependencies:
       react: ^19
       react-dom: ^19
@@ -1544,7 +1544,7 @@ snapshots:
       '@math.gl/types': 4.1.0
       '@probe.gl/env': 4.1.1
 
-  '@mapequation/d3gl@0.8.0(@luma.gl/shadertools@9.3.5(@luma.gl/core@9.3.5))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
+  '@mapequation/d3gl@0.9.0(@luma.gl/shadertools@9.3.5(@luma.gl/core@9.3.5))(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
     dependencies:
       '@luma.gl/core': 9.3.5
       '@luma.gl/engine': 9.3.5(@luma.gl/core@9.3.5)(@luma.gl/shadertools@9.3.5(@luma.gl/core@9.3.5))
