@@ -221,7 +221,11 @@ export const LoadModal = observer(function LoadModal() {
               </div>
             )}
             {ui.loadError && (
-              <Alert status="danger">
+              // HeroUI's Alert doesn't set an ARIA role itself (verified against
+              // its source: AlertRoot spreads `rest` onto a plain div with no
+              // default role) — without this, assistive tech gets no
+              // notification when a load error appears.
+              <Alert status="danger" role="alert">
                 <Alert.Indicator />
                 <Alert.Content>
                   <Alert.Description>{ui.loadError}</Alert.Description>

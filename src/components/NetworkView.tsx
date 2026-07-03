@@ -60,7 +60,16 @@ function buildLod(
   settings: SettingsStore,
 ): NetworkLODOptions | false {
   if (!settings.lodEnabled) return false;
-  const modules = store.current?.modules;
+  const cur = store.current;
+  // `modules` is dense-indexed by node id in `cur.graph` (buildGraph's space).
+  // For a *States network that's state-indexed (one record per state node),
+  // but d3gl's engine renders the "physical" view (the default) over the
+  // physical graph — a different, smaller index space — so handing it
+  // straight through makes buildModuleLODTree read an out-of-range id and
+  // throw on every LOD recompute (mapequation/d3gl#197 territory: no
+  // physical/state module remapping exists yet). State networks fall back to
+  // spatial (non-module) LOD grouping until that mapping is built.
+  const modules = cur?.isStates ? undefined : cur?.modules;
   return {
     ...(modules ? { modules } : {}),
     expandPx: settings.expandPx,
@@ -142,20 +151,37 @@ export const NetworkView = observer(function NetworkView() {
       net.data(graph);
     }
 
+    // These reactions track live store/settings state so the SAME net keeps
+    // updating in place while `current` is loaded (e.g. toggling a setting).
+    // But they run as plain mobx reactions, independent of React's effect
+    // schedule: swapping store.current (e.g. a "Cluster with Infomap" run
+    // finishing) can re-fire one of them synchronously — inside the same
+    // mobx action — before React tears this effect down and builds a new
+    // net for the new network. Applying the newly-computed value to `net`
+    // then reaches into its old graph (still the pre-swap one), which can
+    // throw (e.g. nodeRadius by:"flow" needs nodeFlow, absent on a raw
+    // graph). `forCurrent` drops updates once this net is no longer the
+    // active one — it's about to be destroyed by the effect cleanup anyway.
+    const forCurrent =
+      <T,>(fn: (value: T) => void) =>
+      (value: T): void => {
+        if (store.current === current) fn(value);
+      };
+
     const disposers = [
       reaction(
         () => buildStyle(store, settings, colors),
-        (s) => net.style(s),
+        forCurrent((s) => net.style(s)),
         { fireImmediately: true },
       ),
       reaction(
         () => buildLod(store, settings),
-        (lod) => net.lod(lod),
+        forCurrent((lod) => net.lod(lod)),
         { fireImmediately: true },
       ),
       reaction(
         () => ({ on: settings.labelsVisible, max: settings.maxLabels }),
-        ({ on, max }) =>
+        forCurrent(({ on, max }) =>
           net.labels(
             on
               ? {
@@ -173,27 +199,30 @@ export const NetworkView = observer(function NetworkView() {
                 }
               : false,
           ),
+        ),
         { fireImmediately: true },
       ),
       reaction(
         () => settings.simulation,
-        (on) => (on ? net.layout({ backend: "worker" }) : net.stopLayout()),
+        forCurrent((on) =>
+          on ? net.layout({ backend: "worker" }) : net.stopLayout(),
+        ),
       ),
       reaction(
         () => store.searchHighlight,
-        (ids) => net.select("nodes", ids),
+        forCurrent((ids) => net.select("nodes", ids)),
         { fireImmediately: true },
       ),
       reaction(
         () => settings.pickLinks,
-        (p) => net.pickLinks(p),
+        forCurrent((p) => net.pickLinks(p)),
         { fireImmediately: true },
       ),
       reaction(
         () => settings.stateView,
-        (view) => {
+        forCurrent((view) => {
           if (current.isStates && current.modules) net.view(view);
-        },
+        }),
       ),
     ];
 
