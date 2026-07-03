@@ -19,7 +19,10 @@ export class SettingsStore {
   crossFade = 0;
   linkStyle: "line" | "half-arrow" = "half-arrow";
   sizeMode: "screen" | "world" = "screen";
-  backend: "auto" | "webgl" | "canvas" | "svg" = "auto";
+  // "auto" (progressive canvas→WebGL) blocks the main thread for ~10s emitting
+  // canvas geometry on large graphs (mapequation/d3gl#201) — default to webgl
+  // until the auto path scales; auto/canvas/svg stay selectable in Settings.
+  backend: "auto" | "webgl" | "canvas" | "svg" = "webgl";
   pickLinks = false;
   stateView: "physical" | "state" | "both" = "physical";
 
