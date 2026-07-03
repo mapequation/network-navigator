@@ -58,7 +58,7 @@ export class NetworkStore {
   builtState: StateNetworkGraph | null = null;
   engine: Network | null = null;
   /** Set by NetworkView; null ids = fit whole network. Placeholder for d3gl fitToNodes (d3gl#197). */
-  zoomTo: ((ids: number[] | null) => void) | null = null;
+  zoomTo: ((ids: readonly number[] | null) => void) | null = null;
 
   private moduleLeafCache = new Map<string, readonly number[]>();
 
