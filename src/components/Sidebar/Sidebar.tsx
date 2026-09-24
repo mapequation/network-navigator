@@ -6,8 +6,8 @@ import { DataPanel } from "./DataPanel";
 import { Distributions } from "./Distributions";
 import { Export } from "./Export";
 import { Header } from "./Header";
+import { MetadataOverlap } from "./MetadataOverlap";
 import { ModulesPanel } from "./ModulesPanel";
-import { Occurrences } from "./Occurrences";
 import { Search } from "./Search";
 import { SelectedNode } from "./SelectedNode";
 import { DisplayPanel, LodPanel, RenderingPanel } from "./SettingsPanel";
@@ -47,8 +47,8 @@ export const Sidebar = observer(function Sidebar() {
             <SelectedNode />
             <Distributions />
           </Section>
-          <Section title="Occurrences" defaultOpen={false}>
-            <Occurrences />
+          <Section title="Metadata overlap" defaultOpen={false}>
+            <MetadataOverlap />
           </Section>
           <Section title="Display">
             <DisplayPanel />

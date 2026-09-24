@@ -5,7 +5,12 @@ import { Bar, BarChart, Cell, Tooltip, XAxis, YAxis } from "recharts";
 import { downloadText } from "../../lib/download";
 import { useStores } from "../../stores";
 
-export const Occurrences = observer(function Occurrences() {
+/**
+ * Metadata overlap (v1 "occurrences"): each uploaded CSV is a set of node
+ * names. Matching nodes are coloured per set, and a selected module shows how
+ * many of each set's nodes it holds versus the count expected by chance.
+ */
+export const MetadataOverlap = observer(function MetadataOverlap() {
   const { network: store } = useStores();
   const input = useRef<HTMLInputElement>(null);
   const sel = store.selection;
@@ -34,7 +39,7 @@ export const Occurrences = observer(function Occurrences() {
     id: f.id,
     name: f.name,
     color: f.color,
-    occurrences: f.ids.reduce((n, id) => n + (selSet.has(id) ? 1 : 0), 0),
+    overlap: f.ids.reduce((n, id) => n + (selSet.has(id) ? 1 : 0), 0),
     expected: cur
       ? Math.round((f.ids.length * selSet.size) / cur.graph.nodeCount)
       : 0,
@@ -50,7 +55,7 @@ export const Occurrences = observer(function Occurrences() {
     });
     const base = cur.filename.replace(/\.[^.]+$/, "");
     downloadText(
-      `${base}-occurrences.csv`,
+      `${base}-metadata-overlap.csv`,
       lines.join("\n"),
       "text/csv;charset=utf-8",
     );
@@ -59,7 +64,11 @@ export const Occurrences = observer(function Occurrences() {
   return (
     <div className="flex flex-col gap-2 text-xs">
       {store.occurrenceFiles.length === 0 && (
-        <p className="text-neutral-400">No files loaded</p>
+        <p className="leading-snug text-neutral-500">
+          Upload CSV files listing node names (first column), one file per node
+          set. Matching nodes are coloured, and selecting a module compares its
+          overlap with each set against chance.
+        </p>
       )}
       {store.occurrenceFiles.map((f, i) => (
         <div key={f.id} className="flex items-center gap-2">
@@ -107,13 +116,16 @@ export const Occurrences = observer(function Occurrences() {
         variant="secondary"
         onPress={() => input.current?.click()}
       >
-        Add file…
+        Upload CSV of node names…
       </Button>
 
       {sel?.aggregate && enabled.length > 0 && (
         <div>
           <div className="flex items-center justify-between">
-            <p className="text-neutral-500">Occurrences in selected module</p>
+            <p className="text-neutral-500">
+              Overlap with selected module{" "}
+              <span className="text-neutral-400">(grey: expected)</span>
+            </p>
             <Button size="sm" variant="ghost" onPress={downloadCsv}>
               CSV
             </Button>
@@ -127,12 +139,12 @@ export const Occurrences = observer(function Occurrences() {
             <XAxis dataKey="name" tick={false} />
             <YAxis tick={{ fontSize: 10 }} width={40} />
             <Tooltip />
-            <Bar dataKey="occurrences">
+            <Bar dataKey="overlap" name="In module">
               {chartData.map((d) => (
                 <Cell key={d.id} fill={d.color} />
               ))}
             </Bar>
-            <Bar dataKey="expected" fill="#aaaaaa" />
+            <Bar dataKey="expected" name="Expected" fill="#aaaaaa" />
           </BarChart>
         </div>
       )}
