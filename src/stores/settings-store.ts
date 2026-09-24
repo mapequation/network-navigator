@@ -14,7 +14,8 @@ export class SettingsStore {
   maxLabels = 50;
   simulation = true;
   lodMode: LodMode = "modules";
-  expandPx = 48;
+  /** null = d3gl's tree-adaptive default (opens a module tree as a map of modules). */
+  expandPx: number | null = null;
   maxAggregateRadius = 26;
   declutter = true;
   superEdges = true;

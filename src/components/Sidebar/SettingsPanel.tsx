@@ -188,8 +188,8 @@ export const LodPanel = observer(function LodPanel() {
       </Row>
       <SliderRow
         label="Expand at"
-        value={settings.expandPx}
-        format={(v) => `${v} px`}
+        value={settings.expandPx ?? 48}
+        format={(v) => (settings.expandPx === null ? "auto" : `${v} px`)}
         min={16}
         max={200}
         step={4}

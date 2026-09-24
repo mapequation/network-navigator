@@ -1,6 +1,7 @@
 import type {
   BuildGraphInput,
   BuildStateGraphInput,
+  ModuleLink,
   ModuleNode,
 } from "@mapequation/d3gl/network";
 import type { NetworkStats } from "./network-stats";
@@ -33,6 +34,12 @@ export interface LoadedNetwork {
   stateIds?: number[];
   /** Per-node Infomap paths, dense-index keyed (kind === "clustered"). */
   modules?: ModuleNode[];
+  /**
+   * Module-level links from an .ftree's *Links sections (rows with a module
+   * endpoint), path-addressed for d3gl's lod({ moduleLinks }). Leaf-to-leaf
+   * rows are in `graph` instead.
+   */
+  moduleLinks?: ModuleLink[];
   /** Curated module names: pathKey ("1:2") → name. Only the example ships these. */
   moduleNames?: Map<string, string>;
   /** ftree text (loaded or Infomap-generated) — export source. */

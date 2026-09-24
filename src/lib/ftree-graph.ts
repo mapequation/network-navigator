@@ -1,3 +1,4 @@
+import type { ModuleLink } from "@mapequation/d3gl/network";
 import { parseTree } from "@mapequation/infomap-parser";
 import { byteLength, computeStats } from "./network-stats";
 import { normalizeModulePath, parseNodePath, pathKey } from "./path-key";
@@ -12,10 +13,11 @@ interface ParsedNode {
 }
 
 /**
- * Leaf edges come from bottom-module *Links rows. A module-level link becomes
- * ONE leaf edge between the highest-flow leaves of its endpoint modules
- * (weight = link flow) so d3gl's LOD derives super-edges with the correct
- * aggregate flow. Upstreaming tracked by mapequation/d3gl#199.
+ * An .ftree stores leaf links only inside bottom modules; every coarser link
+ * appears once, aggregated, in its parent module's *Links section. Leaf-to-leaf
+ * rows become the graph's edges; every row with a module endpoint is kept as a
+ * path-addressed module link for d3gl's `lod({ moduleLinks })` (d3gl#199).
+ * Nothing is synthesized: the graph holds exactly the links the file lists.
  */
 export function ftreeToNetwork(
   text: string,
@@ -33,62 +35,52 @@ export function ftreeToNetwork(
   const physicalIds: number[] = [];
   const stateIds: number[] = [];
   const nodeFlow = new Float32Array(nodes.length);
+  const paths: number[][] = [];
   const leafByPath = new Map<string, number>();
-  const bestLeaf = new Map<string, number>(); // module pathKey → highest-flow leaf index
+  const modulePaths = new Set<string>();
 
   nodes.forEach((node, i) => {
     const path = parseNodePath(node.path);
+    paths.push(path);
     names.push(node.name ?? String(node.id));
     physicalIds.push(node.id);
     if (node.stateId !== undefined) stateIds.push(node.stateId);
     nodeFlow[i] = node.flow ?? 0;
     leafByPath.set(pathKey(path), i);
-    for (let k = 1; k < path.length; k++) {
-      const key = pathKey(path.slice(0, k));
-      const best = bestLeaf.get(key);
-      if (best === undefined || (nodes[best].flow ?? 0) < (node.flow ?? 0))
-        bestLeaf.set(key, i);
-    }
+    for (let k = 1; k < path.length; k++)
+      modulePaths.add(pathKey(path.slice(0, k)));
   });
 
   const source: number[] = [];
   const target: number[] = [];
   const weight: number[] = [];
-  // Real leaf-to-leaf links (bottom-module rows) — the only network-level
-  // links an ftree stores; module-level rows aggregate the rest.
-  const leafSource: number[] = [];
-  const leafTarget: number[] = [];
-  const leafWeight: number[] = [];
-  let moduleLinks = 0;
+  const moduleLinks: ModuleLink[] = [];
   for (const module of result.modules ?? []) {
     const modPath = normalizeModulePath(module.path);
-    const resolve = (child: number): [number, boolean] => {
-      const key = pathKey([...modPath, child]);
-      const leaf = leafByPath.get(key);
-      if (leaf !== undefined) return [leaf, true];
-      const best = bestLeaf.get(key);
-      if (best === undefined)
+    const endpoint = (child: number): number[] => {
+      const path = [...modPath, child];
+      const key = pathKey(path);
+      if (!leafByPath.has(key) && !modulePaths.has(key))
         throw new Error(`${filename}: link endpoint ${key} not found`);
-      return [best, false];
+      return path;
     };
     for (const link of module.links ?? []) {
-      const [s, sLeaf] = resolve(link.source);
-      const [t, tLeaf] = resolve(link.target);
-      source.push(s);
-      target.push(t);
-      weight.push(link.flow);
-      if (sLeaf && tLeaf) {
-        leafSource.push(s);
-        leafTarget.push(t);
-        leafWeight.push(link.flow);
-      } else moduleLinks++;
+      const s = endpoint(link.source);
+      const t = endpoint(link.target);
+      const sLeaf = leafByPath.get(pathKey(s));
+      const tLeaf = leafByPath.get(pathKey(t));
+      if (sLeaf !== undefined && tLeaf !== undefined) {
+        source.push(sLeaf);
+        target.push(tLeaf);
+        weight.push(link.flow);
+      } else moduleLinks.push({ source: s, target: t, flow: link.flow });
     }
   }
-  const stats = computeStats(nodes.length, leafSource, leafTarget, leafWeight, {
+  const stats = computeStats(nodes.length, source, target, weight, {
     weightIsFlow: true,
     physicalIds,
   });
-  stats.moduleLinks = moduleLinks;
+  stats.moduleLinks = moduleLinks.length;
 
   const net: LoadedNetwork = {
     kind: "clustered",
@@ -107,7 +99,8 @@ export function ftreeToNetwork(
     },
     names,
     physicalIds,
-    modules: nodes.map((n, i) => ({ id: i, path: parseNodePath(n.path) })),
+    modules: paths.map((path, i) => ({ id: i, path })),
+    moduleLinks,
     ftree: text,
   };
 

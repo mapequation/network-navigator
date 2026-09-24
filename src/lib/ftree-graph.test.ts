@@ -44,13 +44,16 @@ describe("ftreeToNetwork", () => {
     expect(net.stats.weightIsFlow).toBe(true);
   });
 
-  it("uses bottom-module links directly and injects representative leaves for module-level links", () => {
-    const edges = edgeList(net);
-    expect(edges).toContainEqual([0, 3, 0.5]); // root link module1→module2 → a→d (highest-flow leaves)
-    expect(edges).toContainEqual([0, 1, 0.2]);
-    expect(edges).toContainEqual([1, 2, 0.1]);
-    expect(edges).toContainEqual([3, 4, 0.3]);
-    expect(edges).toHaveLength(4);
+  it("keeps only the file's leaf links as graph edges — nothing synthesized", () => {
+    expect(edgeList(net)).toEqual([
+      [0, 1, 0.2],
+      [1, 2, 0.1],
+      [3, 4, 0.3],
+    ]);
+  });
+
+  it("keeps module-level links path-addressed for d3gl lod({ moduleLinks })", () => {
+    expect(net.moduleLinks).toEqual([{ source: [1], target: [2], flow: 0.5 }]);
   });
 
   it("is directed, clustered, with per-node module paths and retained ftree text", () => {

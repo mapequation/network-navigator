@@ -14,8 +14,11 @@ import type { NetworkStore } from "../stores/network-store";
 import type { ScaleKind, SettingsStore } from "../stores/settings-store";
 
 const DEFAULT_NODE_FILL = "#4878d0";
-const HALF_ARROW_BEND = 30;
+const HALF_ARROW_BEND = 0.15; // d3gl#299: half-arrow bend is a chord fraction too
 const LINE_BEND = 0.15;
+// GPU force layout, seeded top-down over the module tree when lod({ modules })
+// is set first (d3gl N8.2); fit keeps the camera framed while it converges.
+const LAYOUT = { backend: "gpu", fit: true } as const;
 const ZOOM_EXTENT: [number, number] = [0.002, 200];
 
 const makeScale = (kind: ScaleKind) =>
@@ -84,8 +87,8 @@ function buildLod(
   const modules =
     settings.lodMode === "modules" && !cur?.isStates ? cur?.modules : undefined;
   return {
-    ...(modules ? { modules } : {}),
-    expandPx: settings.expandPx,
+    ...(modules ? { modules, moduleLinks: cur?.moduleLinks } : {}),
+    ...(settings.expandPx !== null ? { expandPx: settings.expandPx } : {}),
     maxAggregateRadius: settings.maxAggregateRadius,
     declutter: settings.declutter,
     superEdges: settings.superEdges,
@@ -224,7 +227,7 @@ export const NetworkView = observer(function NetworkView() {
       reaction(
         () => settings.simulation,
         forCurrent((on) =>
-          on ? net.layout({ backend: "worker" }) : net.stopLayout(),
+          on ? net.layout(LAYOUT) : net.stopLayout(),
         ),
       ),
       reaction(
@@ -245,7 +248,7 @@ export const NetworkView = observer(function NetworkView() {
       ),
     ];
 
-    net.layout({ backend: "worker" });
+    net.layout(LAYOUT);
     void net.whenSettled().then(() => store.zoomTo?.(null));
 
     return () => {
