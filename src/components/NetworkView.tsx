@@ -16,9 +16,11 @@ import type { ScaleKind, SettingsStore } from "../stores/settings-store";
 const DEFAULT_NODE_FILL = "#4878d0";
 const HALF_ARROW_BEND = 0.15; // d3gl#299: half-arrow bend is a chord fraction too
 const LINE_BEND = 0.15;
-// GPU force layout, seeded top-down over the module tree when lod({ modules })
-// is set first (d3gl N8.2); fit keeps the camera framed while it converges.
-const LAYOUT = { backend: "gpu", fit: true } as const;
+// With lod({ modules }) set first, d3gl lays the module tree out nested
+// (d3gl#324): each module's children inside it, by their own links only,
+// streamed top-down off-thread. Without modules it's the worker force layout.
+// fit keeps the camera framed while it streams.
+const LAYOUT = { backend: "worker", fit: true, nested: true } as const;
 const ZOOM_EXTENT: [number, number] = [0.002, 200];
 
 const makeScale = (kind: ScaleKind) =>
@@ -55,11 +57,19 @@ function buildStyle(
     linkWidth: {
       by: "weight",
       scale: makeScale(settings.linkScale)
-        .domain([0, store.maxWeight || 1])
+        .domain([0, store.maxLinkFlow || 1])
         .range([0.4, 4])
         .clamp(true),
     },
-    linkStroke: "rgba(90,100,120,0.55)",
+    // Opacity rises with flow so weak links recede and overlaps read as
+    // density (as in d3gl's directed map of modules).
+    linkStroke: (settings.linkScale === "root"
+      ? scaleSqrt<string>()
+      : scaleLinear<string>()
+    )
+      .domain([0, store.maxLinkFlow || 1])
+      .range(["rgba(90,100,120,0.12)", "rgba(60,70,90,0.85)"])
+      .clamp(true),
     nodeFill:
       occurrences.length || colors
         ? (i: number) => {
@@ -208,11 +218,13 @@ export const NetworkView = observer(function NetworkView() {
             on
               ? {
                   max,
-                  // Aggregate glyphs are labeled by size only: labelOf(id, info) exposes no
-                  // module identity for aggregates yet — raised on mapequation/d3gl#197.
+                  // Modules are named like v1: curated name, else their
+                  // highest-flow node. info.path is the module's Infomap path.
                   labelOf: (id, info) =>
                     info.aggregate
-                      ? `${info.count.toLocaleString()} node${info.count === 1 ? "" : "s"}`
+                      ? info.path
+                        ? store.moduleLabel(info.path)
+                        : `${info.count.toLocaleString()} node${info.count === 1 ? "" : "s"}`
                       : current.names[Number(id)],
                   importanceOf: (id, info) =>
                     info.aggregate
@@ -226,9 +238,7 @@ export const NetworkView = observer(function NetworkView() {
       ),
       reaction(
         () => settings.simulation,
-        forCurrent((on) =>
-          on ? net.layout(LAYOUT) : net.stopLayout(),
-        ),
+        forCurrent((on) => (on ? net.layout(LAYOUT) : net.stopLayout())),
       ),
       reaction(
         () => store.searchHighlight,
@@ -249,7 +259,7 @@ export const NetworkView = observer(function NetworkView() {
     ];
 
     net.layout(LAYOUT);
-    void net.whenSettled().then(() => store.zoomTo?.(null));
+    // layout({ fit: true }) frames the view while the layout streams and on settle.
 
     return () => {
       for (const dispose of disposers) dispose();

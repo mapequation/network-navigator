@@ -45,6 +45,43 @@ function commonPathPrefix(paths: ArrayLike<number>[]): number[] {
   return Array.from({ length: len }, (_, k) => first[k]);
 }
 
+/** See {@link NetworkStore.maxLinkFlow}. */
+function maxLinkFlowOf(net: LoadedNetwork, maxLeafWeight: number): number {
+  let max = maxLeafWeight;
+  for (const l of net.moduleLinks ?? []) if (l.flow > max) max = l.flow;
+  const modules = net.modules;
+  if (!modules) return max;
+  // Leaf links summed per ordered pair of distinct top modules (the coarsest super-edges).
+  const g = net.graph;
+  const pair = new Map<number, number>();
+  const tops = 1 + modules.reduce((m, r) => Math.max(m, r.path[0] ?? 0), 0);
+  for (let e = 0; e < g.source.length; e++) {
+    const a = modules[g.source[e]]?.path[0];
+    const b = modules[g.target[e]]?.path[0];
+    if (a === undefined || b === undefined || a === b) continue;
+    const key = a * tops + b;
+    const sum = (pair.get(key) ?? 0) + (g.weight?.[e] ?? 1);
+    pair.set(key, sum);
+    if (sum > max) max = sum;
+  }
+  return max;
+}
+
+/** Module pathKey → highest-flow leaf, over every module prefix. O(nodes · depth). */
+function topLeaves(net: LoadedNetwork): Map<string, number> {
+  const out = new Map<string, number>();
+  const flow = net.graph.nodeFlow as ArrayLike<number> | undefined;
+  if (!net.modules || !flow) return out;
+  for (const { id, path } of net.modules) {
+    for (let k = 1; k < path.length; k++) {
+      const key = pathKey(Array.prototype.slice.call(path, 0, k));
+      const best = out.get(key);
+      if (best === undefined || flow[id] > flow[best]) out.set(key, id);
+    }
+  }
+  return out;
+}
+
 export class NetworkStore {
   current: LoadedNetwork | null = null;
   selection: SelectionInfo | null = null;
@@ -54,6 +91,12 @@ export class NetworkStore {
   maxFlow = 0;
   maxDegree = 0;
   maxWeight = 0;
+  /**
+   * Largest link flow/weight at any level: leaf links, ftree module links, and
+   * top-module pairs aggregated from leaf links — the link-width scale's domain,
+   * so module super-edges and leaf links share one scale.
+   */
+  maxLinkFlow = 0;
 
   /** Non-observable: typed-array graphs + engine handle (imperative surface). */
   built: NetworkGraph | null = null;
@@ -63,12 +106,14 @@ export class NetworkStore {
   zoomTo: ((ids: readonly number[] | null) => void) | null = null;
 
   private moduleLeafCache = new Map<string, readonly number[]>();
+  /** Module pathKey → its highest-flow leaf (names unnamed modules, v1-style). */
+  private moduleTopLeaf = new Map<string, number>();
 
   constructor() {
     // `moduleLeafCache` is private; TS's homomorphic AnnotationsMap mapped type drops private
     // members from `keyof this`, so it must be threaded through as an explicit AdditionalKeys
     // type argument rather than inferred from the overrides object literal.
-    makeAutoObservable<this, "moduleLeafCache">(
+    makeAutoObservable<this, "moduleLeafCache" | "moduleTopLeaf">(
       this,
       {
         // The loaded network is replaced wholesale, never mutated internally —
@@ -79,6 +124,7 @@ export class NetworkStore {
         engine: false,
         zoomTo: false,
         moduleLeafCache: false,
+        moduleTopLeaf: false,
       },
       // autoBind: actions are handed bare to d3gl event callbacks (e.g. onClick: store.selectFromHit).
       { autoBind: true },
@@ -105,6 +151,19 @@ export class NetworkStore {
     this.maxFlow = maxFlow;
     this.maxDegree = maxDegree;
     this.maxWeight = maxWeight;
+    this.maxLinkFlow = maxLinkFlowOf(net, maxWeight);
+    this.moduleTopLeaf = topLeaves(net);
+  }
+
+  /** A module's display name: curated (example), else its highest-flow node's name. */
+  moduleLabel(path: readonly number[]): string {
+    const cur = this.current;
+    if (!cur) return "";
+    const key = pathKey(path);
+    const curated = cur.moduleNames?.get(key);
+    if (curated) return curated;
+    const leaf = this.moduleTopLeaf.get(key);
+    return leaf === undefined ? "" : (cur.names[leaf] ?? "");
   }
 
   applyClustering(ftreeText: string): void {
@@ -161,8 +220,8 @@ export class NetworkStore {
     const cur = this.current;
     if (!cur) return "";
     if (path) {
-      const curated = cur.moduleNames?.get(pathKey(path));
-      if (curated) return curated;
+      const label = this.moduleLabel(path);
+      if (label) return label;
     }
     if (memberIds.length === 0) return "";
     const nodeFlow = cur.graph.nodeFlow as Float32Array | undefined;
