@@ -37,6 +37,13 @@ describe("ftreeToNetwork", () => {
     );
   });
 
+  it("counts only real leaf links in stats, module links separately", () => {
+    expect(net.stats.links).toBe(3);
+    expect(net.stats.moduleLinks).toBe(1);
+    expect(net.stats.nodes).toBe(5);
+    expect(net.stats.weightIsFlow).toBe(true);
+  });
+
   it("uses bottom-module links directly and injects representative leaves for module-level links", () => {
     const edges = edgeList(net);
     expect(edges).toContainEqual([0, 3, 0.5]); // root link module1→module2 → a→d (highest-flow leaves)

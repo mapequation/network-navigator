@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildInfomapArgs } from "./infomap-args";
+import { buildInfomapArgs, infomapArgString } from "./infomap-args";
 
 describe("buildInfomapArgs", () => {
   it("always requests ftree output, silently", () => {
@@ -27,5 +27,23 @@ describe("buildInfomapArgs", () => {
       noInfomap: true,
       clusterData: "p.clu",
     });
+  });
+});
+
+describe("infomapArgString", () => {
+  it("appends free-text flags to the structured args", () => {
+    expect(
+      infomapArgString(
+        buildInfomapArgs({
+          directed: false,
+          twoLevel: true,
+          noInfomap: false,
+          regularized: true,
+        }),
+        "  --markov-time 0.8   -N 5 ",
+      ),
+    ).toBe(
+      "--output ftree --silent --two-level --regularized --markov-time 0.8 -N 5",
+    );
   });
 });

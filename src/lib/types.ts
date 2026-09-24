@@ -3,11 +3,22 @@ import type {
   BuildStateGraphInput,
   ModuleNode,
 } from "@mapequation/d3gl/network";
+import type { NetworkStats } from "./network-stats";
+
+export interface SourceFile {
+  name: string;
+  /** Size in bytes. */
+  size: number;
+}
 
 /** Everything the app knows about the currently loaded network. */
 export interface LoadedNetwork {
   kind: "raw" | "clustered";
   filename: string;
+  /** Every file the network was built from (network, partition, or ftree). */
+  files: SourceFile[];
+  /** Topology summary computed once at load time. */
+  stats: NetworkStats;
   directed: boolean;
   isStates: boolean;
   /** Leaf graph (state-node graph when isStates). Rendered via buildGraph(). */
@@ -34,5 +45,6 @@ export interface ClusterOptions {
   directed: boolean;
   twoLevel: boolean;
   noInfomap: boolean;
+  regularized?: boolean;
   clusterFilename?: string;
 }

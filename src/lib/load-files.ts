@@ -3,6 +3,7 @@ import { withClustering } from "./apply-ftree";
 import { fileKind, isStatesText } from "./file-kinds";
 import { ftreeToNetwork } from "./ftree-graph";
 import { buildInfomapArgs } from "./infomap-args";
+import { byteLength, computeStats } from "./network-stats";
 import { parseStates } from "./parse-states";
 import { runInfomap } from "./run-infomap";
 import type { ClusterOptions, LoadedNetwork } from "./types";
@@ -10,6 +11,8 @@ import type { ClusterOptions, LoadedNetwork } from "./types";
 export interface NamedText {
   name: string;
   text: string;
+  /** Byte size when known (File.size); computed from `text` otherwise. */
+  size?: number;
 }
 
 /**
@@ -22,12 +25,19 @@ export function networkToLoaded(
   text: string,
   filename: string,
   directedOverride?: boolean,
+  size = byteLength(text),
 ): LoadedNetwork {
+  const files = [{ name: filename, size }];
   if (isStatesText(text)) {
     const parsed = parseStates(text, filename, directedOverride ?? true);
+    const g = parsed.stateGraph;
     return {
       kind: "raw",
       filename,
+      files,
+      stats: computeStats(g.stateCount, g.source, g.target, g.weight, {
+        physicalIds: parsed.physicalIds,
+      }),
       directed: parsed.stateGraph.directed ?? true,
       isStates: true,
       graph: parsed.graph,
@@ -52,6 +62,13 @@ export function networkToLoaded(
   return {
     kind: "raw",
     filename,
+    files,
+    stats: computeStats(
+      parsed.nodeCount,
+      parsed.source,
+      parsed.target,
+      parsed.weight,
+    ),
     directed,
     isStates: false,
     graph: {
@@ -105,7 +122,7 @@ export async function loadFiles(
         "Load an .ftree alone, or a network file with an optional partition",
       );
     }
-    return ftreeToNetwork(ftrees[0].text, ftrees[0].name);
+    return ftreeToNetwork(ftrees[0].text, ftrees[0].name, ftrees[0].size);
   }
   if (!networks.length) {
     throw new Error(
@@ -119,6 +136,7 @@ export async function loadFiles(
     networks[0].text,
     networks[0].name,
     opts.directed || undefined,
+    networks[0].size,
   );
   if (!partitions.length) return net;
 
@@ -131,5 +149,13 @@ export async function loadFiles(
     onProgress: cb.onProgress,
     onLog: cb.onLog,
   });
-  return withClustering(net, ftree);
+  const clustered = withClustering(net, ftree);
+  clustered.files = [
+    ...net.files,
+    {
+      name: partition.name,
+      size: partition.size ?? byteLength(partition.text),
+    },
+  ];
+  return clustered;
 }

@@ -7,6 +7,12 @@ export class UiStore {
   infomapProgress = 0;
   infomapLog: string[] = [];
   loadError: string | null = null;
+  /** Error from the sidebar Infomap run (shown in the Modules section). */
+  infomapError: string | null = null;
+  /** Sidebar Infomap options. */
+  twoLevel = false;
+  regularized = false;
+  infomapFlags = "";
 
   constructor() {
     makeAutoObservable(this);
@@ -30,6 +36,19 @@ export class UiStore {
     this.infomapProgress = 0;
     this.infomapLog = [];
     this.loadError = null;
+    this.infomapError = null;
+  };
+  setInfomapError = (message: string | null): void => {
+    this.infomapError = message;
+  };
+  setTwoLevel = (on: boolean): void => {
+    this.twoLevel = on;
+  };
+  setRegularized = (on: boolean): void => {
+    this.regularized = on;
+  };
+  setInfomapFlags = (flags: string): void => {
+    this.infomapFlags = flags;
   };
   onInfomapProgress = (percent: number): void => {
     this.infomapProgress = percent;

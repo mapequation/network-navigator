@@ -1,10 +1,12 @@
 import Infomap from "@mapequation/infomap";
-import type { InfomapArguments } from "./infomap-args";
+import { type InfomapArguments, infomapArgString } from "./infomap-args";
 
 export interface RunInfomapOptions {
   network: string;
   filename: string;
   args: InfomapArguments;
+  /** Extra command-line flags appended to `args`. */
+  flags?: string;
   /** Virtual files (e.g. cluster data) — keys must match args.clusterData. */
   files?: Record<string, string>;
   onProgress?: (percent: number) => void;
@@ -19,7 +21,7 @@ export async function runInfomap(opts: RunInfomapOptions): Promise<string> {
   const result = await infomap.runAsync({
     network: opts.network,
     filename: opts.filename,
-    args: opts.args,
+    args: infomapArgString(opts.args, opts.flags),
     files: opts.files,
   });
   const ftree = result.ftree_states ?? result.ftree;

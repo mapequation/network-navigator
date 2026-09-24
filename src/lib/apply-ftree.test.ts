@@ -1,10 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { withClustering } from "./apply-ftree";
+import { computeStats } from "./network-stats";
 import type { LoadedNetwork } from "./types";
 
 const raw: LoadedNetwork = {
   kind: "raw",
   filename: "toy.net",
+  files: [{ name: "toy.net", size: 0 }],
+  stats: computeStats(3, [0, 1], [1, 2], [1, 1]),
   directed: false,
   isStates: false,
   graph: {

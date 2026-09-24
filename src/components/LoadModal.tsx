@@ -34,14 +34,14 @@ export const LoadModal = observer(function LoadModal() {
       accepted.map(async (f) => ({
         id: crypto.randomUUID(),
         name: f.name,
+        size: f.size,
         text: await f.text(),
       })),
     );
     setFiles((prev) => [...prev, ...named]);
   }, []);
-  const { getRootProps, getInputProps, isDragActive, open } = useDropzone({
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
-    noClick: true,
   });
 
   const finish = (net: LoadedNetwork): void => {
@@ -138,72 +138,95 @@ export const LoadModal = observer(function LoadModal() {
           <Modal.Body className="flex flex-col gap-4">
             <div
               {...getRootProps()}
-              className={`rounded-lg border-2 border-dashed p-6 text-center text-sm ${
+              className={`cursor-pointer rounded-lg border-2 border-dashed p-6 text-center text-sm transition-colors ${
                 isDragActive
                   ? "border-blue-400 bg-blue-50"
-                  : "border-neutral-300"
+                  : "border-neutral-300 hover:border-neutral-400 hover:bg-neutral-50"
               }`}
             >
               <input {...getInputProps()} />
               {files.length === 0 ? (
-                <p className="text-neutral-500">
-                  Drop files here — .ftree, or a network (.net, edge list,
-                  states) optionally with a .tree/.clu partition
-                </p>
+                <div className="flex flex-col gap-1">
+                  <p className="font-medium text-neutral-700">
+                    Click or drop files here
+                  </p>
+                  <p className="text-xs text-neutral-500">
+                    An .ftree, or a network (.net, edge list, states) with an
+                    optional .tree/.clu partition
+                  </p>
+                </div>
               ) : (
                 <ul className="flex flex-col gap-1 text-left">
                   {files.map((f) => (
                     <li key={f.id} className="flex items-center gap-2">
                       <Chip size="sm">{fileKind(f.name)}</Chip>
                       <span className="min-w-0 flex-1 truncate">{f.name}</span>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onPress={() =>
-                          setFiles((prev) => prev.filter((p) => p.id !== f.id))
-                        }
-                      >
-                        ✕
-                      </Button>
+                      {/* Keep the remove click from reaching the dropzone (which opens the picker). */}
+                      {/* biome-ignore lint/a11y/noStaticElementInteractions: only stops propagation */}
+                      {/* biome-ignore lint/a11y/useKeyWithClickEvents: the Button handles keys */}
+                      <span onClick={(e) => e.stopPropagation()}>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          aria-label={`Remove ${f.name}`}
+                          onPress={() =>
+                            setFiles((prev) =>
+                              prev.filter((p) => p.id !== f.id),
+                            )
+                          }
+                        >
+                          ✕
+                        </Button>
+                      </span>
                     </li>
                   ))}
+                  <li className="pt-1 text-center text-xs text-neutral-400">
+                    Click or drop to add more
+                  </li>
                 </ul>
               )}
             </div>
 
-            <div className="flex flex-wrap gap-4 text-sm">
+            <div className="flex flex-col gap-2 text-sm">
               <Switch isSelected={directed} onChange={setDirected}>
                 <Switch.Content>
                   <Switch.Control>
                     <Switch.Thumb />
                   </Switch.Control>
-                  Directed
+                  Force directed links
                 </Switch.Content>
               </Switch>
-              <Switch isSelected={twoLevel} onChange={setTwoLevel}>
-                <Switch.Content>
-                  <Switch.Control>
-                    <Switch.Thumb />
-                  </Switch.Control>
-                  Two-level
-                </Switch.Content>
-              </Switch>
-              <Switch
-                isSelected={noInfomap}
-                onChange={setNoInfomap}
-                isDisabled={!hasPartition}
-              >
-                <Switch.Content>
-                  <Switch.Control>
-                    <Switch.Thumb />
-                  </Switch.Control>
-                  No Infomap (flow from partition only)
-                </Switch.Content>
-              </Switch>
+              {hasPartition && (
+                <>
+                  <p className="text-neutral-500 text-xs">
+                    With a partition file, Infomap runs to compute flow and the
+                    module hierarchy from it.
+                  </p>
+                  <div className="flex flex-wrap gap-4">
+                    <Switch isSelected={noInfomap} onChange={setNoInfomap}>
+                      <Switch.Content>
+                        <Switch.Control>
+                          <Switch.Thumb />
+                        </Switch.Control>
+                        No Infomap (keep partition as is)
+                      </Switch.Content>
+                    </Switch>
+                    <Switch
+                      isSelected={twoLevel}
+                      onChange={setTwoLevel}
+                      isDisabled={noInfomap}
+                    >
+                      <Switch.Content>
+                        <Switch.Control>
+                          <Switch.Thumb />
+                        </Switch.Control>
+                        Two-level
+                      </Switch.Content>
+                    </Switch>
+                  </div>
+                </>
+              )}
             </div>
-            <p className="text-neutral-500 text-xs">
-              Directed forces link direction; off lets the file format decide.
-            </p>
 
             {ui.infomapRunning && (
               <div className="flex flex-col gap-1">
@@ -249,9 +272,6 @@ export const LoadModal = observer(function LoadModal() {
               onPress={loadOnline}
             >
               Open from Infomap Online
-            </Button>
-            <Button variant="secondary" onPress={open}>
-              Add files…
             </Button>
             <Button
               isDisabled={files.length === 0 || busy || ui.infomapRunning}

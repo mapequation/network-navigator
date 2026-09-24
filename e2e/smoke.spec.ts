@@ -50,7 +50,7 @@ async function loadExample(page: Page): Promise<void> {
 }
 
 /** Attaches files to the hidden dropzone input without going through the
- * "Add files…" button's native file picker (which Playwright can't drive). */
+ * dropzone's native file picker (which Playwright can't drive). */
 async function addFiles(page: Page, files: string[]): Promise<void> {
   await page.locator('input[type="file"]').setInputFiles(files);
 }
@@ -110,11 +110,14 @@ test.describe("Network Navigator smoke", () => {
     await expect(page.locator("main canvas")).toBeVisible();
 
     const clusterButton = page.getByRole("button", {
-      name: "Cluster with Infomap",
+      name: "Run Infomap",
+      exact: true,
     });
     await expect(clusterButton).toBeVisible();
     await clusterButton.click();
-    await expect(clusterButton).toBeHidden({ timeout: 30_000 });
+    await expect(
+      page.getByRole("button", { name: "Re-run Infomap" }),
+    ).toBeVisible({ timeout: 30_000 });
 
     // Breadcrumb overlay shows the filename once modules exist.
     await expect(
@@ -184,14 +187,17 @@ test.describe("Network Navigator smoke", () => {
     await expect(page.locator("main canvas")).toBeVisible();
 
     const clusterButton = page.getByRole("button", {
-      name: "Cluster with Infomap",
+      name: "Run Infomap",
+      exact: true,
     });
     await expect(clusterButton).toBeVisible();
     await clusterButton.click();
-    await expect(clusterButton).toBeHidden({ timeout: 30_000 });
+    await expect(
+      page.getByRole("button", { name: "Re-run Infomap" }),
+    ).toBeVisible({ timeout: 30_000 });
 
     await expect(
-      page.getByRole("button", { name: "State view" }),
+      page.getByRole("radiogroup", { name: "State view" }),
     ).toBeVisible();
 
     await screenshot(page, "states");

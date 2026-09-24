@@ -11,8 +11,8 @@ const BIBTEX = `@misc{mapequation${year}software,
 export function Cite() {
   return (
     <Popover>
-      <Button size="sm" variant="secondary">
-        How to cite
+      <Button size="sm" variant="ghost">
+        Cite
       </Button>
       <Popover.Content className="max-w-96">
         <Popover.Dialog>

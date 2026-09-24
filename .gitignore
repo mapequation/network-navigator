@@ -6,3 +6,4 @@ dist
 e2e/screenshots
 test-results
 playwright-report
+/public/data

@@ -14,6 +14,8 @@ import type { NetworkStore } from "../stores/network-store";
 import type { ScaleKind, SettingsStore } from "../stores/settings-store";
 
 const DEFAULT_NODE_FILL = "#4878d0";
+const HALF_ARROW_BEND = 30;
+const LINE_BEND = 0.15;
 const ZOOM_EXTENT: [number, number] = [0.002, 200];
 
 const makeScale = (kind: ScaleKind) =>
@@ -27,11 +29,19 @@ function buildStyle(
   const cur = store.current;
   const occurrences = store.occurrenceFiles.filter((f) => f.enabled);
   const byFlow = settings.nodeSizeBy === "flow" && !!cur?.graph.nodeFlow;
+  // half-arrow only makes sense with direction; undirected graphs render lines.
+  const linkStyle = cur?.directed ? settings.linkStyle : "line";
+  const halfArrow = linkStyle === "half-arrow";
   return {
     directed: cur?.directed,
     sizeMode: settings.sizeMode,
-    // half-arrow only makes sense with direction; undirected graphs render lines.
-    linkStyle: cur?.directed ? settings.linkStyle : "line",
+    linkStyle,
+    // Half-arrow bend is an absolute world offset; line bend a chord fraction.
+    linkBend: settings.bendFor(halfArrow)
+      ? halfArrow
+        ? HALF_ARROW_BEND
+        : LINE_BEND
+      : 0,
     nodeBorder: { width: 1, color: "#ffffff" },
     nodeRadius: {
       by: byFlow ? "flow" : "degree",
@@ -199,7 +209,7 @@ export const NetworkView = observer(function NetworkView() {
                   // module identity for aggregates yet — raised on mapequation/d3gl#197.
                   labelOf: (id, info) =>
                     info.aggregate
-                      ? `${info.count.toLocaleString()} nodes`
+                      ? `${info.count.toLocaleString()} node${info.count === 1 ? "" : "s"}`
                       : current.names[Number(id)],
                   importanceOf: (id, info) =>
                     info.aggregate

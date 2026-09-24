@@ -1,10 +1,13 @@
 import { describe, expect, it } from "vitest";
+import { computeStats } from "../lib/network-stats";
 import type { LoadedNetwork } from "../lib/types";
 import { NetworkStore } from "./network-store";
 
 const toy = (): LoadedNetwork => ({
   kind: "clustered",
   filename: "toy.ftree",
+  files: [{ name: "toy.ftree", size: 0 }],
+  stats: computeStats(4, [0, 1, 2], [1, 2, 3], [1, 2, 0.5]),
   directed: false,
   isStates: false,
   graph: {
