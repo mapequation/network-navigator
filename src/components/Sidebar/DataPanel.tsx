@@ -1,6 +1,6 @@
 import { AlertDialog, Button, Chip, Tooltip } from "@heroui/react";
 import { observer } from "mobx-react-lite";
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useLayoutEffect, useRef, useState } from "react";
 import { formatBytes, formatNumber } from "../../lib/network-stats";
 import { useStores } from "../../stores";
 import { Stats } from "./controls";
@@ -22,6 +22,12 @@ function TrashIcon() {
   );
 }
 
+/** The parts of a press a row's remove handler uses. */
+interface RemovePress {
+  target: Element;
+  pointerType: string;
+}
+
 /** A loaded file: name, then its size, which a trash button replaces on hover/focus. */
 function FileRow({
   name,
@@ -37,7 +43,7 @@ function FileRow({
   swatch?: string;
   removeLabel: string;
   isDisabled?: boolean;
-  onRemove: () => void;
+  onRemove: (e: RemovePress) => void;
 }) {
   return (
     <li className="group/file flex items-baseline gap-2 text-xs">
@@ -81,6 +87,18 @@ function FileRow({
 export const DataPanel = observer(function DataPanel() {
   const { network: store, ui } = useStores();
   const [confirmClear, setConfirmClear] = useState(false);
+  const list = useRef<HTMLUListElement>(null);
+  /** Index of the remove button to focus once a removed row is gone. */
+  const refocus = useRef<number | null>(null);
+  // A keyboard removal unmounts the focused button: move focus to the row
+  // that took its place, else the one before.
+  useLayoutEffect(() => {
+    const i = refocus.current;
+    if (i === null) return;
+    refocus.current = null;
+    const buttons = list.current?.querySelectorAll("button");
+    if (buttons?.length) buttons[Math.min(i, buttons.length - 1)].focus();
+  });
   const cur = store.current;
   if (!cur) return null;
 
@@ -121,7 +139,7 @@ export const DataPanel = observer(function DataPanel() {
 
   return (
     <div className="flex flex-col gap-2.5">
-      <ul className="flex flex-col gap-1">
+      <ul ref={list} className="flex flex-col gap-1">
         {/* Any network input clears the whole network (after a confirm); a
             metadata file goes alone. */}
         {cur.sources.map((f) => (
@@ -141,7 +159,17 @@ export const DataPanel = observer(function DataPanel() {
             size={f.size}
             swatch={f.color}
             removeLabel={`Remove ${f.name}`}
-            onRemove={() => store.removeOccurrenceFile(f.id)}
+            onRemove={(e) => {
+              if (e.pointerType === "keyboard" || e.pointerType === "virtual") {
+                const buttons = [
+                  ...(list.current?.querySelectorAll("button") ?? []),
+                ];
+                refocus.current = buttons.indexOf(
+                  e.target as HTMLButtonElement,
+                );
+              }
+              store.removeOccurrenceFile(f.id);
+            }}
           />
         ))}
       </ul>
