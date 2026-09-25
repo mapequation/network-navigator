@@ -55,6 +55,32 @@ async function addFiles(page: Page, files: string[]): Promise<void> {
   await page.locator('input[type="file"]').setInputFiles(files);
 }
 
+type Transform = { k: number; x: number; y: number };
+
+/** The camera: d3gl keeps d3-zoom's transform (on its host) synced to it. */
+async function viewTransform(page: Page): Promise<Transform> {
+  return page.evaluate(() => {
+    const host = [...document.querySelectorAll("main *")].find(
+      (el) => "__zoom" in el,
+    ) as (Element & { __zoom: Transform }) | undefined;
+    if (!host) throw new Error("no zoom host");
+    const { k, x, y } = host.__zoom;
+    return { k, x, y };
+  });
+}
+
+/** The camera once it has stopped moving (the load's fit-on-layout). */
+async function settledTransform(page: Page): Promise<Transform> {
+  let last = await viewTransform(page);
+  for (let i = 0; i < 40; i++) {
+    await page.waitForTimeout(250);
+    const t = await viewTransform(page);
+    if (t.k === last.k && t.x === last.x && t.y === last.y) return t;
+    last = t;
+  }
+  throw new Error("camera did not settle");
+}
+
 test.describe("Network Navigator smoke", () => {
   test("example: load, canvas, sidebar, search", async ({ page }) => {
     const errors = collectErrors(page);
@@ -357,6 +383,78 @@ test.describe("Network Navigator smoke", () => {
       dialog.getByRole("button", { name: "Remove bad.clu" }),
     ).toHaveCount(0);
     await expect(alert).toHaveCount(0);
+
+    expect(errors.filter(isFatal)).toEqual([]);
+  });
+
+  test("engine: re-clustering keeps the view; later networks load into the same engine", async ({
+    page,
+  }) => {
+    const errors = collectErrors(page);
+    const heading = page.getByRole("heading", { name: "Load network" });
+    const dialog = page.getByRole("dialog", { name: "Load network" });
+    const load = dialog.getByRole("button", { name: "Load", exact: true });
+    const canvas = page.locator("main canvas").first();
+    const consoleButton = page.getByRole("button", { name: "Console", exact: true });
+    const statesChip = page
+      .locator("aside")
+      .getByText("State network", { exact: true });
+    /** Replace the loaded network with `name` through the load dialog. */
+    const swapTo = async (from: string, name: string): Promise<void> => {
+      await page.getByRole("button", { name: /^Load network/ }).click();
+      await dialog.getByRole("button", { name: `Remove ${from}` }).click();
+      await dialog.locator('input[type="file"]').setInputFiles([fixture(name)]);
+      await load.click();
+      await expect(heading).toBeHidden({ timeout: MODAL_CLOSE_TIMEOUT });
+    };
+
+    await page.goto("/");
+    await addFiles(page, [fixture("toy.net")]);
+    await load.click();
+    await expect(heading).toBeHidden({ timeout: MODAL_CLOSE_TIMEOUT });
+    await expect(canvas).toBeVisible();
+    const fitted = await settledTransform(page);
+    // Mark the canvas: a new engine would bring a new one.
+    await canvas.evaluate((el) => {
+      el.dataset.e2eEngine = "first";
+    });
+
+    // Zoom away from the fitted view, then re-cluster.
+    const box = await canvas.boundingBox();
+    if (!box) throw new Error("canvas has no bounding box");
+    await page.mouse.move(box.x + box.width / 3, box.y + box.height / 3);
+    await page.mouse.wheel(0, -400);
+    const zoomed = await settledTransform(page);
+    expect(zoomed).not.toEqual(fitted);
+    await page.getByRole("button", { name: "Run Infomap", exact: true }).click();
+    await expect(
+      page.getByRole("button", { name: "Re-run Infomap" }),
+    ).toBeVisible({ timeout: 30_000 });
+    await page.waitForTimeout(1000); // the relayout's transition
+    expect(await settledTransform(page)).toEqual(zoomed);
+    await expect(canvas).toHaveAttribute("data-e2e-engine", "first");
+
+    // The console holds the run, and its output takes keyboard focus.
+    await consoleButton.click();
+    const log = page.getByRole("log", { name: "Infomap output" });
+    await expect(log).toContainText("Infomap v");
+    for (let i = 0; i < 3; i++) {
+      if (await log.evaluate((el) => el === document.activeElement)) break;
+      await page.keyboard.press("Tab");
+    }
+    await expect(log).toBeFocused();
+    await page.keyboard.press("Escape");
+    await expect(log).toBeHidden();
+
+    // States, then plain again, on the same engine. Neither ran Infomap, so
+    // the console of toy.net's run is gone.
+    await swapTo("toy.net", "toy_states.net");
+    await expect(statesChip).toBeVisible();
+    await expect(consoleButton).toHaveCount(0);
+    await expect(canvas).toHaveAttribute("data-e2e-engine", "first");
+    await swapTo("toy_states.net", "toy.net");
+    await expect(statesChip).toHaveCount(0);
+    await expect(canvas).toHaveAttribute("data-e2e-engine", "first");
 
     expect(errors.filter(isFatal)).toEqual([]);
   });
