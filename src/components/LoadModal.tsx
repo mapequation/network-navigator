@@ -38,11 +38,14 @@ export const LoadModal = observer(function LoadModal() {
     };
 
   // Each time the dialog opens, stage what is loaded as if its files were
-  // dropped again (edits made before a dismiss are dropped). Keyed on the open
-  // flag only: re-staging while open would discard the user's edits.
+  // dropped again (edits made before a dismiss are dropped, and so are the
+  // error and run output of a failed Load). Keyed on the open flag only:
+  // re-staging while open would discard the user's edits.
   // biome-ignore lint/correctness/useExhaustiveDependencies: see above
   useEffect(() => {
     if (!ui.loadOpen) return;
+    ui.setLoadError(null);
+    setRanInfomap(false);
     void loadInfomapOnline()
       .then((item) => setOnlineAvailable(item !== null))
       .catch(() => setOnlineAvailable(false));
