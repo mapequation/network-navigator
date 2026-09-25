@@ -15,8 +15,10 @@ import { DisplayPanel, LodPanel, RenderingPanel } from "./SettingsPanel";
 export const Sidebar = observer(function Sidebar() {
   const { network: store, ui } = useStores();
   const cur = store.current;
+  // `relative`: HeroUI Switch's visually-hidden inputs are position:absolute; without a
+  // positioned ancestor they escape the scroll box and stretch the document past the viewport.
   return (
-    <aside className="flex w-84 shrink-0 flex-col overflow-y-auto border-l border-neutral-200 bg-white">
+    <aside className="relative flex w-84 shrink-0 flex-col overflow-y-auto overscroll-contain border-l border-neutral-200 bg-white">
       <Header />
       {/* Load errors otherwise only render inside the (closed) load modal. */}
       {ui.loadError && !ui.loadOpen && (

@@ -232,6 +232,17 @@ export const LodPanel = observer(function LodPanel() {
           onChange={(on) => settings.set("superEdges", on)}
         />
       </Row>
+      <Row
+        label="Cross-level links"
+        hint="Keep links between an expanded module and collapsed ones"
+      >
+        <Toggle
+          label="Cross-level links"
+          isDisabled={off}
+          isSelected={settings.crossLevelEdges}
+          onChange={(on) => settings.set("crossLevelEdges", on)}
+        />
+      </Row>
     </>
   );
 });

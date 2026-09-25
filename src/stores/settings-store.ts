@@ -19,6 +19,8 @@ export class SettingsStore {
   maxAggregateRadius = 26;
   declutter = true;
   superEdges = true;
+  /** Keep super-edges between an expanded module and still-collapsed ones (d3gl crossLevelEdges). */
+  crossLevelEdges = true;
   crossFade = 0;
   linkStyle: "line" | "half-arrow" = "half-arrow";
   sizeMode: "screen" | "world" = "screen";

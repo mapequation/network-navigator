@@ -102,6 +102,7 @@ function buildLod(
     maxAggregateRadius: settings.maxAggregateRadius,
     declutter: settings.declutter,
     superEdges: settings.superEdges,
+    crossLevelEdges: settings.crossLevelEdges,
     crossFade: settings.crossFade,
   };
 }

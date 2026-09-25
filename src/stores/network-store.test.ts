@@ -104,4 +104,41 @@ describe("NetworkStore", () => {
     expect(store.occurrenceFiles[0].ids).toEqual([1, 3]);
     expect(store.occurrenceFiles[0].enabled).toBe(true);
   });
+
+  it("keeps occurrence files across a re-clustering", () => {
+    const store = new NetworkStore();
+    store.setNetwork(toy());
+    store.addOccurrenceFile("occ.csv", ["beta"]);
+    store.applyClustering(`# path flow name node_id
+1:1 0.4 "alpha" 1
+1:2 0.3 "beta" 2
+1:3 0.2 "gamma" 3
+2:1 0.1 "delta" 4
+`);
+    expect(store.current?.modules?.[3]?.path).toEqual([2, 1]);
+    expect(store.occurrenceFiles.map((f) => f.ids)).toEqual([[1]]);
+  });
+
+  it("resets all network-derived state on clear", () => {
+    const store = new NetworkStore();
+    store.setNetwork(toy());
+    store.selectFromHit(0, false, null);
+    store.setSearch("a");
+    store.addOccurrenceFile("occ.csv", ["beta"]);
+    expect(store.leavesOfModule([1])).toEqual([0, 1]);
+    store.clear();
+    expect(store.current).toBeNull();
+    expect(store.built).toBeNull();
+    expect(store.builtState).toBeNull();
+    expect(store.selection).toBeNull();
+    expect(store.searchHighlight).toBeNull();
+    expect(store.occurrenceFiles).toEqual([]);
+    expect(store.breadcrumb).toEqual([]);
+    expect([store.maxFlow, store.maxDegree, store.maxWeight]).toEqual([
+      0, 0, 0,
+    ]);
+    expect(store.maxLinkFlow).toBe(0);
+    expect(store.leavesOfModule([1])).toEqual([]);
+    expect(store.moduleLabel([1])).toBe("");
+  });
 });

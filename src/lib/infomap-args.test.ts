@@ -40,10 +40,8 @@ describe("infomapArgString", () => {
           noInfomap: false,
           regularized: true,
         }),
-        "  --markov-time 0.8   -N 5 ",
+        "  -N 5   --seed 7 ",
       ),
-    ).toBe(
-      "--output ftree --silent --two-level --regularized --markov-time 0.8 -N 5",
-    );
+    ).toBe("--output ftree --silent --two-level --regularized -N 5 --seed 7");
   });
 });

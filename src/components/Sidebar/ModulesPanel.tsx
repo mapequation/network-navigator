@@ -99,7 +99,7 @@ export const ModulesPanel = observer(function ModulesPanel() {
             isDisabled={ui.infomapRunning}
           >
             <Input
-              placeholder="More flags, e.g. -N 5 --markov-time 0.8"
+              placeholder="More flags, e.g. -N 5"
               className="font-mono text-xs"
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !ui.infomapRunning) void cluster();

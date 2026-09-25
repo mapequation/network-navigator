@@ -26,7 +26,7 @@ export function buildInfomapArgs(o: ClusterOptions): InfomapArguments {
 
 /**
  * Infomap command-line string: structured args plus free-text CLI flags
- * (e.g. "--markov-time 0.8 -N 5"), passed verbatim to the worker. ftree
+ * (e.g. "-N 5"), passed verbatim to the worker. ftree
  * output is always requested by the structured part.
  */
 export function infomapArgString(args: InfomapArguments, flags = ""): string {

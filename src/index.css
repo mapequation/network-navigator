@@ -1,2 +1,10 @@
 @import "tailwindcss";
 @import "@heroui/styles";
+
+/* The app is a fixed full-viewport layout; the page itself never scrolls. */
+html,
+body,
+#root {
+  height: 100%;
+  overflow: hidden;
+}

@@ -166,8 +166,29 @@ export class NetworkStore {
     return leaf === undefined ? "" : (cur.names[leaf] ?? "");
   }
 
+  /** Unload the network: reset everything derived from it (NetworkView tears the engine down). */
+  clear(): void {
+    this.current = null;
+    this.built = null;
+    this.builtState = null;
+    this.selection = null;
+    this.searchHighlight = null;
+    this.occurrenceFiles = [];
+    this.breadcrumb = [];
+    this.maxFlow = 0;
+    this.maxDegree = 0;
+    this.maxWeight = 0;
+    this.maxLinkFlow = 0;
+    this.moduleLeafCache.clear();
+    this.moduleTopLeaf = new Map();
+  }
+
   applyClustering(ftreeText: string): void {
-    if (this.current) this.setNetwork(withClustering(this.current, ftreeText));
+    if (!this.current) return;
+    // Re-clustering keeps the dense node ids, so metadata-overlap files stay valid.
+    const occurrenceFiles = this.occurrenceFiles;
+    this.setNetwork(withClustering(this.current, ftreeText));
+    this.occurrenceFiles = occurrenceFiles;
   }
 
   clearSelection(): void {
