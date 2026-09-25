@@ -1,6 +1,6 @@
 import { parseNetwork } from "@mapequation/d3gl/network";
 import { withClustering } from "./apply-ftree";
-import { fileKind, isStatesText } from "./file-kinds";
+import { type FileKind, fileKind, isStatesText } from "./file-kinds";
 import { ftreeToNetwork } from "./ftree-graph";
 import { buildInfomapArgs, infomapArgString } from "./infomap-args";
 import { byteLength, computeStats } from "./network-stats";
@@ -13,7 +13,11 @@ export interface NamedText {
   text: string;
   /** Byte size when known (File.size); computed from `text` otherwise. */
   size?: number;
+  /** Kind as staged (a restaged metadata .txt); from the extension otherwise. */
+  kind?: FileKind;
 }
+
+const kindOf = (f: NamedText): FileKind => f.kind ?? fileKind(f.name);
 
 /**
  * Parse a raw network file (Pajek, edge list, or *States) into a LoadedNetwork.
@@ -106,7 +110,7 @@ export async function loadFiles(
   opts: ClusterOptions,
   cb: LoadCallbacks = {},
 ): Promise<LoadedNetwork> {
-  const unsupported = files.find((f) => fileKind(f.name) === "unknown");
+  const unsupported = files.find((f) => kindOf(f) === "unknown");
   if (unsupported)
     throw new Error(`Unsupported file type: ${unsupported.name}`);
   const net = await loadStructure(files, opts, cb);
@@ -119,11 +123,9 @@ async function loadStructure(
   opts: ClusterOptions,
   cb: LoadCallbacks,
 ): Promise<LoadedNetwork> {
-  const ftrees = files.filter((f) => fileKind(f.name) === "ftree");
-  const partitions = files.filter((f) =>
-    ["tree", "clu"].includes(fileKind(f.name)),
-  );
-  const networks = files.filter((f) => fileKind(f.name) === "network");
+  const ftrees = files.filter((f) => kindOf(f) === "ftree");
+  const partitions = files.filter((f) => ["tree", "clu"].includes(kindOf(f)));
+  const networks = files.filter((f) => kindOf(f) === "network");
 
   if (ftrees.length > 1 || networks.length > 1 || partitions.length > 1) {
     throw new Error(
@@ -142,7 +144,7 @@ async function loadStructure(
     throw new Error(
       partitions.length
         ? "A partition file needs its network file"
-        : files.some((f) => fileKind(f.name) === "metadata")
+        : files.some((f) => kindOf(f) === "metadata")
           ? "Metadata files need a network or .ftree file"
           : "No files to load",
     );
@@ -173,7 +175,7 @@ async function loadStructure(
       name: partition.name,
       size: partition.size ?? byteLength(partition.text),
       text: partition.text,
-      kind: fileKind(partition.name),
+      kind: kindOf(partition),
     },
   ];
   return clustered;

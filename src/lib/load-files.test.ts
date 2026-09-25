@@ -80,6 +80,17 @@ describe("loadFiles", () => {
     ).rejects.toThrow("Metadata files need a network or .ftree file");
   });
 
+  it("goes by the staged kind: a restaged .txt metadata file is not a network", async () => {
+    const net = await loadFiles(
+      [
+        { name: "toy.net", text: PAJEK, kind: "network" },
+        { name: "names.txt", text: "n1\n", kind: "metadata" },
+      ],
+      { directed: true, twoLevel: false, noInfomap: false },
+    );
+    expect(net.sources.map((f) => f.name)).toEqual(["toy.net"]);
+  });
+
   it("runs Infomap on a network + partition and clusters from its JSON tree", async () => {
     const tree: InfomapTree = {
       version: "v2.14.0",
