@@ -55,8 +55,15 @@ const ConsoleBody = observer(function ConsoleBody() {
     if (el && follow.current && text) el.scrollTop = el.scrollHeight;
   }, [text]);
 
+  const dropped =
+    ui.infomapDroppedLines > 0
+      ? `Showing the last ${CONSOLE_MAX_LINES.toLocaleString()} lines; ${ui.infomapDroppedLines.toLocaleString()} earlier lines were dropped.`
+      : null;
+
   const copy = async (): Promise<void> => {
-    const parts = [`$ ${ui.infomapCommand ?? ""}`, text];
+    const parts = [`$ ${ui.infomapCommand ?? ""}`];
+    if (dropped) parts.push(`[${dropped}]`);
+    parts.push(text);
     if (ui.infomapFailure) parts.push(`Error: ${ui.infomapFailure}`);
     try {
       await navigator.clipboard.writeText(parts.join("\n"));
@@ -86,13 +93,7 @@ const ConsoleBody = observer(function ConsoleBody() {
             {status}
           </span>
         </div>
-        {ui.infomapDroppedLines > 0 && (
-          <p className="text-[11px] text-neutral-400">
-            Showing the last {CONSOLE_MAX_LINES.toLocaleString()} lines;{" "}
-            {ui.infomapDroppedLines.toLocaleString()} earlier lines were
-            dropped.
-          </p>
-        )}
+        {dropped && <p className="text-[11px] text-neutral-400">{dropped}</p>}
         <pre
           ref={preRef}
           onScroll={(e) => {
