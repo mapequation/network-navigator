@@ -6,6 +6,7 @@ import type {
 } from "@mapequation/d3gl/network";
 import type { Header, Module } from "@mapequation/infomap";
 import type { TreeNode, TreeStateNode } from "@mapequation/infomap/filetypes";
+import type { FileKind } from "./file-kinds";
 import type { NetworkStats } from "./network-stats";
 
 /** A JSON tree node row; state trees add stateId (and layerId for multilayer). */
@@ -30,18 +31,26 @@ export type InfomapSummary = Pick<
   "codelength" | "numLevels" | "numTopModules" | "relativeCodelengthSavings"
 >;
 
+/** An input file exactly as loaded; the load dialog restages these. */
 export interface SourceFile {
   name: string;
   /** Size in bytes. */
   size: number;
+  text: string;
+  kind: FileKind;
 }
 
 /** Everything the app knows about the currently loaded network. */
 export interface LoadedNetwork {
   kind: "raw" | "clustered";
   filename: string;
-  /** Every file the network was built from (network, partition, or ftree). */
-  files: SourceFile[];
+  /**
+   * Every file the network was built from (network, partition, or ftree).
+   * Bundled companions (the example's module names) are not sources.
+   */
+  sources: SourceFile[];
+  /** Options loadFiles ran with; absent for the example and Infomap Online. */
+  loadOptions?: ClusterOptions;
   /** Topology summary computed once at load time. */
   stats: NetworkStats;
   directed: boolean;

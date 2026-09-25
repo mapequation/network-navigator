@@ -6,7 +6,7 @@ import { NetworkStore } from "./network-store";
 const toy = (): LoadedNetwork => ({
   kind: "clustered",
   filename: "toy.ftree",
-  files: [{ name: "toy.ftree", size: 0 }],
+  sources: [{ name: "toy.ftree", size: 0, text: "", kind: "ftree" }],
   stats: computeStats(4, [0, 1, 2], [1, 2, 3], [1, 2, 0.5]),
   directed: false,
   isStates: false,
@@ -100,15 +100,35 @@ describe("NetworkStore", () => {
   it("matches occurrence values against names", () => {
     const store = new NetworkStore();
     store.setNetwork(toy());
-    store.addOccurrenceFile("occ.csv", ["beta", "delta", "nope"]);
+    store.addOccurrenceFile({
+      name: "occ.csv",
+      size: 20,
+      text: 'beta,1\n"delta",2\nnope\n',
+    });
     expect(store.occurrenceFiles[0].ids).toEqual([1, 3]);
     expect(store.occurrenceFiles[0].enabled).toBe(true);
+    expect(store.occurrenceFiles[0].size).toBe(20);
   });
 
-  it("keeps occurrence files across a re-clustering", () => {
+  it("removes an occurrence file by id", () => {
     const store = new NetworkStore();
     store.setNetwork(toy());
-    store.addOccurrenceFile("occ.csv", ["beta"]);
+    store.addOccurrenceFile({ name: "a.csv", size: 5, text: "beta\n" });
+    store.addOccurrenceFile({ name: "b.csv", size: 6, text: "gamma\n" });
+    store.removeOccurrenceFile(store.occurrenceFiles[0].id);
+    expect(store.occurrenceFiles.map((f) => f.name)).toEqual(["b.csv"]);
+  });
+
+  it("keeps occurrence files across a re-clustering and drops a stale partition", () => {
+    const store = new NetworkStore();
+    store.setNetwork({
+      ...toy(),
+      sources: [
+        { name: "toy.net", size: 1, text: "x", kind: "network" },
+        { name: "toy.clu", size: 1, text: "y", kind: "clu" },
+      ],
+    });
+    store.addOccurrenceFile({ name: "occ.csv", size: 5, text: "beta\n" });
     store.applyClustering({
       version: "v2.14.0",
       args: "",
@@ -131,6 +151,7 @@ describe("NetworkStore", () => {
     });
     expect(store.current?.modules?.[3]?.path).toEqual([2, 1]);
     expect(store.occurrenceFiles.map((f) => f.ids)).toEqual([[1]]);
+    expect(store.current?.sources.map((f) => f.name)).toEqual(["toy.net"]);
   });
 
   it("resets all network-derived state on clear", () => {
@@ -138,7 +159,7 @@ describe("NetworkStore", () => {
     store.setNetwork(toy());
     store.selectFromHit(0, false, null);
     store.setSearch("a");
-    store.addOccurrenceFile("occ.csv", ["beta"]);
+    store.addOccurrenceFile({ name: "occ.csv", size: 5, text: "beta\n" });
     expect(store.leavesOfModule([1])).toEqual([0, 1]);
     store.clear();
     expect(store.current).toBeNull();

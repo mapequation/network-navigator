@@ -11,6 +11,8 @@ describe("fileKind", () => {
     expect(fileKind("a.paj")).toBe("network");
     expect(fileKind("a.txt")).toBe("network");
     expect(fileKind("a.edges")).toBe("network");
+    expect(fileKind("a.csv")).toBe("metadata");
+    expect(fileKind("a.TSV")).toBe("metadata");
     expect(fileKind("weird.xyz")).toBe("unknown");
   });
 });

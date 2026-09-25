@@ -1,4 +1,10 @@
-export type FileKind = "ftree" | "tree" | "clu" | "network" | "unknown";
+export type FileKind =
+  | "ftree"
+  | "tree"
+  | "clu"
+  | "network"
+  | "metadata"
+  | "unknown";
 
 export function fileKind(filename: string): FileKind {
   const ext = filename.split(".").pop()?.toLowerCase() ?? "";
@@ -7,6 +13,8 @@ export function fileKind(filename: string): FileKind {
   if (ext === "clu") return "clu";
   if (["net", "paj", "txt", "edges", "edgelist"].includes(ext))
     return "network";
+  // Node-name lists for metadata overlap; .txt stays a network (edge list).
+  if (ext === "csv" || ext === "tsv") return "metadata";
   return "unknown";
 }
 

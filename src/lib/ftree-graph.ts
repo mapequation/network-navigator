@@ -85,7 +85,7 @@ export function ftreeToNetwork(
   const net: LoadedNetwork = {
     kind: "clustered",
     filename,
-    files: [{ name: filename, size }],
+    sources: [{ name: filename, size, text, kind: "ftree" }],
     stats,
     directed,
     isStates,

@@ -124,8 +124,9 @@ test.describe("Network Navigator smoke", () => {
       page.locator("nav").getByRole("button", { name: "toy.net" }),
     ).toBeVisible();
 
+    // In-app runs export Infomap's JSON tree (no ftree is written).
     await expect(
-      page.getByRole("button", { name: "Download .ftree" }),
+      page.getByRole("button", { name: "Download .json" }),
     ).toBeEnabled();
 
     await screenshot(page, "raw-cluster");
@@ -167,7 +168,7 @@ test.describe("Network Navigator smoke", () => {
 
     await expect(canvas).toBeVisible();
     await expect(
-      page.getByRole("button", { name: "Download .ftree" }),
+      page.getByRole("button", { name: "Download .json" }),
     ).toBeEnabled();
 
     await screenshot(page, "partition");
@@ -201,6 +202,67 @@ test.describe("Network Navigator smoke", () => {
     ).toBeVisible();
 
     await screenshot(page, "states");
+    expect(errors.filter(isFatal)).toEqual([]);
+  });
+
+  test("load dialog: restages the loaded files and adds metadata in place", async ({
+    page,
+  }) => {
+    const errors = collectErrors(page);
+    const heading = page.getByRole("heading", { name: "Load network" });
+    const dialog = page.getByRole("dialog", { name: "Load network" });
+    const load = dialog.getByRole("button", { name: "Load", exact: true });
+    const reopen = async (): Promise<void> => {
+      await page.getByRole("button", { name: /^Load network/ }).click();
+      await expect(heading).toBeVisible();
+    };
+    const rerun = page.getByRole("button", { name: "Re-run Infomap" });
+
+    await page.goto("/");
+    await addFiles(page, [fixture("toy.net")]);
+    await load.click();
+    await expect(heading).toBeHidden({ timeout: MODAL_CLOSE_TIMEOUT });
+    await page.getByRole("button", { name: "Run Infomap", exact: true }).click();
+    await expect(rerun).toBeVisible({ timeout: 30_000 });
+
+    // The raw network is restaged; loading it unchanged keeps the clustering.
+    await reopen();
+    await expect(
+      dialog.getByRole("button", { name: "Remove toy.net" }),
+    ).toBeVisible();
+    await load.click();
+    await expect(heading).toBeHidden();
+    await expect(rerun).toBeVisible();
+
+    // Adding a metadata file applies it without reloading the network.
+    await reopen();
+    await dialog
+      .locator('input[type="file"]')
+      .setInputFiles([fixture("toy-names.csv")]);
+    await expect(
+      dialog.getByRole("button", { name: "Remove toy-names.csv" }),
+    ).toBeVisible();
+    await load.click();
+    await expect(heading).toBeHidden();
+    await expect(rerun).toBeVisible();
+    const metaRow = page
+      .locator("aside li")
+      .filter({ hasText: "toy-names.csv" });
+    await expect(metaRow).toBeVisible();
+
+    // Its own trash removes just the metadata file.
+    await metaRow.hover();
+    await page.getByRole("button", { name: "Remove toy-names.csv" }).click();
+    await expect(metaRow).toBeHidden();
+    await expect(rerun).toBeVisible();
+
+    // Removing every staged file clears the network.
+    await reopen();
+    await dialog.getByRole("button", { name: "Remove toy.net" }).click();
+    await dialog.getByRole("button", { name: "Clear network" }).click();
+    await expect(page.locator("main canvas")).toHaveCount(0);
+    await expect(heading).toBeVisible();
+
     expect(errors.filter(isFatal)).toEqual([]);
   });
 

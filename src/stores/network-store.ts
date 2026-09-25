@@ -7,6 +7,7 @@ import {
 } from "@mapequation/d3gl/network";
 import { makeAutoObservable, observable } from "mobx";
 import { withClustering } from "../lib/apply-ftree";
+import { parseNodeNames } from "../lib/node-names";
 import { OCCURRENCE_COLORS } from "../lib/occurrence-colors";
 import { pathKey } from "../lib/path-key";
 import type { InfomapTree, LoadedNetwork } from "../lib/types";
@@ -24,6 +25,10 @@ export interface OccurrenceFile {
   /** Stable identity for React keys — files may share a name. */
   id: string;
   name: string;
+  /** Size in bytes. */
+  size: number;
+  /** File text as loaded, so the load dialog can restage it. */
+  text: string;
   ids: number[];
   idSet: Set<number>;
   color: string;
@@ -184,10 +189,14 @@ export class NetworkStore {
   }
 
   applyClustering(tree: InfomapTree): void {
-    if (!this.current) return;
+    const cur = this.current;
+    if (!cur) return;
     // Re-clustering keeps the dense node ids, so metadata-overlap files stay valid.
     const occurrenceFiles = this.occurrenceFiles;
-    this.setNetwork(withClustering(this.current, tree));
+    const net = withClustering(cur, tree);
+    // A partition the network was loaded with no longer produced these modules.
+    net.sources = cur.sources.filter((f) => f.kind === "network");
+    this.setNetwork(net);
     this.occurrenceFiles = occurrenceFiles;
   }
 
@@ -282,17 +291,20 @@ export class NetworkStore {
     this.searchHighlight = ids;
   }
 
-  addOccurrenceFile(name: string, values: string[]): void {
+  /** Add a metadata file: its node names (see parseNodeNames) matched against the network's. */
+  addOccurrenceFile(file: { name: string; size: number; text: string }): void {
     const cur = this.current;
     if (!cur) return;
-    const wanted = new Set(values);
+    const wanted = new Set(parseNodeNames(file.text, file.name));
     const ids: number[] = [];
     cur.names.forEach((n, i) => {
       if (wanted.has(n)) ids.push(i);
     });
     this.occurrenceFiles.push({
       id: crypto.randomUUID(),
-      name,
+      name: file.name,
+      size: file.size,
+      text: file.text,
       ids,
       idSet: new Set(ids),
       color:
@@ -308,7 +320,8 @@ export class NetworkStore {
     if (f) f.enabled = !f.enabled;
   }
 
-  removeOccurrenceFile(index: number): void {
-    this.occurrenceFiles.splice(index, 1);
+  removeOccurrenceFile(id: string): void {
+    const index = this.occurrenceFiles.findIndex((f) => f.id === id);
+    if (index >= 0) this.occurrenceFiles.splice(index, 1);
   }
 }

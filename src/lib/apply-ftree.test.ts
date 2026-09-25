@@ -7,7 +7,7 @@ import type { InfomapTree, InfomapTreeNode, LoadedNetwork } from "./types";
 const raw: LoadedNetwork = {
   kind: "raw",
   filename: "toy.net",
-  files: [{ name: "toy.net", size: 0 }],
+  sources: [{ name: "toy.net", size: 0, text: "", kind: "network" }],
   stats: computeStats(3, [0, 1], [1, 2], [1, 1]),
   directed: false,
   isStates: false,

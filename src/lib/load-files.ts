@@ -6,7 +6,7 @@ import { buildInfomapArgs, infomapArgString } from "./infomap-args";
 import { byteLength, computeStats } from "./network-stats";
 import { parseStates } from "./parse-states";
 import { runInfomap } from "./run-infomap";
-import type { ClusterOptions, LoadedNetwork } from "./types";
+import type { ClusterOptions, LoadedNetwork, SourceFile } from "./types";
 
 export interface NamedText {
   name: string;
@@ -27,14 +27,16 @@ export function networkToLoaded(
   directedOverride?: boolean,
   size = byteLength(text),
 ): LoadedNetwork {
-  const files = [{ name: filename, size }];
+  const sources: SourceFile[] = [
+    { name: filename, size, text, kind: "network" },
+  ];
   if (isStatesText(text)) {
     const parsed = parseStates(text, filename, directedOverride ?? true);
     const g = parsed.stateGraph;
     return {
       kind: "raw",
       filename,
-      files,
+      sources,
       stats: computeStats(g.stateCount, g.source, g.target, g.weight, {
         physicalIds: parsed.physicalIds,
       }),
@@ -62,7 +64,7 @@ export function networkToLoaded(
   return {
     kind: "raw",
     filename,
-    files,
+    sources,
     stats: computeStats(
       parsed.nodeCount,
       parsed.source,
@@ -96,6 +98,8 @@ export interface LoadCallbacks {
  * - one network file alone → raw network
  * - one network + one .tree/.clu → Infomap runs with the partition as cluster
  *   data (full run seeded by it, or flow-only with noInfomap)
+ * Metadata files (.csv/.tsv) are skipped: the caller adds them to the store
+ * once the network is set.
  */
 export async function loadFiles(
   files: NamedText[],
@@ -105,7 +109,16 @@ export async function loadFiles(
   const unsupported = files.find((f) => fileKind(f.name) === "unknown");
   if (unsupported)
     throw new Error(`Unsupported file type: ${unsupported.name}`);
+  const net = await loadStructure(files, opts, cb);
+  net.loadOptions = opts;
+  return net;
+}
 
+async function loadStructure(
+  files: NamedText[],
+  opts: ClusterOptions,
+  cb: LoadCallbacks,
+): Promise<LoadedNetwork> {
   const ftrees = files.filter((f) => fileKind(f.name) === "ftree");
   const partitions = files.filter((f) =>
     ["tree", "clu"].includes(fileKind(f.name)),
@@ -129,7 +142,9 @@ export async function loadFiles(
     throw new Error(
       partitions.length
         ? "A partition file needs its network file"
-        : "No files to load",
+        : files.some((f) => fileKind(f.name) === "metadata")
+          ? "Metadata files need a network or .ftree file"
+          : "No files to load",
     );
   }
 
@@ -152,11 +167,13 @@ export async function loadFiles(
     onLog: cb.onLog,
   });
   const clustered = withClustering(net, tree);
-  clustered.files = [
-    ...net.files,
+  clustered.sources = [
+    ...net.sources,
     {
       name: partition.name,
       size: partition.size ?? byteLength(partition.text),
+      text: partition.text,
+      kind: fileKind(partition.name),
     },
   ];
   return clustered;

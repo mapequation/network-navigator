@@ -22,6 +22,59 @@ function TrashIcon() {
   );
 }
 
+/** A loaded file: name, then its size, which a trash button replaces on hover/focus. */
+function FileRow({
+  name,
+  size,
+  swatch,
+  removeLabel,
+  isDisabled,
+  onRemove,
+}: {
+  name: string;
+  size: number;
+  /** Metadata files: their overlay colour. */
+  swatch?: string;
+  removeLabel: string;
+  isDisabled?: boolean;
+  onRemove: () => void;
+}) {
+  return (
+    <li className="group/file flex items-baseline gap-2 text-xs">
+      {swatch && (
+        <span
+          className="h-2.5 w-2.5 shrink-0 self-center rounded-sm"
+          style={{ background: swatch }}
+        />
+      )}
+      <span
+        className="min-w-0 flex-1 truncate font-medium text-neutral-800"
+        title={name}
+      >
+        {name}
+      </span>
+      {/* Size and trash share one slot: the size hides on hover/focus, the
+          button only fades (opacity) so it stays keyboard-focusable. */}
+      <span className="relative shrink-0">
+        <span className="tabular-nums text-neutral-400 group-focus-within/file:invisible group-hover/file:invisible">
+          {formatBytes(size)}
+        </span>
+        <Button
+          isIconOnly
+          size="sm"
+          variant="ghost"
+          aria-label={removeLabel}
+          isDisabled={isDisabled}
+          onPress={onRemove}
+          className="absolute top-1/2 right-0 size-6 -translate-y-1/2 opacity-0 group-focus-within/file:opacity-100 group-hover/file:opacity-100"
+        >
+          <TrashIcon />
+        </Button>
+      </span>
+    </li>
+  );
+}
+
 export const DataPanel = observer(function DataPanel() {
   const { network: store, ui } = useStores();
   const cur = store.current;
@@ -65,36 +118,26 @@ export const DataPanel = observer(function DataPanel() {
   return (
     <div className="flex flex-col gap-2.5">
       <ul className="flex flex-col gap-1">
-        {cur.files.map((f) => (
-          <li
-            key={f.name}
-            className="group/file flex items-baseline gap-2 text-xs"
-          >
-            <span
-              className="min-w-0 flex-1 truncate font-medium text-neutral-800"
-              title={f.name}
-            >
-              {f.name}
-            </span>
-            {/* Size and trash share one slot: the size hides on hover/focus, the
-                button only fades (opacity) so it stays keyboard-focusable. */}
-            <span className="relative shrink-0">
-              <span className="tabular-nums text-neutral-400 group-focus-within/file:invisible group-hover/file:invisible">
-                {formatBytes(f.size)}
-              </span>
-              <Button
-                isIconOnly
-                size="sm"
-                variant="ghost"
-                aria-label="Clear network"
-                isDisabled={ui.infomapRunning}
-                onPress={clear}
-                className="absolute top-1/2 right-0 size-6 -translate-y-1/2 opacity-0 group-focus-within/file:opacity-100 group-hover/file:opacity-100"
-              >
-                <TrashIcon />
-              </Button>
-            </span>
-          </li>
+        {/* Any network input clears the whole network; a metadata file goes alone. */}
+        {cur.sources.map((f) => (
+          <FileRow
+            key={`${f.kind}:${f.name}`}
+            name={f.name}
+            size={f.size}
+            removeLabel="Clear network"
+            isDisabled={ui.infomapRunning}
+            onRemove={clear}
+          />
+        ))}
+        {store.occurrenceFiles.map((f) => (
+          <FileRow
+            key={f.id}
+            name={f.name}
+            size={f.size}
+            swatch={f.color}
+            removeLabel={`Remove ${f.name}`}
+            onRemove={() => store.removeOccurrenceFile(f.id)}
+          />
         ))}
       </ul>
       <div className="flex flex-wrap gap-1">

@@ -1,18 +1,22 @@
 import { Alert, Button, Chip, Modal, Switch } from "@heroui/react";
+import { runInAction } from "mobx";
 import { observer } from "mobx-react-lite";
 import { useCallback, useEffect, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { fileKind } from "../lib/file-kinds";
 import { ftreeToNetwork } from "../lib/ftree-graph";
 import { loadInfomapOnline } from "../lib/infomap-online";
-import { loadFiles, type NamedText } from "../lib/load-files";
+import { loadFiles } from "../lib/load-files";
+import {
+  type CurrentLoad,
+  planLoad,
+  restage,
+  type StagedFile,
+} from "../lib/load-plan";
+import { formatBytes } from "../lib/network-stats";
 import type { LoadedNetwork } from "../lib/types";
 import { useStores } from "../stores";
 import { ConsoleButton, InfomapProgressBar } from "./InfomapConsole";
-
-interface StagedFile extends NamedText {
-  id: string;
-}
 
 export const LoadModal = observer(function LoadModal() {
   const { network: store, ui } = useStores();
@@ -25,11 +29,28 @@ export const LoadModal = observer(function LoadModal() {
   /** The last Load ran Infomap (network + partition); keeps its output visible after a failure. */
   const [ranInfomap, setRanInfomap] = useState(false);
 
+  /** What is loaded now, for restaging and for diffing on Load. */
+  const currentLoad = (): CurrentLoad | null =>
+    store.current && {
+      sources: store.current.sources,
+      loadOptions: store.current.loadOptions,
+      metadata: store.occurrenceFiles,
+    };
+
+  // Each time the dialog opens, stage what is loaded as if its files were
+  // dropped again (edits made before a dismiss are dropped). Keyed on the open
+  // flag only: re-staging while open would discard the user's edits.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: see above
   useEffect(() => {
-    if (ui.loadOpen)
-      void loadInfomapOnline()
-        .then((item) => setOnlineAvailable(item !== null))
-        .catch(() => setOnlineAvailable(false));
+    if (!ui.loadOpen) return;
+    void loadInfomapOnline()
+      .then((item) => setOnlineAvailable(item !== null))
+      .catch(() => setOnlineAvailable(false));
+    const cur = currentLoad();
+    setFiles(cur ? restage(cur) : []);
+    setDirected(cur?.loadOptions?.directed ?? false);
+    setTwoLevel(cur?.loadOptions?.twoLevel ?? false);
+    setNoInfomap(cur?.loadOptions?.noInfomap ?? false);
   }, [ui.loadOpen]);
 
   const onDrop = useCallback(async (accepted: File[]) => {
@@ -39,6 +60,7 @@ export const LoadModal = observer(function LoadModal() {
         name: f.name,
         size: f.size,
         text: await f.text(),
+        kind: fileKind(f.name),
       })),
     );
     setFiles((prev) => [...prev, ...named]);
@@ -47,15 +69,29 @@ export const LoadModal = observer(function LoadModal() {
     onDrop,
   });
 
-  const finish = (net: LoadedNetwork): void => {
-    store.setNetwork(net);
-    ui.setLoadOpen(false);
+  const reset = (): void => {
     ui.setLoadError(null);
     setFiles([]);
     setRanInfomap(false);
     setDirected(false);
     setTwoLevel(false);
     setNoInfomap(false);
+  };
+  const close = (): void => {
+    ui.setLoadOpen(false);
+    reset();
+  };
+  /** Show a new network, then match the staged metadata files against it. */
+  const finish = (
+    net: LoadedNetwork,
+    metadata: readonly StagedFile[] = [],
+  ): void => {
+    // One transaction: views react once to the network and its metadata.
+    runInAction(() => {
+      store.setNetwork(net);
+      for (const f of metadata) store.addOccurrenceFile(f);
+    });
+    close();
   };
   const fail = (err: unknown): void =>
     ui.setLoadError(err instanceof Error ? err.message : String(err));
@@ -99,23 +135,39 @@ export const LoadModal = observer(function LoadModal() {
     }
   };
 
-  const loadDropped = async (): Promise<void> => {
+  const load = async (): Promise<void> => {
+    const options = { directed, twoLevel, noInfomap };
+    const plan = planLoad(files, currentLoad(), options);
+    if (plan.type === "clear") {
+      // Nothing to show: the dialog stays open, as at startup.
+      store.clear();
+      ui.setInfomapError(null);
+      reset();
+      return;
+    }
+    if (plan.type === "metadata") {
+      runInAction(() => {
+        for (const id of plan.remove) store.removeOccurrenceFile(id);
+        for (const f of plan.add) store.addOccurrenceFile(f);
+      });
+      close();
+      return;
+    }
     setBusy(true);
     setRanInfomap(false);
     let error: string | null = null;
     try {
-      const net = await loadFiles(
-        files,
-        { directed, twoLevel, noInfomap },
-        {
-          onInfomapStart: (command) => {
-            setRanInfomap(true);
-            ui.startInfomap(command);
-          },
-          onLog: ui.onInfomapLog,
+      const net = await loadFiles(files, options, {
+        onInfomapStart: (command) => {
+          setRanInfomap(true);
+          ui.startInfomap(command);
         },
+        onLog: ui.onInfomapLog,
+      });
+      finish(
+        net,
+        files.filter((f) => f.kind === "metadata"),
       );
-      finish(net);
     } catch (err) {
       error = err instanceof Error ? err.message : String(err);
       fail(err);
@@ -125,9 +177,7 @@ export const LoadModal = observer(function LoadModal() {
     }
   };
 
-  const hasPartition = files.some((f) =>
-    ["tree", "clu"].includes(fileKind(f.name)),
-  );
+  const hasPartition = files.some((f) => f.kind === "tree" || f.kind === "clu");
   const hasNetwork = Boolean(store.current);
   const canDismiss = hasNetwork && !ui.infomapRunning && !busy;
 
@@ -164,15 +214,19 @@ export const LoadModal = observer(function LoadModal() {
                   </p>
                   <p className="text-xs text-neutral-500">
                     An .ftree, or a network (.net, edge list, states) with an
-                    optional .tree/.clu partition
+                    optional .tree/.clu partition. Add .csv/.tsv lists of node
+                    names as metadata.
                   </p>
                 </div>
               ) : (
                 <ul className="flex flex-col gap-1 text-left">
                   {files.map((f) => (
                     <li key={f.id} className="flex items-center gap-2">
-                      <Chip size="sm">{fileKind(f.name)}</Chip>
+                      <Chip size="sm">{f.kind}</Chip>
                       <span className="min-w-0 flex-1 truncate">{f.name}</span>
+                      <span className="text-xs tabular-nums text-neutral-400">
+                        {formatBytes(f.size)}
+                      </span>
                       {/* Keep the remove click from reaching the dropzone (which opens the picker). */}
                       {/* biome-ignore lint/a11y/noStaticElementInteractions: only stops propagation */}
                       {/* biome-ignore lint/a11y/useKeyWithClickEvents: the Button handles keys */}
@@ -282,10 +336,12 @@ export const LoadModal = observer(function LoadModal() {
               Open from Infomap Online
             </Button>
             <Button
-              isDisabled={files.length === 0 || busy || ui.infomapRunning}
-              onPress={loadDropped}
+              isDisabled={
+                (files.length === 0 && !hasNetwork) || busy || ui.infomapRunning
+              }
+              onPress={load}
             >
-              Load
+              {files.length === 0 && hasNetwork ? "Clear network" : "Load"}
             </Button>
           </Modal.Footer>
         </Modal.Dialog>

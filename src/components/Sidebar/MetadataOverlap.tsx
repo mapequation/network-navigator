@@ -18,18 +18,11 @@ export const MetadataOverlap = observer(function MetadataOverlap() {
 
   const addFiles = async (list: FileList | null): Promise<void> => {
     for (const file of Array.from(list ?? [])) {
-      const text = await file.text();
-      // v1 semantics: first CSV column = node names (quoted values unwrapped)
-      const values = text
-        .split(/\r?\n/)
-        .map((line) =>
-          line
-            .split(",")[0]
-            .trim()
-            .replace(/^"(.*)"$/, "$1"),
-        )
-        .filter(Boolean);
-      store.addOccurrenceFile(file.name, values);
+      store.addOccurrenceFile({
+        name: file.name,
+        size: file.size,
+        text: await file.text(),
+      });
     }
   };
 
@@ -94,7 +87,7 @@ export const MetadataOverlap = observer(function MetadataOverlap() {
           <Button
             size="sm"
             variant="ghost"
-            onPress={() => store.removeOccurrenceFile(i)}
+            onPress={() => store.removeOccurrenceFile(f.id)}
           >
             ✕
           </Button>
@@ -104,7 +97,7 @@ export const MetadataOverlap = observer(function MetadataOverlap() {
         ref={input}
         type="file"
         multiple
-        accept=".csv,.txt"
+        accept=".csv,.tsv,.txt"
         className="hidden"
         onChange={(e) => {
           void addFiles(e.target.files);

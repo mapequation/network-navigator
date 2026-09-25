@@ -60,6 +60,24 @@ describe("loadFiles", () => {
       noInfomap: false,
     });
     expect(net.kind).toBe("raw");
+    expect(net.sources).toEqual([
+      { name: "toy.net", size: PAJEK.length, text: PAJEK, kind: "network" },
+    ]);
+  });
+
+  it("skips metadata files, which need a network", async () => {
+    const opts = { directed: false, twoLevel: false, noInfomap: false };
+    const net = await loadFiles(
+      [
+        { name: "toy.net", text: PAJEK },
+        { name: "set.csv", text: "n1\n" },
+      ],
+      opts,
+    );
+    expect(net.sources.map((f) => f.name)).toEqual(["toy.net"]);
+    await expect(
+      loadFiles([{ name: "set.csv", text: "n1\n" }], opts),
+    ).rejects.toThrow("Metadata files need a network or .ftree file");
   });
 
   it("runs Infomap on a network + partition and clusters from its JSON tree", async () => {
@@ -100,7 +118,15 @@ describe("loadFiles", () => {
     ]);
     expect(net.kind).toBe("clustered");
     expect(net.infomap?.codelength).toBe(1.5);
-    expect(net.files.map((f) => f.name)).toEqual(["toy.net", "p.clu"]);
+    expect(net.sources).toEqual([
+      { name: "toy.net", size: PAJEK.length, text: PAJEK, kind: "network" },
+      { name: "p.clu", size: 12, text: "1 1\n2 1\n3 2\n", kind: "clu" },
+    ]);
+    expect(net.loadOptions).toEqual({
+      directed: false,
+      twoLevel: false,
+      noInfomap: true,
+    });
   });
 
   it("rejects a partition without a network", async () => {
