@@ -82,7 +82,7 @@ export const DataPanel = observer(function DataPanel() {
 
   const clear = (): void => {
     store.clear();
-    ui.setInfomapError(null);
+    ui.clearInfomapRun();
     ui.setLoadError(null);
     ui.openLoad();
   };

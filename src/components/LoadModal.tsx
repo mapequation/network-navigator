@@ -85,11 +85,14 @@ export const LoadModal = observer(function LoadModal() {
   const finish = (
     net: LoadedNetwork,
     metadata: readonly StagedFile[] = [],
+    ranInfomap = false,
   ): void => {
     // One transaction: views react once to the network and its metadata.
     runInAction(() => {
       store.setNetwork(net);
       for (const f of metadata) store.addOccurrenceFile(f);
+      // The console keeps only a run that produced this network.
+      if (!ranInfomap) ui.clearInfomapRun();
     });
     close();
   };
@@ -141,7 +144,7 @@ export const LoadModal = observer(function LoadModal() {
     if (plan.type === "clear") {
       // Nothing to show: the dialog stays open, as at startup.
       store.clear();
-      ui.setInfomapError(null);
+      ui.clearInfomapRun();
       reset();
       return;
     }
@@ -156,9 +159,11 @@ export const LoadModal = observer(function LoadModal() {
     setBusy(true);
     setRanInfomap(false);
     let error: string | null = null;
+    let ran = false;
     try {
       const net = await loadFiles(files, options, {
         onInfomapStart: (command) => {
+          ran = true;
           setRanInfomap(true);
           ui.startInfomap(command);
         },
@@ -167,6 +172,7 @@ export const LoadModal = observer(function LoadModal() {
       finish(
         net,
         files.filter((f) => f.kind === "metadata"),
+        ran,
       );
     } catch (err) {
       error = err instanceof Error ? err.message : String(err);

@@ -108,6 +108,20 @@ export class UiStore {
     this.loadError = null;
     this.infomapError = null;
   };
+  /** Forget the last run: the network it clustered was replaced or cleared. */
+  clearInfomapRun = (): void => {
+    if (this.infomapRunning) return;
+    this.consoleOpen = false;
+    this.infomapCommand = null;
+    this.infomapOutput = [];
+    this.infomapDroppedLines = 0;
+    this.infomapFailure = null;
+    this.infomapTrials = null;
+    this.infomapError = null;
+    this.pending = [];
+    this.pendingDropped = 0;
+    this.pendingTrials = null;
+  };
   setInfomapError = (message: string | null): void => {
     this.infomapError = message;
   };

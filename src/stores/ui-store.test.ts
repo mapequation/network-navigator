@@ -61,4 +61,20 @@ describe("UiStore Infomap console", () => {
     expect(ui.infomapFailure).toBeNull();
     expect(ui.infomapCommand).toBeNull();
   });
+
+  it("forgets a finished run, but not one in flight", () => {
+    const ui = new UiStore();
+    ui.startInfomap("infomap -N 3");
+    ui.onInfomapLog("Trial 1/3 started");
+    ui.clearInfomapRun();
+    expect(ui.infomapCommand).toBe("infomap -N 3");
+    ui.finishInfomap("failed");
+    ui.setInfomapError("failed");
+    ui.clearInfomapRun();
+    expect(ui.infomapCommand).toBeNull();
+    expect(ui.infomapOutput).toEqual([]);
+    expect(ui.infomapFailure).toBeNull();
+    expect(ui.infomapError).toBeNull();
+    expect(ui.infomapProgress).toBeNull();
+  });
 });
