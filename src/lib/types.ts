@@ -69,8 +69,8 @@ export interface LoadedNetwork {
   modules?: ModuleNode[];
   /**
    * Module-level links from an .ftree's *Links sections (rows with a module
-   * endpoint), path-addressed for d3gl's lod({ moduleLinks }). Leaf-to-leaf
-   * rows are in `graph` instead.
+   * endpoint), path-addressed for d3gl's data(graph, { moduleLinks }).
+   * Leaf-to-leaf rows are in `graph` instead.
    */
   moduleLinks?: ModuleLink[];
   /** Curated module names: pathKey ("1:2") → name. Only the example ships these. */

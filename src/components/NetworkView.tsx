@@ -1,14 +1,17 @@
 import {
+  type ModuleNode,
   moduleColors,
+  type NetworkLayoutOptions,
   type NetworkLODOptions,
   type NetworkStyle,
   network,
 } from "@mapequation/d3gl/network";
 import { scaleLinear, scaleSqrt } from "d3-scale";
-import { reaction, runInAction } from "mobx";
+import { computed, observable, reaction, runInAction } from "mobx";
 import { observer } from "mobx-react-lite";
 import { useEffect, useRef } from "react";
 import { fitTransform } from "../lib/fit-transform";
+import type { LoadedNetwork } from "../lib/types";
 import { useStores } from "../stores";
 import type { NetworkStore } from "../stores/network-store";
 import type { ScaleKind, SettingsStore } from "../stores/settings-store";
@@ -16,11 +19,25 @@ import type { ScaleKind, SettingsStore } from "../stores/settings-store";
 const DEFAULT_NODE_FILL = "#4878d0";
 const HALF_ARROW_BEND = 0.15; // d3gl#299: half-arrow bend is a chord fraction too
 const LINE_BEND = 0.15;
-// With lod({ modules }) set first, d3gl lays the module tree out nested
-// (d3gl#324): each module's children inside it, by their own links only,
-// streamed top-down off-thread. Without modules it's the worker force layout.
-// fit keeps the camera framed while it streams.
+// A load lays the network out from scratch. With a module hierarchy (given to
+// data(), whatever the LOD mode) that's the nested map of modules (d3gl#324):
+// each module's children inside it, by their own links only, streamed
+// top-down off-thread. Without one it's the worker force layout. fit keeps
+// the camera framed while it streams.
 const LAYOUT = { backend: "worker", fit: true, nested: true } as const;
+// A re-clustering keeps the nodes, their positions and the camera: the new
+// map is laid out from the current positions (d3gl#328) and eased in.
+const RELAYOUT = {
+  backend: "worker",
+  nested: { warm: true },
+  transition: 600,
+} as const;
+// Rings around the modules the LOD cut has opened (d3gl#329): thin and low
+// contrast, context rather than content. They are the nested layout's module
+// discs; until a layout lands d3gl rings each module's centroid + extent,
+// which over the previous (e.g. force) positions is a tangle of huge rings —
+// so they are drawn once the layout has settled.
+const MODULE_BOUNDARY = { width: 1, color: "rgb(90,100,120)", opacity: 0.35 };
 const ZOOM_EXTENT: [number, number] = [0.002, 200];
 
 const makeScale = (kind: ScaleKind) =>
@@ -80,24 +97,31 @@ function buildStyle(
   };
 }
 
+/**
+ * The module hierarchy the engine holds as data (d3gl#326), or undefined.
+ * `modules` is dense-indexed by node id in `cur.graph` (buildGraph's space).
+ * A *States network's records are state-indexed, but the engine renders its
+ * physical graph — so it keeps stateNetwork()'s own module handling instead.
+ */
+function hierarchyOf(cur: LoadedNetwork | null) {
+  return cur?.modules && !cur.isStates
+    ? { modules: cur.modules, moduleLinks: cur.moduleLinks }
+    : undefined;
+}
+
 function buildLod(
   store: NetworkStore,
   settings: SettingsStore,
+  settled: boolean,
 ): NetworkLODOptions | false {
   if (settings.lodMode === "off") return false;
   const cur = store.current;
-  // `modules` is dense-indexed by node id in `cur.graph` (buildGraph's space).
-  // For a *States network that's state-indexed (one record per state node),
-  // but d3gl's engine renders the "physical" view (the default) over the
-  // physical graph — a different, smaller index space — so handing it
-  // straight through makes buildModuleLODTree read an out-of-range id and
-  // throw on every LOD recompute (mapequation/d3gl#197 territory: no
-  // physical/state module remapping exists yet). State networks fall back to
-  // spatial (non-module) LOD grouping until that mapping is built.
-  const modules =
-    settings.lodMode === "modules" && !cur?.isStates ? cur?.modules : undefined;
+  // "modules" cuts the hierarchy the engine holds (see hierarchyOf); without
+  // one both sources coarsen the graph structurally.
+  const cutsModules = settings.lodMode === "modules" && !!hierarchyOf(cur);
   return {
-    ...(modules ? { modules, moduleLinks: cur?.moduleLinks } : {}),
+    source: settings.lodMode === "spatial" ? "structure" : "modules",
+    ...(cutsModules && settled ? { moduleBoundary: MODULE_BOUNDARY } : {}),
     ...(settings.expandPx !== null ? { expandPx: settings.expandPx } : {}),
     maxAggregateRadius: settings.maxAggregateRadius,
     declutter: settings.declutter,
@@ -110,17 +134,26 @@ function buildLod(
 export const NetworkView = observer(function NetworkView() {
   const { network: store, settings } = useStores();
   const hostRef = useRef<HTMLDivElement>(null);
-  const current = store.current; // observed: effect re-runs when a new network loads
   const backend = settings.backend;
 
+  // One engine per host + backend. A load hands it new data; a re-clustering
+  // keeps its camera and positions (see NetworkStore.topologyVersion).
   useEffect(() => {
     const host = hostRef.current;
-    const graph = store.built;
-    if (!host || !current || !graph) return;
+    if (!host) return;
 
     const net = network(host, { backend });
     store.engine = net;
-    const colors = current.modules ? moduleColors(current.modules) : null;
+
+    let colorsFor: ArrayLike<ModuleNode> | undefined;
+    let colors: string[] | null = null;
+    const colorsOf = (cur: LoadedNetwork | null): string[] | null => {
+      if (cur?.modules !== colorsFor) {
+        colorsFor = cur?.modules;
+        colors = colorsFor ? moduleColors(colorsFor) : null;
+      }
+      return colors;
+    };
 
     net.enableZoom(ZOOM_EXTENT);
     net.interactive({
@@ -143,18 +176,21 @@ export const NetworkView = observer(function NetworkView() {
       });
     });
 
-    const activePositions = (): Float32Array => {
-      if (current.isStates && store.builtState && current.modules) {
+    const activePositions = (): Float32Array | null => {
+      const cur = store.current;
+      if (cur?.isStates && store.builtState && cur.modules) {
         return settings.stateView === "physical"
           ? store.builtState.physical.positions
           : store.builtState.state.positions;
       }
-      return graph.positions;
+      return store.built?.positions ?? null;
     };
 
     store.zoomTo = (ids) => {
+      const positions = activePositions();
+      if (!positions) return;
       const t = fitTransform(
-        activePositions(),
+        positions,
         ids,
         host.clientWidth,
         host.clientHeight,
@@ -175,46 +211,94 @@ export const NetworkView = observer(function NetworkView() {
     };
     host.addEventListener("dblclick", onDblClick);
 
-    if (current.isStates && store.builtState && current.modules) {
-      net.stateNetwork(store.builtState, {
-        modules: current.modules,
-        view: settings.stateView,
-      });
-    } else {
-      net.data(graph);
-    }
+    // Style and LOD are computed once per change and shared by the reaction
+    // that keeps them live and by `show`, so a network swap applies each once.
+    const style = computed(() =>
+      buildStyle(store, settings, colorsOf(store.current)),
+    );
+    const settled = observable.box(false); // the latest layout has landed
+    const lod = computed(() => buildLod(store, settings, settled.get()));
+    let appliedStyle: NetworkStyle | null = null;
+    let appliedLod: NetworkLODOptions | false | null = null;
+    const applyStyle = (s: NetworkStyle): void => {
+      if (s === appliedStyle) return;
+      appliedStyle = s;
+      net.style(s);
+    };
+    const applyLod = (l: NetworkLODOptions | false): void => {
+      if (l === appliedLod) return;
+      appliedLod = l;
+      net.lod(l);
+    };
 
-    // These reactions track live store/settings state so the SAME net keeps
-    // updating in place while `current` is loaded (e.g. toggling a setting).
-    // But they run as plain mobx reactions, independent of React's effect
-    // schedule: swapping store.current (e.g. a "Cluster with Infomap" run
-    // finishing) can re-fire one of them synchronously — inside the same
-    // mobx action — before React tears this effect down and builds a new
-    // net for the new network. Applying the newly-computed value to `net`
-    // then reaches into its old graph (still the pre-swap one), which can
-    // throw (e.g. nodeRadius by:"flow" needs nodeFlow, absent on a raw
-    // graph). `forCurrent` drops updates once this net is no longer the
-    // active one — it's about to be destroyed by the effect cleanup anyway.
-    const forCurrent =
-      <T,>(fn: (value: T) => void) =>
-      (value: T): void => {
-        if (store.current === current) fn(value);
-      };
+    // The network the engine holds, and the topology it was loaded with. The
+    // reactions below track store state that a network swap also changes, and
+    // mobx may run them before `show` within the same action: until the
+    // engine holds the current network they leave it alone (show applies it).
+    let shown: LoadedNetwork | null = null;
+    let shownTopology = -1;
+    const holdsCurrent = () => shown !== null && shown === store.current;
+
+    let layoutRun = 0;
+    const layout = (opts: NetworkLayoutOptions): void => {
+      const run = ++layoutRun;
+      runInAction(() => settled.set(false));
+      applyLod(lod.get());
+      net.layout(opts);
+      void net.whenSettled().then(() => {
+        if (run === layoutRun) runInAction(() => settled.set(true));
+      });
+    };
+
+    const show = (): void => {
+      const cur = store.current;
+      const graph = store.built;
+      if (!cur || !graph) return; // cleared: the view is unmounting
+      const reCluster =
+        shown !== null && shownTopology === store.topologyVersion;
+      shown = cur;
+      shownTopology = store.topologyVersion;
+      const s = style.get();
+      // data()/stateNetwork() re-resolve the engine's current style against
+      // the new graph, and style() resolves against the old one. Sizing by
+      // flow throws on a graph without flow, so apply the new style after the
+      // swap when the new graph has flow and before it otherwise.
+      const flowFirst = !!cur.graph.nodeFlow;
+      if (!flowFirst) applyStyle(s);
+      if (cur.isStates && store.builtState && cur.modules) {
+        net.stateNetwork(store.builtState, {
+          modules: cur.modules,
+          view: settings.stateView,
+        });
+      } else {
+        net.data(graph, hierarchyOf(cur));
+      }
+      if (flowFirst) applyStyle(s);
+      net.select("nodes", store.searchHighlight);
+      layout(reCluster ? RELAYOUT : LAYOUT);
+    };
 
     const disposers = [
       reaction(
-        () => buildStyle(store, settings, colors),
-        forCurrent((s) => net.style(s)),
-        { fireImmediately: true },
+        () => style.get(),
+        (s) => {
+          if (holdsCurrent()) applyStyle(s);
+        },
       ),
       reaction(
-        () => buildLod(store, settings),
-        forCurrent((lod) => net.lod(lod)),
-        { fireImmediately: true },
+        () => lod.get(),
+        (l) => {
+          if (holdsCurrent()) applyLod(l);
+        },
       ),
+      // Loads and re-clusterings. After the two above, so that when the store
+      // swaps the network those usually run first and skip.
+      reaction(() => [store.current, store.topologyVersion], show, {
+        fireImmediately: true,
+      }),
       reaction(
         () => ({ on: settings.labelsVisible, max: settings.maxLabels }),
-        forCurrent(({ on, max }) =>
+        ({ on, max }) =>
           net.labels(
             on
               ? {
@@ -226,41 +310,43 @@ export const NetworkView = observer(function NetworkView() {
                       ? info.path
                         ? store.moduleLabel(info.path)
                         : `${info.count.toLocaleString()} node${info.count === 1 ? "" : "s"}`
-                      : current.names[Number(id)],
+                      : (store.current?.names[Number(id)] ?? ""),
                   importanceOf: (id, info) =>
                     info.aggregate
                       ? info.count
-                      : (graph.flow?.[Number(id)] ?? 0),
+                      : (store.built?.flow?.[Number(id)] ?? 0),
                 }
               : false,
           ),
-        ),
         { fireImmediately: true },
       ),
       reaction(
         () => settings.simulation,
-        forCurrent((on) => (on ? net.layout(LAYOUT) : net.stopLayout())),
+        (on) => {
+          if (!holdsCurrent()) return;
+          if (on) layout(LAYOUT);
+          else net.stopLayout();
+        },
       ),
       reaction(
         () => store.searchHighlight,
-        forCurrent((ids) => net.select("nodes", ids)),
-        { fireImmediately: true },
+        (ids) => {
+          if (holdsCurrent()) net.select("nodes", ids);
+        },
       ),
       reaction(
         () => settings.pickLinks,
-        forCurrent((p) => net.pickLinks(p)),
+        (p) => net.pickLinks(p),
         { fireImmediately: true },
       ),
       reaction(
         () => settings.stateView,
-        forCurrent((view) => {
-          if (current.isStates && current.modules) net.view(view);
-        }),
+        (view) => {
+          const cur = store.current;
+          if (holdsCurrent() && cur?.isStates && cur.modules) net.view(view);
+        },
       ),
     ];
-
-    net.layout(LAYOUT);
-    // layout({ fit: true }) frames the view while the layout streams and on settle.
 
     return () => {
       for (const dispose of disposers) dispose();
@@ -269,7 +355,7 @@ export const NetworkView = observer(function NetworkView() {
       if (store.engine === net) store.engine = null;
       net.destroy();
     };
-  }, [store, settings, current, backend]);
+  }, [store, settings, backend]);
 
   return <div ref={hostRef} className="absolute inset-0" />;
 });

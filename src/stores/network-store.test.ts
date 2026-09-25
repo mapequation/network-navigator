@@ -154,6 +154,45 @@ describe("NetworkStore", () => {
     expect(store.current?.sources.map((f) => f.name)).toEqual(["toy.net"]);
   });
 
+  it("re-clusters over the same graph buffers without a new topology", () => {
+    const store = new NetworkStore();
+    store.setNetwork({ ...toy(), sources: [] });
+    const before = store.built;
+    const version = store.topologyVersion;
+    before?.positions.set([1, 2, 3, 4, 5, 6, 7, 8]);
+    store.applyClustering({
+      version: "v2.14.0",
+      args: "",
+      startedAt: "",
+      completedIn: 0,
+      codelength: 1,
+      numLevels: 2,
+      numTopModules: 1,
+      relativeCodelengthSavings: 0,
+      directed: false,
+      flowModel: "undirected",
+      higherOrder: false,
+      nodes: [1, 2, 3, 4].map((id) => ({
+        path: [1, id],
+        flow: id / 10,
+        name: "",
+        id,
+      })),
+      modules: [],
+    });
+    const after = store.built;
+    expect(after).not.toBe(before);
+    expect(after?.positions).toBe(before?.positions);
+    expect(after?.csr).toBe(before?.csr);
+    expect(Array.from(after?.flow ?? [])).toEqual(
+      [0.1, 0.2, 0.3, 0.4].map(Math.fround),
+    );
+    expect(store.maxFlow).toBeCloseTo(0.4);
+    expect(store.topologyVersion).toBe(version);
+    store.setNetwork(toy());
+    expect(store.topologyVersion).toBe(version + 1);
+  });
+
   it("resets all network-derived state on clear", () => {
     const store = new NetworkStore();
     store.setNetwork(toy());

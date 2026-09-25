@@ -16,8 +16,9 @@ interface ParsedNode {
  * An .ftree stores leaf links only inside bottom modules; every coarser link
  * appears once, aggregated, in its parent module's *Links section. Leaf-to-leaf
  * rows become the graph's edges; every row with a module endpoint is kept as a
- * path-addressed module link for d3gl's `lod({ moduleLinks })` (d3gl#199).
- * Nothing is synthesized: the graph holds exactly the links the file lists.
+ * path-addressed module link for d3gl's `data(graph, { moduleLinks })`
+ * (d3gl#199). Nothing is synthesized: the graph holds exactly the links the
+ * file lists.
  */
 export function ftreeToNetwork(
   text: string,

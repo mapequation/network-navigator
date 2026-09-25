@@ -102,6 +102,13 @@ export class NetworkStore {
    * so module super-edges and leaf links share one scale.
    */
   maxLinkFlow = 0;
+  /**
+   * Bumped on every load (setNetwork): the view takes the network as new data,
+   * lays it out from scratch and frames it. A re-clustering of a plain network
+   * keeps it — same nodes, same graph buffers — so the view keeps its engine,
+   * camera and positions and re-lays the map out from where it is.
+   */
+  topologyVersion = 0;
 
   /** Non-observable: typed-array graphs + engine handle (imperative surface). */
   built: NetworkGraph | null = null;
@@ -137,7 +144,13 @@ export class NetworkStore {
   }
 
   setNetwork(net: LoadedNetwork): void {
-    this.built = buildGraph(net.graph);
+    this.topologyVersion++;
+    this.adopt(net, buildGraph(net.graph));
+  }
+
+  /** Make `net` (built as `g`) current and reset everything derived from it. */
+  private adopt(net: LoadedNetwork, g: NetworkGraph): void {
+    this.built = g;
     this.builtState =
       net.stateGraph && net.modules ? buildStateGraph(net.stateGraph) : null;
     this.moduleLeafCache.clear();
@@ -149,7 +162,6 @@ export class NetworkStore {
     let maxFlow = 0;
     let maxDegree = 0;
     let maxWeight = 0;
-    const g = this.built;
     if (g.flow) for (const f of g.flow) maxFlow = Math.max(maxFlow, f);
     for (const d of g.csr.degree) maxDegree = Math.max(maxDegree, d);
     for (const w of g.weight) maxWeight = Math.max(maxWeight, w);
@@ -190,13 +202,26 @@ export class NetworkStore {
 
   applyClustering(tree: InfomapTree): void {
     const cur = this.current;
-    if (!cur) return;
+    const built = this.built;
+    if (!cur || !built) return;
     // Re-clustering keeps the dense node ids, so metadata-overlap files stay valid.
     const occurrenceFiles = this.occurrenceFiles;
     const net = withClustering(cur, tree);
     // A partition the network was loaded with no longer produced these modules.
     net.sources = cur.sources.filter((f) => f.kind === "network");
-    this.setNetwork(net);
+    if (cur.isStates) {
+      // A clustered states network is shown as a state network — new data for
+      // the engine, so this is a load.
+      this.setNetwork(net);
+    } else {
+      // Same nodes and edges: share every buffer of the built graph (no CSR
+      // rebuild), the positions included, and swap in the new flow.
+      const flow = net.graph.nodeFlow;
+      this.adopt(net, {
+        ...built,
+        flow: flow ? Float32Array.from(flow) : null,
+      });
+    }
     this.occurrenceFiles = occurrenceFiles;
   }
 

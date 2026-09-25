@@ -52,7 +52,7 @@ describe("ftreeToNetwork", () => {
     ]);
   });
 
-  it("keeps module-level links path-addressed for d3gl lod({ moduleLinks })", () => {
+  it("keeps module-level links path-addressed for d3gl data({ moduleLinks })", () => {
     expect(net.moduleLinks).toEqual([{ source: [1], target: [2], flow: 0.5 }]);
   });
 
