@@ -1,6 +1,6 @@
-import { Button, Chip } from "@heroui/react";
+import { AlertDialog, Button, Chip, Tooltip } from "@heroui/react";
 import { observer } from "mobx-react-lite";
-import type { ReactNode } from "react";
+import { type ReactNode, useState } from "react";
 import { formatBytes, formatNumber } from "../../lib/network-stats";
 import { useStores } from "../../stores";
 import { Stats } from "./controls";
@@ -59,17 +59,20 @@ function FileRow({
         <span className="tabular-nums text-neutral-400 group-focus-within/file:invisible group-hover/file:invisible">
           {formatBytes(size)}
         </span>
-        <Button
-          isIconOnly
-          size="sm"
-          variant="ghost"
-          aria-label={removeLabel}
-          isDisabled={isDisabled}
-          onPress={onRemove}
-          className="absolute top-1/2 right-0 size-6 -translate-y-1/2 opacity-0 group-focus-within/file:opacity-100 group-hover/file:opacity-100"
-        >
-          <TrashIcon />
-        </Button>
+        <Tooltip delay={300}>
+          <Button
+            isIconOnly
+            size="sm"
+            variant="ghost"
+            aria-label={removeLabel}
+            isDisabled={isDisabled}
+            onPress={onRemove}
+            className="absolute top-1/2 right-0 size-6 -translate-y-1/2 opacity-0 group-focus-within/file:opacity-100 group-hover/file:opacity-100"
+          >
+            <TrashIcon />
+          </Button>
+          <Tooltip.Content>{removeLabel}</Tooltip.Content>
+        </Tooltip>
       </span>
     </li>
   );
@@ -77,6 +80,7 @@ function FileRow({
 
 export const DataPanel = observer(function DataPanel() {
   const { network: store, ui } = useStores();
+  const [confirmClear, setConfirmClear] = useState(false);
   const cur = store.current;
   if (!cur) return null;
 
@@ -118,7 +122,8 @@ export const DataPanel = observer(function DataPanel() {
   return (
     <div className="flex flex-col gap-2.5">
       <ul className="flex flex-col gap-1">
-        {/* Any network input clears the whole network; a metadata file goes alone. */}
+        {/* Any network input clears the whole network (after a confirm); a
+            metadata file goes alone. */}
         {cur.sources.map((f) => (
           <FileRow
             key={`${f.kind}:${f.name}`}
@@ -126,7 +131,7 @@ export const DataPanel = observer(function DataPanel() {
             size={f.size}
             removeLabel="Clear network"
             isDisabled={ui.infomapRunning}
-            onRemove={clear}
+            onRemove={() => setConfirmClear(true)}
           />
         ))}
         {store.occurrenceFiles.map((f) => (
@@ -140,6 +145,36 @@ export const DataPanel = observer(function DataPanel() {
           />
         ))}
       </ul>
+      <AlertDialog.Backdrop
+        isOpen={confirmClear}
+        onOpenChange={setConfirmClear}
+      >
+        <AlertDialog.Container size="sm">
+          <AlertDialog.Dialog>
+            <AlertDialog.Header>
+              <AlertDialog.Icon status="danger" />
+              <AlertDialog.Heading>Clear the network?</AlertDialog.Heading>
+            </AlertDialog.Header>
+            <AlertDialog.Body>
+              <p>
+                This unloads {cur.filename}
+                {store.occurrenceFiles.length > 0 && " and its metadata files"}.
+                {cur.modules &&
+                  cur.sources.every((f) => f.kind === "network") &&
+                  " Its modules come from an Infomap run in this session: download them first to keep them."}
+              </p>
+            </AlertDialog.Body>
+            <AlertDialog.Footer>
+              <Button slot="close" variant="tertiary">
+                Cancel
+              </Button>
+              <Button slot="close" variant="danger" onPress={clear}>
+                Clear network
+              </Button>
+            </AlertDialog.Footer>
+          </AlertDialog.Dialog>
+        </AlertDialog.Container>
+      </AlertDialog.Backdrop>
       <div className="flex flex-wrap gap-1">
         <Chip size="sm" variant="secondary">
           {cur.directed ? "Directed" : "Undirected"}
