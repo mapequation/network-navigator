@@ -94,8 +94,15 @@ const ConsoleBody = observer(function ConsoleBody() {
           </span>
         </div>
         {dropped && <p className="text-[11px] text-neutral-400">{dropped}</p>}
+        {/* Focusable so the keyboard can scroll it; not live, as a run
+            prints thousands of lines. */}
         <pre
           ref={preRef}
+          // biome-ignore lint/a11y/noNoninteractiveTabindex: a scrollable region
+          tabIndex={0}
+          role="log"
+          aria-live="off"
+          aria-label="Infomap output"
           onScroll={(e) => {
             const el = e.currentTarget;
             follow.current =
