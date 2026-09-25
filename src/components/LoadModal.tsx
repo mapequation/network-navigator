@@ -344,9 +344,13 @@ export const LoadModal = observer(function LoadModal() {
             >
               Open from Infomap Online
             </Button>
+            {/* Pending, not disabled, while busy: a disabled button drops
+                focus to <body>, where the dialog's keys stop working. */}
             <Button
+              isPending={busy}
               isDisabled={
-                (files.length === 0 && !hasNetwork) || busy || ui.infomapRunning
+                (files.length === 0 && !hasNetwork) ||
+                (ui.infomapRunning && !busy)
               }
               onPress={load}
             >
