@@ -238,7 +238,8 @@ export const LodPanel = observer(function LodPanel() {
       >
         <Toggle
           label="Cross-level links"
-          isDisabled={off}
+          // Kept or dropped by the super-edge pass, which Super-edges turns off.
+          isDisabled={off || !settings.superEdges}
           isSelected={settings.crossLevelEdges}
           onChange={(on) => settings.set("crossLevelEdges", on)}
         />
