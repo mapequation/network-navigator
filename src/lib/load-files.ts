@@ -2,7 +2,7 @@ import { parseNetwork } from "@mapequation/d3gl/network";
 import { withClustering } from "./apply-ftree";
 import { fileKind, isStatesText } from "./file-kinds";
 import { ftreeToNetwork } from "./ftree-graph";
-import { buildInfomapArgs } from "./infomap-args";
+import { buildInfomapArgs, infomapArgString } from "./infomap-args";
 import { byteLength, computeStats } from "./network-stats";
 import { parseStates } from "./parse-states";
 import { runInfomap } from "./run-infomap";
@@ -85,7 +85,8 @@ export function networkToLoaded(
 }
 
 export interface LoadCallbacks {
-  onProgress?: (percent: number) => void;
+  /** Infomap is about to run (partition loads only), with its command line. */
+  onInfomapStart?: (command: string) => void;
   onLog?: (line: string) => void;
 }
 
@@ -141,15 +142,16 @@ export async function loadFiles(
   if (!partitions.length) return net;
 
   const partition = partitions[0];
-  const ftree = await runInfomap({
+  const args = buildInfomapArgs({ ...opts, clusterFilename: partition.name });
+  cb.onInfomapStart?.(`infomap ${infomapArgString(args)}`);
+  const tree = await runInfomap({
     network: networks[0].text,
     filename: networks[0].name,
-    args: buildInfomapArgs({ ...opts, clusterFilename: partition.name }),
+    args,
     files: { [partition.name]: partition.text },
-    onProgress: cb.onProgress,
     onLog: cb.onLog,
   });
-  const clustered = withClustering(net, ftree);
+  const clustered = withClustering(net, tree);
   clustered.files = [
     ...net.files,
     {

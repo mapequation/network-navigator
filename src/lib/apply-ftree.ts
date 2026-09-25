@@ -1,26 +1,17 @@
 import type { ModuleNode } from "@mapequation/d3gl/network";
-import { parseTree } from "@mapequation/infomap-parser";
-import { parseNodePath } from "./path-key";
-import type { LoadedNetwork } from "./types";
+import type { InfomapTree, InfomapTreeNode, LoadedNetwork } from "./types";
 
-interface ParsedNode {
-  path: number[] | string;
-  flow?: number;
-  name?: string;
-  id: number;
-  stateId?: number;
-}
-
-/** Attach an Infomap ftree result to a raw network, keeping the real edges. */
+/**
+ * Attach an Infomap JSON tree to a raw network, keeping the real edges.
+ * No moduleLinks: the raw graph already holds every leaf edge, and d3gl sums
+ * moduleLinks on top of the graph's edges, so they would count twice.
+ */
 export function withClustering(
   net: LoadedNetwork,
-  ftreeText: string,
+  tree: InfomapTree,
 ): LoadedNetwork {
-  const result = parseTree(ftreeText, undefined, true, false);
-  const nodes = result.nodes as unknown as ParsedNode[];
-
   // Raw states networks are keyed by state id; plain networks by physical id.
-  const keyOf = (n: ParsedNode): number =>
+  const keyOf = (n: InfomapTreeNode): number =>
     net.isStates ? (n.stateId ?? n.id) : n.id;
   const denseIndex = new Map<number, number>();
   (net.isStates && net.stateIds ? net.stateIds : net.physicalIds).forEach(
@@ -33,19 +24,19 @@ export function withClustering(
   const nodeFlow = new Float32Array(net.graph.nodeCount);
   const names = [...net.names];
   let covered = 0;
-  for (const n of nodes) {
+  for (const n of tree.nodes) {
     const idx = denseIndex.get(keyOf(n));
     // Skip unknown and duplicate keys (first write wins) so `covered`
     // counts distinct filled indices and the guard below stays sound.
     if (idx === undefined || modules[idx] !== undefined) continue;
-    modules[idx] = { id: idx, path: parseNodePath(n.path) };
+    modules[idx] = { id: idx, path: n.path };
     nodeFlow[idx] = n.flow ?? 0;
     if (n.name) names[idx] = n.name;
     covered++;
   }
   if (covered < net.graph.nodeCount) {
     throw new Error(
-      `ftree is missing ${net.graph.nodeCount - covered} of ${net.graph.nodeCount} nodes`,
+      `Infomap output is missing ${net.graph.nodeCount - covered} of ${net.graph.nodeCount} nodes`,
     );
   }
 
@@ -56,6 +47,12 @@ export function withClustering(
     stateGraph: net.stateGraph ? { ...net.stateGraph, nodeFlow } : undefined,
     names,
     modules,
-    ftree: ftreeText,
+    infomap: {
+      codelength: tree.codelength,
+      numLevels: tree.numLevels,
+      numTopModules: tree.numTopModules,
+      relativeCodelengthSavings: tree.relativeCodelengthSavings,
+    },
+    infomapJson: tree,
   };
 }

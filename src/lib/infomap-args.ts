@@ -4,9 +4,9 @@ import type { ClusterOptions } from "./types";
 // The Arguments type lives in @mapequation/infomap; keep the subset we use
 // structural so the exact type-export path never bites us. output stays a
 // literal type so the whole object is assignable to the library's Arguments.
+// No --silent: the stdout lines feed the console and the progress stage.
 export interface InfomapArguments {
-  output: "ftree"[];
-  silent: boolean;
+  output: "json"[];
   directed?: boolean;
   twoLevel?: boolean;
   noInfomap?: boolean;
@@ -15,7 +15,7 @@ export interface InfomapArguments {
 }
 
 export function buildInfomapArgs(o: ClusterOptions): InfomapArguments {
-  const args: InfomapArguments = { output: ["ftree"], silent: true };
+  const args: InfomapArguments = { output: ["json"] };
   if (o.directed) args.directed = true;
   if (o.twoLevel) args.twoLevel = true;
   if (o.noInfomap) args.noInfomap = true;
@@ -26,7 +26,7 @@ export function buildInfomapArgs(o: ClusterOptions): InfomapArguments {
 
 /**
  * Infomap command-line string: structured args plus free-text CLI flags
- * (e.g. "-N 5"), passed verbatim to the worker. ftree
+ * (e.g. "-N 5"), passed verbatim to the worker. JSON
  * output is always requested by the structured part.
  */
 export function infomapArgString(args: InfomapArguments, flags = ""): string {

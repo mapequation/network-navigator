@@ -9,7 +9,7 @@ import { makeAutoObservable, observable } from "mobx";
 import { withClustering } from "../lib/apply-ftree";
 import { OCCURRENCE_COLORS } from "../lib/occurrence-colors";
 import { pathKey } from "../lib/path-key";
-import type { LoadedNetwork } from "../lib/types";
+import type { InfomapTree, LoadedNetwork } from "../lib/types";
 
 export interface SelectionInfo {
   ids: number[];
@@ -183,11 +183,11 @@ export class NetworkStore {
     this.moduleTopLeaf = new Map();
   }
 
-  applyClustering(ftreeText: string): void {
+  applyClustering(tree: InfomapTree): void {
     if (!this.current) return;
     // Re-clustering keeps the dense node ids, so metadata-overlap files stay valid.
     const occurrenceFiles = this.occurrenceFiles;
-    this.setNetwork(withClustering(this.current, ftreeText));
+    this.setNetwork(withClustering(this.current, tree));
     this.occurrenceFiles = occurrenceFiles;
   }
 

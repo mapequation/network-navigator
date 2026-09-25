@@ -2,12 +2,11 @@ import { describe, expect, it } from "vitest";
 import { buildInfomapArgs, infomapArgString } from "./infomap-args";
 
 describe("buildInfomapArgs", () => {
-  it("always requests ftree output, silently", () => {
+  it("always requests JSON output, not silenced", () => {
     expect(
       buildInfomapArgs({ directed: false, twoLevel: false, noInfomap: false }),
     ).toEqual({
-      output: ["ftree"],
-      silent: true,
+      output: ["json"],
     });
   });
 
@@ -20,8 +19,7 @@ describe("buildInfomapArgs", () => {
         clusterFilename: "p.clu",
       }),
     ).toEqual({
-      output: ["ftree"],
-      silent: true,
+      output: ["json"],
       directed: true,
       twoLevel: true,
       noInfomap: true,
@@ -42,6 +40,6 @@ describe("infomapArgString", () => {
         }),
         "  -N 5   --seed 7 ",
       ),
-    ).toBe("--output ftree --silent --two-level --regularized -N 5 --seed 7");
+    ).toBe("--output json --two-level --regularized -N 5 --seed 7");
   });
 });

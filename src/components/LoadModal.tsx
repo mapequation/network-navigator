@@ -1,4 +1,4 @@
-import { Alert, Button, Chip, Modal, ProgressBar, Switch } from "@heroui/react";
+import { Alert, Button, Chip, Modal, Switch } from "@heroui/react";
 import { observer } from "mobx-react-lite";
 import { useCallback, useEffect, useState } from "react";
 import { useDropzone } from "react-dropzone";
@@ -8,6 +8,7 @@ import { loadInfomapOnline } from "../lib/infomap-online";
 import { loadFiles, type NamedText } from "../lib/load-files";
 import type { LoadedNetwork } from "../lib/types";
 import { useStores } from "../stores";
+import { ConsoleButton, InfomapProgressBar } from "./InfomapConsole";
 
 interface StagedFile extends NamedText {
   id: string;
@@ -21,6 +22,8 @@ export const LoadModal = observer(function LoadModal() {
   const [noInfomap, setNoInfomap] = useState(false);
   const [onlineAvailable, setOnlineAvailable] = useState(false);
   const [busy, setBusy] = useState(false);
+  /** The last Load ran Infomap (network + partition); keeps its output visible after a failure. */
+  const [ranInfomap, setRanInfomap] = useState(false);
 
   useEffect(() => {
     if (ui.loadOpen)
@@ -49,6 +52,7 @@ export const LoadModal = observer(function LoadModal() {
     ui.setLoadOpen(false);
     ui.setLoadError(null);
     setFiles([]);
+    setRanInfomap(false);
     setDirected(false);
     setTwoLevel(false);
     setNoInfomap(false);
@@ -97,18 +101,26 @@ export const LoadModal = observer(function LoadModal() {
 
   const loadDropped = async (): Promise<void> => {
     setBusy(true);
+    setRanInfomap(false);
+    let error: string | null = null;
     try {
-      ui.startInfomap();
       const net = await loadFiles(
         files,
         { directed, twoLevel, noInfomap },
-        { onProgress: ui.onInfomapProgress, onLog: ui.onInfomapLog },
+        {
+          onInfomapStart: (command) => {
+            setRanInfomap(true);
+            ui.startInfomap(command);
+          },
+          onLog: ui.onInfomapLog,
+        },
       );
       finish(net);
     } catch (err) {
+      error = err instanceof Error ? err.message : String(err);
       fail(err);
     } finally {
-      ui.finishInfomap();
+      ui.finishInfomap(error);
       setBusy(false);
     }
   };
@@ -228,19 +240,15 @@ export const LoadModal = observer(function LoadModal() {
               )}
             </div>
 
-            {ui.infomapRunning && (
+            {(ui.infomapRunning || ranInfomap) && (
               <div className="flex flex-col gap-1">
-                <ProgressBar
-                  value={ui.infomapProgress}
-                  aria-label="Infomap progress"
-                >
-                  <ProgressBar.Track>
-                    <ProgressBar.Fill />
-                  </ProgressBar.Track>
-                </ProgressBar>
-                <pre className="max-h-24 overflow-y-auto text-xs text-neutral-500">
-                  {ui.infomapLog.slice(-8).join("\n")}
-                </pre>
+                {ui.infomapRunning && <InfomapProgressBar />}
+                <div className="flex items-end gap-2">
+                  <pre className="max-h-24 min-w-0 flex-1 overflow-y-auto text-xs text-neutral-500">
+                    {ui.infomapOutput.slice(-8).join("\n")}
+                  </pre>
+                  <ConsoleButton />
+                </div>
               </div>
             )}
             {ui.loadError && (

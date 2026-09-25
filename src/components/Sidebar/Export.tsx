@@ -11,14 +11,32 @@ export const Export = observer(function Export() {
 
   return (
     <div className="flex flex-wrap gap-2">
-      <Button
-        size="sm"
-        variant="secondary"
-        isDisabled={!cur.ftree}
-        onPress={() => cur.ftree && downloadText(`${base}.ftree`, cur.ftree)}
-      >
-        Download .ftree
-      </Button>
+      {/* Loaded .ftree, or the JSON tree of an in-app Infomap run. */}
+      {cur.ftree ? (
+        <Button
+          size="sm"
+          variant="secondary"
+          onPress={() => cur.ftree && downloadText(`${base}.ftree`, cur.ftree)}
+        >
+          Download .ftree
+        </Button>
+      ) : (
+        <Button
+          size="sm"
+          variant="secondary"
+          isDisabled={!cur.infomapJson}
+          onPress={() =>
+            cur.infomapJson &&
+            downloadText(
+              `${base}.json`,
+              JSON.stringify(cur.infomapJson),
+              "application/json;charset=utf-8",
+            )
+          }
+        >
+          Download .json
+        </Button>
+      )}
       <Button
         size="sm"
         variant="secondary"

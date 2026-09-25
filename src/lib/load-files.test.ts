@@ -1,5 +1,9 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { loadFiles, networkToLoaded } from "./load-files";
+import { type RunInfomapOptions, runInfomap } from "./run-infomap";
+import type { InfomapTree } from "./types";
+
+vi.mock("./run-infomap", () => ({ runInfomap: vi.fn() }));
 
 const PAJEK = `*Vertices 3
 1 "n1"
@@ -56,6 +60,47 @@ describe("loadFiles", () => {
       noInfomap: false,
     });
     expect(net.kind).toBe("raw");
+  });
+
+  it("runs Infomap on a network + partition and clusters from its JSON tree", async () => {
+    const tree: InfomapTree = {
+      version: "v2.14.0",
+      args: "",
+      startedAt: "",
+      completedIn: 0,
+      codelength: 1.5,
+      numLevels: 2,
+      numTopModules: 2,
+      relativeCodelengthSavings: 0,
+      directed: false,
+      flowModel: "undirected",
+      higherOrder: false,
+      nodes: [
+        { path: [1, 1], flow: 0.4, id: 1 },
+        { path: [1, 2], flow: 0.3, id: 2 },
+        { path: [2, 1], flow: 0.3, id: 3 },
+      ],
+      modules: [],
+    };
+    vi.mocked(runInfomap).mockResolvedValueOnce(tree);
+    const commands: string[] = [];
+    const net = await loadFiles(
+      [
+        { name: "toy.net", text: PAJEK },
+        { name: "p.clu", text: "1 1\n2 1\n3 2\n" },
+      ],
+      { directed: false, twoLevel: false, noInfomap: true },
+      { onInfomapStart: (c) => commands.push(c) },
+    );
+    const opts = vi.mocked(runInfomap).mock.calls[0][0] as RunInfomapOptions;
+    expect(opts.args.output).toEqual(["json"]);
+    expect(opts.files).toEqual({ "p.clu": "1 1\n2 1\n3 2\n" });
+    expect(commands).toEqual([
+      "infomap --cluster-data p.clu --no-infomap --output json",
+    ]);
+    expect(net.kind).toBe("clustered");
+    expect(net.infomap?.codelength).toBe(1.5);
+    expect(net.files.map((f) => f.name)).toEqual(["toy.net", "p.clu"]);
   });
 
   it("rejects a partition without a network", async () => {

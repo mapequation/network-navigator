@@ -63,9 +63,13 @@ export interface ModuleStats {
   codelength: number | null;
 }
 
+/**
+ * `codelength` (an in-app Infomap run's JSON header) wins over the header of a
+ * loaded `ftree`.
+ */
 export function computeModuleStats(
   modules: readonly ModuleNode[],
-  ftree?: string,
+  source: { codelength?: number; ftree?: string } = {},
 ): ModuleStats {
   const top = new Set<number>();
   const leafModules = new Set<string>();
@@ -77,12 +81,12 @@ export function computeModuleStats(
     if (p.length > levels) levels = p.length;
     leafModules.add(Array.prototype.slice.call(p, 0, -1).join(":"));
   }
-  const match = ftree?.slice(0, 2000).match(/^# codelength (\S+) bits/m);
+  const match = source.ftree?.slice(0, 2000).match(/^# codelength (\S+) bits/m);
   return {
     topModules: top.size,
     levels,
     leafModules: leafModules.size,
-    codelength: match ? Number(match[1]) : null,
+    codelength: source.codelength ?? (match ? Number(match[1]) : null),
   };
 }
 

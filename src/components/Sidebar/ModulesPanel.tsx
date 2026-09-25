@@ -1,24 +1,24 @@
-import {
-  Alert,
-  Button,
-  Input,
-  Link,
-  ProgressBar,
-  TextField,
-} from "@heroui/react";
+import { Alert, Button, Input, Link, TextField } from "@heroui/react";
 import { observer } from "mobx-react-lite";
 import { type ReactNode, useMemo } from "react";
 import { buildInfomapArgs, infomapArgString } from "../../lib/infomap-args";
 import { computeModuleStats, formatNumber } from "../../lib/network-stats";
 import { runInfomap } from "../../lib/run-infomap";
 import { useStores } from "../../stores";
+import { ConsoleButton, InfomapProgressBar } from "../InfomapConsole";
 import { Row, Stats, Toggle } from "./controls";
 
 export const ModulesPanel = observer(function ModulesPanel() {
   const { network: store, ui } = useStores();
   const cur = store.current;
   const moduleStats = useMemo(
-    () => (cur?.modules ? computeModuleStats(cur.modules, cur.ftree) : null),
+    () =>
+      cur?.modules
+        ? computeModuleStats(cur.modules, {
+            codelength: cur.infomap?.codelength,
+            ftree: cur.ftree,
+          })
+        : null,
     [cur],
   );
   if (!cur) return null;
@@ -33,23 +33,25 @@ export const ModulesPanel = observer(function ModulesPanel() {
 
   const cluster = async (): Promise<void> => {
     if (!cur.networkText) return;
+    let error: string | null = null;
     try {
-      ui.startInfomap();
-      const ftree = await runInfomap({
+      ui.startInfomap(command);
+      const tree = await runInfomap({
         network: cur.networkText,
         filename: cur.filename,
         args,
         flags: ui.infomapFlags,
-        onProgress: ui.onInfomapProgress,
         onLog: ui.onInfomapLog,
       });
-      store.applyClustering(ftree);
+      store.applyClustering(tree);
     } catch (err) {
-      ui.setInfomapError(err instanceof Error ? err.message : String(err));
+      error = err instanceof Error ? err.message : String(err);
+      ui.setInfomapError(error);
     } finally {
-      ui.finishInfomap();
+      ui.finishInfomap(error);
     }
   };
+  const progress = ui.infomapProgress;
 
   const rows: [string, ReactNode][] = [];
   if (moduleStats) {
@@ -120,31 +122,29 @@ export const ModulesPanel = observer(function ModulesPanel() {
             All Infomap options
             <Link.Icon />
           </Link>
-          <Button
-            size="sm"
-            fullWidth
-            onPress={cluster}
-            isPending={ui.infomapRunning}
-          >
-            {ui.infomapRunning
-              ? `Running Infomap… ${Math.round(ui.infomapProgress)}%`
-              : moduleStats
-                ? "Re-run Infomap"
-                : "Run Infomap"}
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              className="flex-1"
+              onPress={cluster}
+              isPending={ui.infomapRunning}
+            >
+              {ui.infomapRunning
+                ? `Running Infomap…${progress === null ? "" : ` ${Math.round(progress)}%`}`
+                : moduleStats
+                  ? "Re-run Infomap"
+                  : "Run Infomap"}
+            </Button>
+            <ConsoleButton />
+          </div>
           {ui.infomapRunning && (
             <>
-              <ProgressBar
-                size="sm"
-                value={ui.infomapProgress}
-                aria-label="Infomap progress"
+              <InfomapProgressBar size="sm" />
+              <p
+                className="truncate font-mono text-[11px] text-neutral-400"
+                title={ui.infomapStage ?? undefined}
               >
-                <ProgressBar.Track>
-                  <ProgressBar.Fill />
-                </ProgressBar.Track>
-              </ProgressBar>
-              <p className="truncate font-mono text-[11px] text-neutral-400">
-                {ui.infomapLog.at(-1) ?? "Starting…"}
+                {ui.infomapStage ?? "Starting…"}
               </p>
             </>
           )}

@@ -4,7 +4,31 @@ import type {
   ModuleLink,
   ModuleNode,
 } from "@mapequation/d3gl/network";
+import type { Header, Module } from "@mapequation/infomap";
+import type { TreeNode, TreeStateNode } from "@mapequation/infomap/filetypes";
 import type { NetworkStats } from "./network-stats";
+
+/** A JSON tree node row; state trees add stateId (and layerId for multilayer). */
+export type InfomapTreeNode = TreeNode &
+  Partial<Pick<TreeStateNode, "stateId" | "layerId">>;
+
+/**
+ * Infomap's JSON tree (-o json) as the engine writes it. The package's Tree
+ * type lacks numModules and requires `modules` on every node, which the
+ * physical-level tree of a higher-order run omits.
+ */
+export interface InfomapTree extends Header {
+  /** Module count per level. */
+  numModules?: number[];
+  nodes: InfomapTreeNode[];
+  modules: Module[];
+}
+
+/** Run summary from an Infomap JSON header. */
+export type InfomapSummary = Pick<
+  Header,
+  "codelength" | "numLevels" | "numTopModules" | "relativeCodelengthSavings"
+>;
 
 export interface SourceFile {
   name: string;
@@ -42,8 +66,12 @@ export interface LoadedNetwork {
   moduleLinks?: ModuleLink[];
   /** Curated module names: pathKey ("1:2") → name. Only the example ships these. */
   moduleNames?: Map<string, string>;
-  /** ftree text (loaded or Infomap-generated) — export source. */
+  /** Loaded .ftree text — export source. In-app Infomap runs write no ftree. */
   ftree?: string;
+  /** Header of the in-app Infomap run that produced `modules`. */
+  infomap?: InfomapSummary;
+  /** JSON tree of the in-app Infomap run — export source. */
+  infomapJson?: InfomapTree;
   /** Raw network file text — enables (re-)clustering with Infomap. */
   networkText?: string;
 }

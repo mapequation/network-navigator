@@ -36,7 +36,7 @@ describe("computeModuleStats", () => {
         { id: 2, path: [1, 2, 1] },
         { id: 3, path: [2, 1] },
       ],
-      "# v2\n# codelength 3.14 bits\n",
+      { ftree: "# v2\n# codelength 3.14 bits\n" },
     );
     expect(m).toEqual({
       topModules: 2,
@@ -44,6 +44,19 @@ describe("computeModuleStats", () => {
       leafModules: 3,
       codelength: 3.14,
     });
+  });
+});
+
+describe("computeModuleStats codelength", () => {
+  it("prefers the stored codelength of an in-app run over an ftree header", () => {
+    const modules = [{ id: 0, path: [1, 1] }];
+    expect(
+      computeModuleStats(modules, {
+        codelength: 2.5,
+        ftree: "# codelength 3.14 bits\n",
+      }).codelength,
+    ).toBe(2.5);
+    expect(computeModuleStats(modules).codelength).toBeNull();
   });
 });
 

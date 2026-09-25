@@ -109,12 +109,26 @@ describe("NetworkStore", () => {
     const store = new NetworkStore();
     store.setNetwork(toy());
     store.addOccurrenceFile("occ.csv", ["beta"]);
-    store.applyClustering(`# path flow name node_id
-1:1 0.4 "alpha" 1
-1:2 0.3 "beta" 2
-1:3 0.2 "gamma" 3
-2:1 0.1 "delta" 4
-`);
+    store.applyClustering({
+      version: "v2.14.0",
+      args: "",
+      startedAt: "",
+      completedIn: 0,
+      codelength: 1,
+      numLevels: 2,
+      numTopModules: 2,
+      relativeCodelengthSavings: 0,
+      directed: false,
+      flowModel: "undirected",
+      higherOrder: false,
+      nodes: [
+        { path: [1, 1], flow: 0.4, name: "alpha", id: 1 },
+        { path: [1, 2], flow: 0.3, name: "beta", id: 2 },
+        { path: [1, 3], flow: 0.2, name: "gamma", id: 3 },
+        { path: [2, 1], flow: 0.1, name: "delta", id: 4 },
+      ],
+      modules: [],
+    });
     expect(store.current?.modules?.[3]?.path).toEqual([2, 1]);
     expect(store.occurrenceFiles.map((f) => f.ids)).toEqual([[1]]);
   });

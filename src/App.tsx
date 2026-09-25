@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { Breadcrumb } from "./components/Breadcrumb";
 import { EmptyState } from "./components/EmptyState";
 import { HelpModal } from "./components/HelpModal";
+import { InfomapConsole } from "./components/InfomapConsole";
 import { LoadModal } from "./components/LoadModal";
 import { NetworkView } from "./components/NetworkView";
 import { Sidebar } from "./components/Sidebar/Sidebar";
@@ -56,6 +57,7 @@ const App = observer(function App() {
       <Sidebar />
       <LoadModal />
       <HelpModal />
+      <InfomapConsole />
     </div>
   );
 });
