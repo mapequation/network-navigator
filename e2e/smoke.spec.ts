@@ -266,6 +266,101 @@ test.describe("Network Navigator smoke", () => {
     expect(errors.filter(isFatal)).toEqual([]);
   });
 
+  test("sidebar: a network row's trash asks first, a metadata row's goes alone", async ({
+    page,
+  }) => {
+    const errors = collectErrors(page);
+    const heading = page.getByRole("heading", { name: "Load network" });
+    await page.goto("/");
+    await addFiles(page, [fixture("toy.net"), fixture("toy-names.csv")]);
+    await page.getByRole("button", { name: "Load", exact: true }).click();
+    await expect(heading).toBeHidden({ timeout: MODAL_CLOSE_TIMEOUT });
+
+    // A keyboard removal keeps focus in the list (on the row before).
+    const metaRow = page.locator("aside li").filter({ hasText: "toy-names.csv" });
+    await page.getByRole("button", { name: "Remove toy-names.csv" }).focus();
+    await page.keyboard.press("Enter");
+    await expect(metaRow).toBeHidden();
+    const clear = page.getByRole("button", { name: "Clear network" });
+    await expect(clear).toBeFocused();
+
+    // The network row's trash asks before clearing.
+    const confirm = page.getByRole("alertdialog");
+    await page.keyboard.press("Enter");
+    await expect(confirm).toContainText("Clear the network?");
+    await confirm.getByRole("button", { name: "Cancel" }).click();
+    await expect(confirm).toBeHidden();
+    await expect(page.locator("main canvas")).toBeVisible();
+
+    await page.locator("aside li").filter({ hasText: "toy.net" }).hover();
+    await clear.click();
+    await confirm.getByRole("button", { name: "Clear network" }).click();
+    await expect(page.locator("main canvas")).toHaveCount(0);
+    await expect(heading).toBeVisible();
+
+    expect(errors.filter(isFatal)).toEqual([]);
+  });
+
+  test("load dialog: reloads a loaded network with its metadata; a failed Load is not restaged", async ({
+    page,
+  }) => {
+    const errors = collectErrors(page);
+    const heading = page.getByRole("heading", { name: "Load network" });
+    const dialog = page.getByRole("dialog", { name: "Load network" });
+    const load = dialog.getByRole("button", { name: "Load", exact: true });
+    const reopen = async (): Promise<void> => {
+      await page.getByRole("button", { name: /^Load network/ }).click();
+      await expect(heading).toBeVisible();
+    };
+
+    await page.goto("/");
+    await addFiles(page, [fixture("toy.net")]);
+    await load.click();
+    await expect(heading).toBeHidden({ timeout: MODAL_CLOSE_TIMEOUT });
+
+    // A .txt metadata file from the sidebar (a network extension elsewhere).
+    await page
+      .locator('aside input[type="file"]')
+      .setInputFiles([fixture("toy-names.txt")]);
+    const metaRow = page.locator("aside li").filter({ hasText: "toy-names.txt" });
+    await expect(metaRow).toBeVisible();
+
+    // Changing an option reloads the network; the metadata comes along.
+    await reopen();
+    await expect(
+      dialog.getByRole("button", { name: "Remove toy-names.txt" }),
+    ).toBeVisible();
+    const directed = dialog.getByRole("switch", { name: "Force directed links" });
+    await directed.click({ force: true }); // see the partition test
+    await expect(directed).toBeChecked();
+    await load.click();
+    await expect(heading).toBeHidden({ timeout: MODAL_CLOSE_TIMEOUT });
+    await expect(page.locator("aside").getByText("Directed", { exact: true })).toBeVisible();
+    await expect(metaRow).toBeVisible();
+
+    // A failed Load keeps focus in the dialog, so Escape still dismisses it.
+    await reopen();
+    await dialog.locator('input[type="file"]').setInputFiles([fixture("bad.clu")]);
+    await load.click();
+    const alert = dialog.getByRole("alert");
+    await expect(alert).toBeVisible({ timeout: 30_000 });
+    await expect(load).toBeFocused();
+    await page.keyboard.press("Escape");
+    await expect(heading).toBeHidden();
+
+    // Reopening restages what is loaded, without the failed Load's error.
+    await reopen();
+    await expect(
+      dialog.getByRole("button", { name: "Remove toy.net" }),
+    ).toBeVisible();
+    await expect(
+      dialog.getByRole("button", { name: "Remove bad.clu" }),
+    ).toHaveCount(0);
+    await expect(alert).toHaveCount(0);
+
+    expect(errors.filter(isFatal)).toEqual([]);
+  });
+
   test("export: SVG, PNG, and ftree downloads", async ({ page }) => {
     const errors = collectErrors(page);
     await loadExample(page);
