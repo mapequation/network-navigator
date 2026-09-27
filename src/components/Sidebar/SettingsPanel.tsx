@@ -178,7 +178,10 @@ export const LodPanel = observer(function LodPanel() {
   const off = settings.lodMode === "off";
   return (
     <>
-      <Row label="Aggregate by">
+      <Row
+        label="Aggregate by"
+        hint="modules: the Infomap module tree (spatial without one) · spatial: nearby nodes"
+      >
         <Segmented
           label="LOD mode"
           value={settings.lodMode}

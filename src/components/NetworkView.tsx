@@ -22,13 +22,16 @@ const LINE_BEND = 0.15;
 // A load lays the network out from scratch. With a module hierarchy (given to
 // data(), whatever the LOD mode) that's the nested map of modules (d3gl#324):
 // each module's children inside it, by their own links only, streamed
-// top-down off-thread. Without one it's the worker force layout. fit keeps
-// the camera framed while it streams.
-const LAYOUT = { backend: "worker", fit: true, nested: true } as const;
+// top-down off-thread ("auto" runs it on the worker, d3gl#375). Without one
+// it's the force layout: "auto" solves it on the GPU where the device can,
+// else on the worker, silently. fit keeps the camera framed while it streams.
+const LAYOUT = { backend: "auto", fit: true, nested: true } as const;
 // A re-clustering keeps the nodes, their positions and the camera: the new
-// map is laid out from the current positions (d3gl#328) and eased in.
+// map is laid out from the current positions (d3gl#328) and eased in. As on
+// a load, "auto" keeps the nested map on the worker; a states network holds
+// no hierarchy, so it gets the force layout, on the GPU where it can.
 const RELAYOUT = {
-  backend: "worker",
+  backend: "auto",
   nested: { warm: true },
   transition: 600,
 } as const;
@@ -117,10 +120,11 @@ function buildLod(
   if (settings.lodMode === "off") return false;
   const cur = store.current;
   // "modules" cuts the hierarchy the engine holds (see hierarchyOf); without
-  // one both sources coarsen the graph structurally.
+  // one it falls back to "spatial", which groups nodes by where the layout
+  // put them (a quadtree, d3gl#343), so an aggregate is a compact region.
   const cutsModules = settings.lodMode === "modules" && !!hierarchyOf(cur);
   return {
-    source: settings.lodMode === "spatial" ? "structure" : "modules",
+    source: cutsModules ? "modules" : "spatial",
     ...(cutsModules && settled ? { moduleBoundary: MODULE_BOUNDARY } : {}),
     ...(settings.expandPx !== null ? { expandPx: settings.expandPx } : {}),
     maxAggregateRadius: settings.maxAggregateRadius,

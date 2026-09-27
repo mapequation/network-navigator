@@ -2,7 +2,10 @@ import { makeAutoObservable } from "mobx";
 
 export type NodeSizeBy = "flow" | "degree";
 export type ScaleKind = "linear" | "root";
-/** LOD aggregation source: Infomap modules, d3gl's spatial coarsening, or none. */
+/**
+ * LOD aggregation source: the Infomap module tree (spatial for a network
+ * without one), d3gl's spatial quadtree (nearby nodes), or none.
+ */
 export type LodMode = "modules" | "spatial" | "off";
 
 /** Every d3gl option exposed in the Settings UI. */
