@@ -8,9 +8,11 @@ export type ScaleKind = "linear" | "root";
  */
 export type LodMode = "modules" | "spatial" | "off";
 /**
- * Where d3gl runs the layout: "auto" lets it choose (the GPU where supported,
- * else a worker, silently); "gpu" asks for the GPU and warns when it falls
- * back to the worker; "worker" always runs off-thread on the CPU.
+ * Where d3gl runs a layout, chosen when the layout starts. "auto" lets d3gl
+ * choose (d3gl#375): a force layout on the GPU where supported, else a worker,
+ * silently; a nested map of modules on the worker. "gpu" asks for the GPU
+ * (the nested map's too, d3gl#355) and warns when it falls back to the
+ * worker; "worker" always runs off-thread on the CPU.
  */
 export type LayoutBackend = "auto" | "gpu" | "worker";
 

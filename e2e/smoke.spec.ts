@@ -81,6 +81,56 @@ async function settledTransform(page: Page): Promise<Transform> {
   throw new Error("camera did not settle");
 }
 
+/** d3gl's layoutTransport for a layout that ran on the worker. */
+const WORKER_TRANSPORT = /^(shared|copy)$/;
+
+/** Counts the layout view's aria-busy changes from now on. A layout starts in
+ * the same task as the change that starts it, so after that task a count of 0
+ * shows that none started (no auto-retry needed). */
+async function watchBusy(page: Page): Promise<() => Promise<number>> {
+  await page.evaluate(() => {
+    const host = document.querySelector("main [aria-busy]");
+    if (!host) throw new Error("no layout view");
+    const w = window as Window & { __busyChanges?: number };
+    w.__busyChanges = 0;
+    new MutationObserver((records) => {
+      w.__busyChanges = (w.__busyChanges ?? 0) + records.length;
+    }).observe(host, { attributes: true, attributeFilter: ["aria-busy"] });
+  });
+  return () =>
+    page.evaluate(
+      () => (window as Window & { __busyChanges?: number }).__busyChanges ?? 0,
+    );
+}
+
+/** The Settings controls a layout-backend test drives. */
+function layoutControls(page: Page) {
+  const view = page.locator("main [aria-busy]");
+  const simulation = page.getByRole("switch", { name: "Run simulation" });
+  const group = page.getByRole("radiogroup", { name: "Layout backend" });
+  return {
+    view,
+    group,
+    /** Pick a layout backend while no layout runs: it starts none. */
+    chooseIdle: async (name: string): Promise<void> => {
+      await expect(view).toHaveAttribute("aria-busy", "false", {
+        timeout: 30_000,
+      });
+      const changes = await watchBusy(page);
+      await group.getByRole("radio", { name }).click();
+      await expect(group.getByRole("radio", { name })).toBeChecked();
+      expect(await changes()).toBe(0);
+    },
+    /** A fresh layout, through the simulation toggle. */
+    restart: async (): Promise<void> => {
+      await simulation.click({ force: true }); // off; see the partition test
+      await expect(simulation).not.toBeChecked();
+      await simulation.click({ force: true });
+      await expect(simulation).toBeChecked();
+    },
+  };
+}
+
 test.describe("Network Navigator smoke", () => {
   test("example: load, canvas, sidebar, search", async ({ page }) => {
     const errors = collectErrors(page);
@@ -466,37 +516,79 @@ test.describe("Network Navigator smoke", () => {
     expect(errors.filter(isFatal)).toEqual([]);
   });
 
-  test("layout backend: a switch restarts a running layout on it, and it completes", async ({
+  test("layout backend: each layout runs on the backend chosen when it starts", async ({
     page,
   }) => {
     const errors = collectErrors(page);
-    await loadExample(page);
-    // The view is busy while a layout runs (aria-busy), idle once it lands.
-    const view = page.locator("main [aria-busy]");
-    const simulation = page.getByRole("switch", { name: "Run simulation" });
-    const layoutBackend = page.getByRole("radiogroup", {
-      name: "Layout backend",
+    const { view, group, chooseIdle, restart } = layoutControls(page);
+    const heading = page.getByRole("heading", { name: "Load network" });
+    const load = page.getByRole("button", { name: "Load", exact: true });
+    /** Picks each layout backend in turn: the next layout runs on it. */
+    const cycle = async (): Promise<void> => {
+      for (const [name, transport] of [
+        ["worker", WORKER_TRANSPORT],
+        ["gpu", "gpu"],
+      ] as const) {
+        await chooseIdle(name);
+        await restart();
+        await expect(view).toHaveAttribute("data-layout-transport", transport, {
+          timeout: 30_000,
+        });
+      }
+    };
+
+    // A raw network holds no module hierarchy: d3gl's force layout.
+    await page.goto("/");
+    await addFiles(page, [fixture("toy.net")]);
+    await load.click();
+    await expect(heading).toBeHidden({ timeout: MODAL_CLOSE_TIMEOUT });
+    await expect(group.getByRole("radio", { name: "auto" })).toBeChecked();
+    // "auto" leaves the choice to d3gl.
+    await expect(view).toHaveAttribute(
+      "data-layout-transport",
+      /^(gpu|shared|copy)$/,
+      { timeout: 30_000 },
+    );
+    await cycle();
+
+    // A clustered state network: the force layout of its physical graph.
+    await page.goto("/");
+    await addFiles(page, [fixture("toy_states.net")]);
+    await load.click();
+    await expect(heading).toBeHidden({ timeout: MODAL_CLOSE_TIMEOUT });
+    await page.getByRole("button", { name: "Run Infomap", exact: true }).click();
+    await expect(
+      page.getByRole("radiogroup", { name: "State view" }),
+    ).toBeVisible({ timeout: 30_000 });
+    await cycle();
+
+    expect(errors.filter(isFatal)).toEqual([]);
+  });
+
+  test("layout backend: a switch while a layout runs applies from the next layout", async ({
+    page,
+  }) => {
+    const errors = collectErrors(page);
+    const { view, group, chooseIdle, restart } = layoutControls(page);
+    await loadExample(page); // a map of modules: d3gl's nested layout
+
+    await chooseIdle("gpu");
+    await restart();
+    // Read once, no retry: the switch below has to land while this layout runs.
+    expect(await view.getAttribute("aria-busy")).toBe("true");
+    await group.getByRole("radio", { name: "worker" }).click();
+    await expect(group.getByRole("radio", { name: "worker" })).toBeChecked();
+    // The running layout keeps its backend: it lands on the GPU...
+    await expect(view).toHaveAttribute("data-layout-transport", "gpu", {
+      timeout: 30_000,
     });
-    await expect(layoutBackend.getByRole("radio", { name: "auto" })).toBeChecked();
-    await expect(view).toHaveAttribute("aria-busy", "false", { timeout: 30_000 });
-
-    // Idle, a switch waits for the next layout.
-    await layoutBackend.getByRole("radio", { name: "worker" }).click();
-    await expect(view).toHaveAttribute("aria-busy", "false");
-
-    for (const name of ["gpu", "worker", "auto"]) {
-      // A fresh layout (on the backend chosen before), switched while it
-      // runs: it restarts on the new backend and lands there.
-      await simulation.click({ force: true }); // off; see the partition test
-      await expect(simulation).not.toBeChecked();
-      await simulation.click({ force: true });
-      await expect(view).toHaveAttribute("aria-busy", "true");
-      await layoutBackend.getByRole("radio", { name }).click();
-      await expect(layoutBackend.getByRole("radio", { name })).toBeChecked();
-      await expect(view).toHaveAttribute("aria-busy", "false", {
-        timeout: 30_000,
-      });
-    }
+    // ...and the next one runs on the worker.
+    await restart();
+    await expect(view).toHaveAttribute(
+      "data-layout-transport",
+      WORKER_TRANSPORT,
+      { timeout: 30_000 },
+    );
 
     await screenshot(page, "layout-backend");
     expect(errors.filter(isFatal)).toEqual([]);

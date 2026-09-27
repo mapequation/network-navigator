@@ -295,7 +295,7 @@ export const RenderingPanel = observer(function RenderingPanel() {
       </Row>
       <Row
         label="Layout backend"
-        hint="auto: the GPU where supported, else a worker · switching restarts a running layout"
+        hint="auto: force layouts on the GPU where supported, maps of modules on a worker · applies from the next layout"
       >
         <Segmented
           label="Layout backend"
