@@ -444,6 +444,44 @@ test.describe("Network Navigator smoke", () => {
     expect(errors.filter(isFatal)).toEqual([]);
   });
 
+  test("load dialog: the first one dismisses, and Settings changed then apply to the first load", async ({
+    page,
+  }) => {
+    const errors = collectErrors(page);
+    const heading = page.getByRole("heading", { name: "Load network" });
+    const dialog = page.getByRole("dialog", { name: "Load network" });
+    const openFromEmpty = page
+      .locator("main")
+      .getByRole("button", { name: /^Load network/ });
+    const { view, group } = layoutControls(page);
+
+    // Escape dismisses the dialog at startup, as it does once a network is loaded.
+    await page.goto("/");
+    await expect(heading).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(heading).toBeHidden();
+
+    // The settings are there with no network. "auto" would run the example's
+    // map of modules on the worker; pick the GPU.
+    await group.getByRole("radio", { name: "gpu" }).click();
+    await expect(group.getByRole("radio", { name: "gpu" })).toBeChecked();
+    await screenshot(page, "empty-state");
+
+    // The empty state reopens the dialog; its close button dismisses it too.
+    await openFromEmpty.click();
+    await expect(heading).toBeVisible();
+    await dialog.getByRole("button", { name: "Close" }).click();
+    await expect(heading).toBeHidden();
+    await openFromEmpty.click();
+    await dialog.getByRole("button", { name: "Load example" }).click();
+    await expect(heading).toBeHidden({ timeout: MODAL_CLOSE_TIMEOUT });
+    await expect(view).toHaveAttribute("data-layout-transport", "gpu", {
+      timeout: 30_000,
+    });
+
+    expect(errors.filter(isFatal)).toEqual([]);
+  });
+
   test("engine: re-clustering keeps the view; later networks load into the same engine", async ({
     page,
   }) => {

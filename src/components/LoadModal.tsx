@@ -188,7 +188,9 @@ export const LoadModal = observer(function LoadModal() {
 
   const hasPartition = files.some((f) => f.kind === "tree" || f.kind === "clu");
   const hasNetwork = Boolean(store.current);
-  const canDismiss = hasNetwork && !ui.infomapRunning && !busy;
+  // Dismissable with or without a network (e.g. to change Settings before
+  // the first load), but not while a load or its Infomap run is in flight.
+  const canDismiss = !ui.infomapRunning && !busy;
 
   return (
     <Modal.Backdrop
@@ -196,7 +198,7 @@ export const LoadModal = observer(function LoadModal() {
       isDismissable={canDismiss}
       isKeyboardDismissDisabled={!canDismiss}
       onOpenChange={(nextOpen) => {
-        if (!nextOpen && !canDismiss) return; // nothing loaded yet or run in flight — modal stays
+        if (!nextOpen && !canDismiss) return; // load in flight — modal stays
         ui.setLoadOpen(nextOpen);
       }}
     >

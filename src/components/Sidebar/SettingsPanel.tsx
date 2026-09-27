@@ -50,8 +50,11 @@ function SliderRow({
 export const DisplayPanel = observer(function DisplayPanel() {
   const { network: store, settings } = useStores();
   const cur = store.current;
-  const hasFlow = !!cur?.graph.nodeFlow;
-  const halfArrow = !!cur?.directed && settings.linkStyle === "half-arrow";
+  // Without a network nothing rules an option out: each shows as set, for
+  // the next load.
+  const hasFlow = cur ? !!cur.graph.nodeFlow : true;
+  const directed = cur ? !!cur.directed : true;
+  const halfArrow = directed && settings.linkStyle === "half-arrow";
 
   return (
     <>
@@ -94,14 +97,14 @@ export const DisplayPanel = observer(function DisplayPanel() {
         <Row label="Style">
           <Segmented
             label="Link style"
-            value={cur?.directed ? settings.linkStyle : "line"}
+            value={directed ? settings.linkStyle : "line"}
             options={
               [
                 ["half-arrow", "half-arrow"],
                 ["line", "line"],
               ] as const
             }
-            isDisabled={!cur?.directed}
+            isDisabled={!directed}
             onChange={(v) => settings.set("linkStyle", v)}
           />
         </Row>

@@ -52,19 +52,22 @@ export const Sidebar = observer(function Sidebar() {
           <Section title="Metadata overlap" defaultOpen={false}>
             <MetadataOverlap />
           </Section>
-          <Section title="Display">
-            <DisplayPanel />
-          </Section>
-          <Section title="Level of detail">
-            <LodPanel />
-          </Section>
-          <Section title="Rendering">
-            <RenderingPanel />
-          </Section>
-          <Section title="Export">
-            <Export />
-          </Section>
         </>
+      )}
+      {/* Settings with or without a network: set before a load, they apply to it. */}
+      <Section title="Display">
+        <DisplayPanel />
+      </Section>
+      <Section title="Level of detail">
+        <LodPanel />
+      </Section>
+      <Section title="Rendering">
+        <RenderingPanel />
+      </Section>
+      {cur && (
+        <Section title="Export">
+          <Export />
+        </Section>
       )}
     </aside>
   );
