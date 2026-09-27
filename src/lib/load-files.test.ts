@@ -81,7 +81,7 @@ describe("networkToLoaded", () => {
     expect(net.names).toEqual(["1", "2", "3"]);
   });
 
-  it("goes by the format, not the extension: content-detected Pajek keeps vertex ids", () => {
+  it("keeps vertex ids for Pajek found by its headings, with no .net extension", () => {
     const net = networkToLoaded(PAJEK_NUMERIC, "snap.paj");
     expect(net.physicalIds).toEqual([1, 2, 3]);
     expect(net.names).toEqual(["0", "1", "2"]);
