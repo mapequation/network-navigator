@@ -7,6 +7,12 @@ export type ScaleKind = "linear" | "root";
  * without one), d3gl's spatial quadtree (nearby nodes), or none.
  */
 export type LodMode = "modules" | "spatial" | "off";
+/**
+ * Where d3gl runs the layout: "auto" lets it choose (the GPU where supported,
+ * else a worker, silently); "gpu" asks for the GPU and warns when it falls
+ * back to the worker; "worker" always runs off-thread on the CPU.
+ */
+export type LayoutBackend = "auto" | "gpu" | "worker";
 
 /** Every d3gl option exposed in the Settings UI. */
 export class SettingsStore {
@@ -37,6 +43,7 @@ export class SettingsStore {
   // canvas geometry on large graphs (mapequation/d3gl#201) — default to webgl
   // until the auto path scales; auto/canvas/svg stay selectable in Settings.
   backend: "auto" | "webgl" | "canvas" | "svg" = "webgl";
+  layoutBackend: LayoutBackend = "auto";
   pickLinks = false;
   stateView: "physical" | "state" | "both" = "physical";
 

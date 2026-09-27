@@ -1,7 +1,7 @@
 import { ListBox, NumberField, Select, Slider } from "@heroui/react";
 import { observer } from "mobx-react-lite";
 import { useStores } from "../../stores";
-import type { LodMode } from "../../stores/settings-store";
+import type { LayoutBackend, LodMode } from "../../stores/settings-store";
 import { Group, Row, Segmented, Toggle } from "./controls";
 
 function SliderRow({
@@ -267,9 +267,12 @@ export const RenderingPanel = observer(function RenderingPanel() {
           onChange={(v) => settings.set("sizeMode", v)}
         />
       </Row>
-      <Row label="Backend" hint="Changing the backend recreates the view">
+      <Row
+        label="Render backend"
+        hint="Changing the backend recreates the view"
+      >
         <Select
-          aria-label="Backend"
+          aria-label="Render backend"
           selectedKey={settings.backend}
           onSelectionChange={(k) =>
             settings.set("backend", k as typeof settings.backend)
@@ -289,6 +292,17 @@ export const RenderingPanel = observer(function RenderingPanel() {
             </ListBox>
           </Select.Popover>
         </Select>
+      </Row>
+      <Row
+        label="Layout backend"
+        hint="auto: the GPU where supported, else a worker · switching restarts a running layout"
+      >
+        <Segmented
+          label="Layout backend"
+          value={settings.layoutBackend}
+          options={["auto", "gpu", "worker"] as const satisfies LayoutBackend[]}
+          onChange={(v) => settings.set("layoutBackend", v)}
+        />
       </Row>
       <Row label="Pick links" hint="Hover and click links (WebGL)">
         <Toggle

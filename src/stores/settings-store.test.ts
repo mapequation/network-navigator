@@ -1,0 +1,25 @@
+import { reaction } from "mobx";
+import { describe, expect, it } from "vitest";
+import { SettingsStore } from "./settings-store";
+
+describe("SettingsStore layout backend", () => {
+  it("defaults to auto, apart from the render backend", () => {
+    const settings = new SettingsStore();
+    expect(settings.layoutBackend).toBe("auto");
+    expect(settings.backend).toBe("webgl");
+  });
+
+  it("notifies observers of a change and leaves the render backend alone", () => {
+    const settings = new SettingsStore();
+    const seen: string[] = [];
+    const stop = reaction(
+      () => settings.layoutBackend,
+      (b) => seen.push(b),
+    );
+    settings.set("layoutBackend", "worker");
+    settings.set("layoutBackend", "gpu");
+    stop();
+    expect(seen).toEqual(["worker", "gpu"]);
+    expect(settings.backend).toBe("webgl");
+  });
+});

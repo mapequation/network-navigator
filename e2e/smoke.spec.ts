@@ -466,6 +466,42 @@ test.describe("Network Navigator smoke", () => {
     expect(errors.filter(isFatal)).toEqual([]);
   });
 
+  test("layout backend: a switch restarts a running layout on it, and it completes", async ({
+    page,
+  }) => {
+    const errors = collectErrors(page);
+    await loadExample(page);
+    // The view is busy while a layout runs (aria-busy), idle once it lands.
+    const view = page.locator("main [aria-busy]");
+    const simulation = page.getByRole("switch", { name: "Run simulation" });
+    const layoutBackend = page.getByRole("radiogroup", {
+      name: "Layout backend",
+    });
+    await expect(layoutBackend.getByRole("radio", { name: "auto" })).toBeChecked();
+    await expect(view).toHaveAttribute("aria-busy", "false", { timeout: 30_000 });
+
+    // Idle, a switch waits for the next layout.
+    await layoutBackend.getByRole("radio", { name: "worker" }).click();
+    await expect(view).toHaveAttribute("aria-busy", "false");
+
+    for (const name of ["gpu", "worker", "auto"]) {
+      // A fresh layout (on the backend chosen before), switched while it
+      // runs: it restarts on the new backend and lands there.
+      await simulation.click({ force: true }); // off; see the partition test
+      await expect(simulation).not.toBeChecked();
+      await simulation.click({ force: true });
+      await expect(view).toHaveAttribute("aria-busy", "true");
+      await layoutBackend.getByRole("radio", { name }).click();
+      await expect(layoutBackend.getByRole("radio", { name })).toBeChecked();
+      await expect(view).toHaveAttribute("aria-busy", "false", {
+        timeout: 30_000,
+      });
+    }
+
+    await screenshot(page, "layout-backend");
+    expect(errors.filter(isFatal)).toEqual([]);
+  });
+
   test("export: SVG, PNG, and ftree downloads", async ({ page }) => {
     const errors = collectErrors(page);
     await loadExample(page);

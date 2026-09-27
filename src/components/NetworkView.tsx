@@ -19,22 +19,20 @@ import type { ScaleKind, SettingsStore } from "../stores/settings-store";
 const DEFAULT_NODE_FILL = "#4878d0";
 const HALF_ARROW_BEND = 0.15; // d3gl#299: half-arrow bend is a chord fraction too
 const LINE_BEND = 0.15;
+// Every layout runs on the layout backend chosen in Settings (d3gl's "auto",
+// "gpu" or "worker"; "auto" by default, d3gl#375).
 // A load lays the network out from scratch. With a module hierarchy (given to
 // data(), whatever the LOD mode) that's the nested map of modules (d3gl#324):
 // each module's children inside it, by their own links only, streamed
-// top-down off-thread ("auto" runs it on the worker, d3gl#375). Without one
-// it's the force layout: "auto" solves it on the GPU where the device can,
-// else on the worker, silently. fit keeps the camera framed while it streams.
-const LAYOUT = { backend: "auto", fit: true, nested: true } as const;
+// top-down off-thread. Without one it's the force layout. fit keeps the
+// camera framed while it streams.
+const LAYOUT = { fit: true, nested: true } as const;
 // A re-clustering keeps the nodes, their positions and the camera: the new
-// map is laid out from the current positions (d3gl#328) and eased in. As on
-// a load, "auto" keeps the nested map on the worker; a states network holds
-// no hierarchy, so it gets the force layout, on the GPU where it can.
-const RELAYOUT = {
-  backend: "auto",
-  nested: { warm: true },
-  transition: 600,
-} as const;
+// map is laid out from the current positions (d3gl#328) and eased in. A
+// states network holds no hierarchy, so it gets the force layout, which d3gl
+// starts from its multilevel seed (it has no warm start). A switch of the
+// layout backend while a layout runs restarts it the same way.
+const RELAYOUT = { nested: { warm: true }, transition: 600 } as const;
 // Rings around the modules the LOD cut has opened (d3gl#329): thin and low
 // contrast, context rather than content. They are the nested layout's module
 // discs; until a layout lands d3gl rings each module's centroid + extent,
@@ -244,11 +242,11 @@ export const NetworkView = observer(function NetworkView() {
     const holdsCurrent = () => shown !== null && shown === store.current;
 
     let layoutRun = 0;
-    const layout = (opts: NetworkLayoutOptions): void => {
+    const layout = (opts: Omit<NetworkLayoutOptions, "backend">): void => {
       const run = ++layoutRun;
       runInAction(() => settled.set(false));
       applyLod(lod.get());
-      net.layout(opts);
+      net.layout({ ...opts, backend: settings.layoutBackend });
       void net.whenSettled().then(() => {
         if (run === layoutRun) runInAction(() => settled.set(true));
       });
@@ -331,6 +329,20 @@ export const NetworkView = observer(function NetworkView() {
           if (on) layout(LAYOUT);
           else net.stopLayout();
         },
+      ),
+      // A running layout moves to the new backend (see RELAYOUT); one that
+      // has landed or was stopped keeps its positions until the next layout.
+      reaction(
+        () => settings.layoutBackend,
+        () => {
+          if (holdsCurrent() && !settled.get()) layout(RELAYOUT);
+        },
+      ),
+      // Busy while a layout runs, for assistive tech (and the e2e tests).
+      reaction(
+        () => settled.get(),
+        (done) => host.setAttribute("aria-busy", String(!done)),
+        { fireImmediately: true },
       ),
       reaction(
         () => store.searchHighlight,
