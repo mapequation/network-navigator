@@ -111,6 +111,7 @@ function layoutControls(page: Page) {
   return {
     view,
     group,
+    simulation,
     /** Pick a layout backend while no layout runs: it starts none. */
     chooseIdle: async (name: string): Promise<void> => {
       await expect(view).toHaveAttribute("aria-busy", "false", {
@@ -697,6 +698,78 @@ test.describe("Network Navigator smoke", () => {
     ).toBeVisible({ timeout: 30_000 });
     expect(await changes()).toBe(0);
     expect(await viewTransform(page)).toEqual(before);
+
+    expect(errors.filter(isFatal)).toEqual([]);
+  });
+
+  test("simulation off: a Nested layout switch lays nothing out until it's back on", async ({
+    page,
+  }) => {
+    const errors = collectErrors(page);
+    const { view, simulation } = layoutControls(page);
+    const nested = page.getByRole("switch", { name: "Nested layout" });
+    await loadExample(page);
+    await expect(view).toHaveAttribute("data-layout-transport", WORKER_TRANSPORT, {
+      timeout: 30_000,
+    });
+    await simulation.click({ force: true }); // see the partition test
+    await expect(simulation).not.toBeChecked();
+
+    // Switched either way, nothing moves: the nodes and the camera stay.
+    const before = await settledTransform(page);
+    const changes = await watchBusy(page);
+    await nested.click({ force: true });
+    await expect(nested).not.toBeChecked();
+    await nested.click({ force: true });
+    await expect(nested).toBeChecked();
+    await nested.click({ force: true });
+    await expect(nested).not.toBeChecked();
+    expect(await changes()).toBe(0);
+    expect(await viewTransform(page)).toEqual(before);
+
+    // Back on, the simulation lays the example out as set: the force layout
+    // (on the GPU under "auto").
+    await simulation.click({ force: true });
+    await expect(simulation).toBeChecked();
+    await expect(view).toHaveAttribute("data-layout-transport", "gpu", {
+      timeout: 30_000,
+    });
+
+    expect(errors.filter(isFatal)).toEqual([]);
+  });
+
+  test("simulation off: a re-clustering lays nothing out, even with Nested layout on", async ({
+    page,
+  }) => {
+    const errors = collectErrors(page);
+    const { view, simulation } = layoutControls(page);
+    const heading = page.getByRole("heading", { name: "Load network" });
+
+    await page.goto("/");
+    await addFiles(page, [fixture("toy.net")]);
+    await page.getByRole("button", { name: "Load", exact: true }).click();
+    await expect(heading).toBeHidden({ timeout: MODAL_CLOSE_TIMEOUT });
+    await expect(view).toHaveAttribute("aria-busy", "false", { timeout: 30_000 });
+    await simulation.click({ force: true }); // see the partition test
+    await expect(simulation).not.toBeChecked();
+
+    // The new modules lay nothing out: the nodes and the camera stay.
+    const before = await settledTransform(page);
+    const changes = await watchBusy(page);
+    await page.getByRole("button", { name: "Run Infomap", exact: true }).click();
+    await expect(
+      page.getByRole("button", { name: "Re-run Infomap" }),
+    ).toBeVisible({ timeout: 30_000 });
+    expect(await changes()).toBe(0);
+    expect(await viewTransform(page)).toEqual(before);
+
+    // Back on, the simulation lays the new map of modules out (on the worker
+    // under "auto").
+    await simulation.click({ force: true });
+    await expect(simulation).toBeChecked();
+    await expect(view).toHaveAttribute("data-layout-transport", WORKER_TRANSPORT, {
+      timeout: 30_000,
+    });
 
     expect(errors.filter(isFatal)).toEqual([]);
   });
