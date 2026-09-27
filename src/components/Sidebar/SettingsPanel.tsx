@@ -51,7 +51,8 @@ export const DisplayPanel = observer(function DisplayPanel() {
   const { network: store, settings } = useStores();
   const cur = store.current;
   // Without a network nothing rules an option out: each shows as set, for
-  // the next load.
+  // the next load. The simulation is the exception: a load always lays its
+  // network out, so it's there to stop or restart a loaded network's layout.
   const hasFlow = cur ? !!cur.graph.nodeFlow : true;
   const directed = cur ? !!cur.directed : true;
   const halfArrow = directed && settings.linkStyle === "half-arrow";
@@ -166,6 +167,7 @@ export const DisplayPanel = observer(function DisplayPanel() {
         <Row label="Force simulation">
           <Toggle
             label="Run simulation"
+            isDisabled={!cur}
             isSelected={settings.simulation}
             onChange={(on) => settings.set("simulation", on)}
           />

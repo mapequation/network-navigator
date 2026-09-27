@@ -11,19 +11,31 @@ import { ftreeToNetwork } from "./lib/ftree-graph";
 import { loadInfomapOnline } from "./lib/infomap-online";
 import { useStores } from "./stores";
 
+/** Input types a key can't type into: a shortcut still works on them. */
+const KEYLESS_INPUTS = new Set([
+  "checkbox", // switches too
+  "radio",
+  "range",
+  "button",
+  "submit",
+  "reset",
+  "color",
+  "file",
+  "image",
+]);
+
+/** Whether a key pressed on `el` types into it (a text field or area, editable content). */
+function typesInto(el: HTMLElement): boolean {
+  if (el instanceof HTMLInputElement) return !KEYLESS_INPUTS.has(el.type);
+  return el.tagName === "TEXTAREA" || el.isContentEditable;
+}
+
 const App = observer(function App() {
   const { network: store, ui } = useStores();
 
   useEffect(() => {
     const onKey = (ev: KeyboardEvent): void => {
-      const target = ev.target as HTMLElement | null;
-      if (
-        target &&
-        (target.tagName === "INPUT" ||
-          target.tagName === "TEXTAREA" ||
-          target.isContentEditable)
-      )
-        return;
+      if (ev.target instanceof HTMLElement && typesInto(ev.target)) return;
       if (ev.key === "l" && !ui.loadOpen) ui.openLoad();
     };
     window.addEventListener("keydown", onKey);

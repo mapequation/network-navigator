@@ -454,7 +454,7 @@ test.describe("Network Navigator smoke", () => {
     const openFromEmpty = page
       .locator("main")
       .getByRole("button", { name: /^Load network/ });
-    const { view, group } = layoutControls(page);
+    const { view, group, simulation } = layoutControls(page);
 
     // Escape dismisses the dialog at startup, as it does once a network is loaded.
     await page.goto("/");
@@ -462,11 +462,24 @@ test.describe("Network Navigator smoke", () => {
     await page.keyboard.press("Escape");
     await expect(heading).toBeHidden();
 
-    // The settings are there with no network. "auto" would run the example's
-    // map of modules on the worker; pick the GPU.
+    // The settings are there with no network, but for the simulation: a load
+    // always lays its network out. "auto" would run the example's map of
+    // modules on the worker; pick the GPU.
+    await expect(simulation).toBeDisabled();
     await group.getByRole("radio", { name: "gpu" }).click();
     await expect(group.getByRole("radio", { name: "gpu" })).toBeChecked();
     await screenshot(page, "empty-state");
+
+    // L opens the dialog from a Settings switch too (a checkbox input, which
+    // types no text), and a click on the backdrop dismisses it.
+    await page.keyboard.press("Tab");
+    await expect(
+      page.getByRole("switch", { name: "Nested layout" }),
+    ).toBeFocused();
+    await page.keyboard.press("l");
+    await expect(heading).toBeVisible();
+    await page.mouse.click(8, 8);
+    await expect(heading).toBeHidden();
 
     // The empty state reopens the dialog; its close button dismisses it too.
     await openFromEmpty.click();
