@@ -101,20 +101,29 @@ function parseWithIds(
   text: string,
   filename: string,
 ): { parsed: ParsedPajek; physicalIds?: number[] } {
-  if (detectFormat(text, filename) === "pajek") {
-    const parsed = parsePajek(text);
-    const physicalIds = Array.from(
-      { length: parsed.nodeCount },
-      (_, i) => i + 1,
-    );
-    return { parsed, physicalIds };
+  const format = detectFormat(text, filename);
+  switch (format) {
+    case "pajek": {
+      const parsed = parsePajek(text);
+      const physicalIds = Array.from(
+        { length: parsed.nodeCount },
+        (_, i) => i + 1,
+      );
+      return { parsed, physicalIds };
+    }
+    case "edgelist": {
+      const parsed = { ...parseEdgeList(text), directed: false };
+      const integerIds = parsed.labels.every((l) => /^\d+$/.test(l));
+      return {
+        parsed,
+        physicalIds: integerIds ? parsed.labels.map(Number) : undefined,
+      };
+    }
+    default: {
+      const unhandled: never = format;
+      throw new Error(`${filename}: no node ids for format ${unhandled}`);
+    }
   }
-  const parsed = { ...parseEdgeList(text), directed: false };
-  const integerIds = parsed.labels.every((l) => /^\d+$/.test(l));
-  return {
-    parsed,
-    physicalIds: integerIds ? parsed.labels.map(Number) : undefined,
-  };
 }
 
 export interface LoadCallbacks {
