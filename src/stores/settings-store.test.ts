@@ -23,3 +23,23 @@ describe("SettingsStore layout backend", () => {
     expect(settings.backend).toBe("webgl");
   });
 });
+
+describe("SettingsStore nested layout", () => {
+  it("defaults to on", () => {
+    expect(new SettingsStore().nestedLayout).toBe(true);
+  });
+
+  it("notifies observers of a switch and leaves the layout backend alone", () => {
+    const settings = new SettingsStore();
+    const seen: boolean[] = [];
+    const stop = reaction(
+      () => settings.nestedLayout,
+      (on) => seen.push(on),
+    );
+    settings.set("nestedLayout", false);
+    settings.set("nestedLayout", true);
+    stop();
+    expect(seen).toEqual([false, true]);
+    expect(settings.layoutBackend).toBe("auto");
+  });
+});

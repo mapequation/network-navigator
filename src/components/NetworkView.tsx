@@ -23,22 +23,27 @@ const LINE_BEND = 0.15;
 // (d3gl's "auto", "gpu" or "worker"; "auto" by default, d3gl#375). A switch
 // leaves a running layout on its backend and applies from the next layout.
 // A load lays the network out from scratch. With a module hierarchy (given to
-// data(), whatever the LOD mode) that's the nested map of modules (d3gl#324):
-// each module's children inside it, by their own links only, streamed
-// top-down off-thread ("auto" runs it on the worker, d3gl#375). Without one
-// it's the force layout: "auto" solves it on the GPU where the device can,
-// else on the worker, silently. fit keeps the camera framed while it streams.
-const LAYOUT = { fit: true, nested: true } as const;
-// A re-clustering keeps the nodes, their positions and the camera: the new
-// map is laid out from the current positions (d3gl#328) and eased in. As on
-// a load, "auto" keeps the nested map on the worker; a states network holds
-// no hierarchy, so it gets the force layout, on the GPU where it can.
+// data(), whatever the LOD mode) and Nested layout on in Settings (the
+// default), that's the nested map of modules (d3gl#324): each module's
+// children inside it, by their own links only, streamed top-down off-thread
+// ("auto" runs it on the worker, d3gl#375). Otherwise it's the force layout:
+// "auto" solves it on the GPU where the device can, else on the worker,
+// silently. fit keeps the camera framed while it streams.
+const LAYOUT = { fit: true } as const;
+// A re-clustering keeps the nodes, their positions and the camera. With
+// Nested layout on, the new map is laid out from the current positions
+// (d3gl#328) and eased in; as on a load, "auto" keeps it on the worker. With
+// it off nothing is laid out: the nodes stay where the force layout put them,
+// and the new modules regroup the LOD and recolour them. (A states network's
+// re-clustering is a load, see NetworkStore.) Switching Nested layout on lays
+// a network with modules out the same way; switching it off lays it out as a
+// load does, as d3gl has no warm start for the force layout.
 const RELAYOUT = { nested: { warm: true }, transition: 600 } as const;
 // Rings around the modules the LOD cut has opened (d3gl#329): thin and low
 // contrast, context rather than content. They are the nested layout's module
-// discs; until a layout lands d3gl rings each module's centroid + extent,
-// which over the previous (e.g. force) positions is a tangle of huge rings —
-// so they are drawn once the layout has settled.
+// discs; until a nested layout lands d3gl rings each module's centroid +
+// extent, which over other (e.g. force) positions is a tangle of huge rings —
+// so they are drawn only once a nested layout has settled.
 const MODULE_BOUNDARY = { width: 1, color: "rgb(90,100,120)", opacity: 0.35 };
 const ZOOM_EXTENT: [number, number] = [0.002, 200];
 
@@ -122,9 +127,10 @@ function buildLod(
   // one it falls back to "spatial", which groups nodes by where the layout
   // put them (a quadtree, d3gl#343), so an aggregate is a compact region.
   const cutsModules = settings.lodMode === "modules" && !!hierarchyOf(cur);
+  const discs = cutsModules && settled && settings.nestedLayout;
   return {
     source: cutsModules ? "modules" : "spatial",
-    ...(cutsModules && settled ? { moduleBoundary: MODULE_BOUNDARY } : {}),
+    ...(discs ? { moduleBoundary: MODULE_BOUNDARY } : {}),
     ...(settings.expandPx !== null ? { expandPx: settings.expandPx } : {}),
     maxAggregateRadius: settings.maxAggregateRadius,
     declutter: settings.declutter,
@@ -252,6 +258,9 @@ export const NetworkView = observer(function NetworkView() {
         if (run === layoutRun) runInAction(() => settled.set(true));
       });
     };
+    /** A layout from scratch, framed: a load's or a restarted simulation's. */
+    const layoutAnew = (): void =>
+      layout({ ...LAYOUT, nested: settings.nestedLayout });
 
     const show = (): void => {
       const cur = store.current;
@@ -278,7 +287,9 @@ export const NetworkView = observer(function NetworkView() {
       }
       if (flowFirst) applyStyle(s);
       net.select("nodes", store.searchHighlight);
-      layout(reCluster ? RELAYOUT : LAYOUT);
+      if (!reCluster) layoutAnew();
+      else if (settings.nestedLayout) layout(RELAYOUT);
+      else applyLod(lod.get()); // the positions stay; the modules are new
     };
 
     const disposers = [
@@ -327,8 +338,18 @@ export const NetworkView = observer(function NetworkView() {
         () => settings.simulation,
         (on) => {
           if (!holdsCurrent()) return;
-          if (on) layout(LAYOUT);
+          if (on) layoutAnew();
           else net.stopLayout();
+        },
+      ),
+      // Nested layout switched: a network with a module hierarchy is laid out
+      // again (see RELAYOUT); for any other the switch changes nothing.
+      reaction(
+        () => settings.nestedLayout,
+        (nested) => {
+          if (!holdsCurrent() || !hierarchyOf(store.current)) return;
+          if (nested) layout(RELAYOUT);
+          else layoutAnew();
         },
       ),
       // Busy while a layout runs, for assistive tech (and the e2e tests). Once

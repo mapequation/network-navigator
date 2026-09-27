@@ -632,6 +632,75 @@ test.describe("Network Navigator smoke", () => {
     expect(errors.filter(isFatal)).toEqual([]);
   });
 
+  test("nested layout: switching it re-lays the example out; on, from where it is", async ({
+    page,
+  }) => {
+    const errors = collectErrors(page);
+    const { view } = layoutControls(page);
+    const nested = page.getByRole("switch", { name: "Nested layout" });
+    await loadExample(page);
+    await expect(nested).toBeChecked();
+    // "auto" runs the map of modules on the worker...
+    await expect(view).toHaveAttribute("data-layout-transport", WORKER_TRANSPORT, {
+      timeout: 30_000,
+    });
+
+    // ...and the force layout on the GPU.
+    await nested.click({ force: true }); // see the partition test
+    await expect(nested).not.toBeChecked();
+    await expect(view).toHaveAttribute("data-layout-transport", "gpu", {
+      timeout: 30_000,
+    });
+    const flat = await settledTransform(page);
+
+    // Back on, the map is laid out from the current positions and eased in:
+    // the camera stays.
+    const changes = await watchBusy(page);
+    await nested.click({ force: true });
+    await expect(nested).toBeChecked();
+    await expect(view).toHaveAttribute("aria-busy", "false", { timeout: 30_000 });
+    expect(await changes()).toBeGreaterThan(0);
+    expect(await settledTransform(page)).toEqual(flat);
+
+    await screenshot(page, "nested-layout");
+    expect(errors.filter(isFatal)).toEqual([]);
+  });
+
+  test("nested layout: off, a re-clustering keeps the force layout's positions", async ({
+    page,
+  }) => {
+    const errors = collectErrors(page);
+    const { view } = layoutControls(page);
+    const heading = page.getByRole("heading", { name: "Load network" });
+    const nested = page.getByRole("switch", { name: "Nested layout" });
+    const idle = () =>
+      expect(view).toHaveAttribute("aria-busy", "false", { timeout: 30_000 });
+
+    await page.goto("/");
+    await addFiles(page, [fixture("toy.net")]);
+    await page.getByRole("button", { name: "Load", exact: true }).click();
+    await expect(heading).toBeHidden({ timeout: MODAL_CLOSE_TIMEOUT });
+    await idle();
+
+    // Without modules the switch changes nothing.
+    let changes = await watchBusy(page);
+    await nested.click({ force: true }); // see the partition test
+    await expect(nested).not.toBeChecked();
+    expect(await changes()).toBe(0);
+
+    // The new modules lay nothing out: the nodes and the camera stay.
+    const before = await settledTransform(page);
+    changes = await watchBusy(page);
+    await page.getByRole("button", { name: "Run Infomap", exact: true }).click();
+    await expect(
+      page.getByRole("button", { name: "Re-run Infomap" }),
+    ).toBeVisible({ timeout: 30_000 });
+    expect(await changes()).toBe(0);
+    expect(await viewTransform(page)).toEqual(before);
+
+    expect(errors.filter(isFatal)).toEqual([]);
+  });
+
   test("export: SVG, PNG, and ftree downloads", async ({ page }) => {
     const errors = collectErrors(page);
     await loadExample(page);

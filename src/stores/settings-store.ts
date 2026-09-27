@@ -46,6 +46,13 @@ export class SettingsStore {
   // until the auto path scales; auto/canvas/svg stay selectable in Settings.
   backend: "auto" | "webgl" | "canvas" | "svg" = "webgl";
   layoutBackend: LayoutBackend = "auto";
+  /**
+   * Lay a network with a module hierarchy out as a nested map of modules
+   * (d3gl#324), each module inside its parent's disc; false gives it the
+   * force layout of a network without one. The modules still drive the LOD
+   * and the colours either way.
+   */
+  nestedLayout = true;
   pickLinks = false;
   stateView: "physical" | "state" | "both" = "physical";
 

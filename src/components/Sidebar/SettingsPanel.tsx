@@ -307,6 +307,16 @@ export const RenderingPanel = observer(function RenderingPanel() {
           onChange={(v) => settings.set("layoutBackend", v)}
         />
       </Row>
+      <Row
+        label="Nested layout"
+        hint="A network with modules: each module inside its parent's disc · off: the force layout"
+      >
+        <Toggle
+          label="Nested layout"
+          isSelected={settings.nestedLayout}
+          onChange={(on) => settings.set("nestedLayout", on)}
+        />
+      </Row>
       <Row label="Pick links" hint="Hover and click links (WebGL)">
         <Toggle
           label="Pick links"
