@@ -96,6 +96,9 @@ export function networkToLoaded(
  *   file with any other token has no ids. The parse keeps distinct tokens
  *   apart even when Infomap reads them as one id ("01" and "1"); withClustering
  *   reports such a pair.
+ * The dispatch repeats d3gl's parseNetwork until the parse returns these ids
+ * (mapequation/d3gl#408); d3gl's format choice differs from Infomap's for some
+ * files (mapequation/d3gl#407).
  */
 function parseWithIds(
   text: string,
