@@ -159,47 +159,54 @@ test.describe("Network Navigator smoke", () => {
     expect(errors.filter(isFatal)).toEqual([]);
   });
 
-  test("partition: load toy.net + toy.clu with No Infomap", async ({
-    page,
-  }) => {
-    const errors = collectErrors(page);
-    await page.goto("/");
-    await addFiles(page, [fixture("toy.net"), fixture("toy.clu")]);
+  // Infomap keys a partition by Pajek vertex number, whatever the labels are:
+  // numeric labels (1 "0", 2 "1", ...) must not be taken for the node ids.
+  for (const [network, partition] of [
+    ["toy.net", "toy.clu"],
+    ["toy-numeric.net", "toy-numeric.tree"],
+  ]) {
+    test(`partition: load ${network} + ${partition} with No Infomap`, async ({
+      page,
+    }) => {
+      const errors = collectErrors(page);
+      await page.goto("/");
+      await addFiles(page, [fixture(network), fixture(partition)]);
 
-    const noInfomap = page.getByRole("switch", { name: /No Infomap/ });
-    // The accessible <input role="switch"> is visually hidden (clip-rect
-    // pattern) behind a styled thumb/control that sits on top of it — normal
-    // for this component and fine for real users (a click anywhere in the
-    // wrapping <label> toggles the input natively), but Playwright's
-    // actionability check refuses to click a target it considers obscured by
-    // a sibling element. force:true bypasses that visibility heuristic while
-    // still dispatching a real click at the input's location.
-    await noInfomap.click({ force: true });
-    await expect(noInfomap).toBeChecked();
+      const noInfomap = page.getByRole("switch", { name: /No Infomap/ });
+      // The accessible <input role="switch"> is visually hidden (clip-rect
+      // pattern) behind a styled thumb/control that sits on top of it — normal
+      // for this component and fine for real users (a click anywhere in the
+      // wrapping <label> toggles the input natively), but Playwright's
+      // actionability check refuses to click a target it considers obscured by
+      // a sibling element. force:true bypasses that visibility heuristic while
+      // still dispatching a real click at the input's location.
+      await noInfomap.click({ force: true });
+      await expect(noInfomap).toBeChecked();
 
-    await page.getByRole("button", { name: "Load", exact: true }).click();
+      await page.getByRole("button", { name: "Load", exact: true }).click();
 
-    // If Infomap fails headlessly, the modal surfaces an Alert instead of
-    // closing — capture that verbatim rather than silently retrying.
-    const alert = page.getByRole("alert");
-    const canvas = page.locator("main canvas");
-    await Promise.race([
-      expect(canvas).toBeVisible({ timeout: 30_000 }).catch(() => {}),
-      expect(alert).toBeVisible({ timeout: 30_000 }).catch(() => {}),
-    ]);
+      // If Infomap fails headlessly, the modal surfaces an Alert instead of
+      // closing — capture that verbatim rather than silently retrying.
+      const alert = page.getByRole("alert");
+      const canvas = page.locator("main canvas");
+      await Promise.race([
+        expect(canvas).toBeVisible({ timeout: 30_000 }).catch(() => {}),
+        expect(alert).toBeVisible({ timeout: 30_000 }).catch(() => {}),
+      ]);
 
-    if (await alert.isVisible().catch(() => false)) {
-      throw new Error(`Load modal error (partition flow): ${await alert.innerText()}`);
-    }
+      if (await alert.isVisible().catch(() => false)) {
+        throw new Error(`Load modal error (partition flow): ${await alert.innerText()}`);
+      }
 
-    await expect(canvas).toBeVisible();
-    await expect(
-      page.getByRole("button", { name: "Download .json" }),
-    ).toBeEnabled();
+      await expect(canvas).toBeVisible();
+      await expect(
+        page.getByRole("button", { name: "Download .json" }),
+      ).toBeEnabled();
 
-    await screenshot(page, "partition");
-    expect(errors.filter(isFatal)).toEqual([]);
-  });
+      await screenshot(page, `partition-${network}`);
+      expect(errors.filter(isFatal)).toEqual([]);
+    });
+  }
 
   test("states: load toy_states.net, raw then clustered state view", async ({
     page,

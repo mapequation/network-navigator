@@ -61,8 +61,12 @@ export interface LoadedNetwork {
   stateGraph?: BuildStateGraphInput;
   /** Display name per dense node index (state names when isStates). */
   names: string[];
-  /** Original node id per dense index (for states: the state's physical id). */
-  physicalIds: number[];
+  /**
+   * The id Infomap keys each node by, per dense index (for states: the state's
+   * physical id). Absent when the file has none: an edge list with non-integer
+   * node tokens, which Infomap cannot read.
+   */
+  physicalIds?: number[];
   /** Original state id per dense index (states only). */
   stateIds?: number[];
   /** Per-node Infomap paths, dense-index keyed (kind === "clustered"). */

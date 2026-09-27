@@ -1,4 +1,9 @@
-import { parseNetwork } from "@mapequation/d3gl/network";
+import {
+  detectFormat,
+  type ParsedPajek,
+  parseEdgeList,
+  parsePajek,
+} from "@mapequation/d3gl/network";
 import { withClustering } from "./apply-ftree";
 import { type FileKind, fileKind, isStatesText } from "./file-kinds";
 import { ftreeToNetwork } from "./ftree-graph";
@@ -54,17 +59,8 @@ export function networkToLoaded(
       networkText: text,
     };
   }
-  const parsed = parseNetwork(text, filename);
+  const { parsed, physicalIds } = parseWithIds(text, filename);
   const directed = directedOverride ?? parsed.directed;
-  // Infomap keys its output by the file's node ids. Pajek ids are 1..N; edge
-  // lists may use arbitrary numeric ids preserved in labels — recover them so
-  // withClustering can match.
-  const numericLabels =
-    parsed.labels.length === parsed.nodeCount &&
-    parsed.labels.every((l) => /^\d+$/.test(l));
-  const physicalIds = numericLabels
-    ? parsed.labels.map(Number)
-    : Array.from({ length: parsed.nodeCount }, (_, i) => i + 1);
   return {
     kind: "raw",
     filename,
@@ -84,9 +80,37 @@ export function networkToLoaded(
       weight: parsed.weight,
       directed,
     },
-    names: parsed.labels.length ? [...parsed.labels] : physicalIds.map(String),
+    names: [...parsed.labels],
     physicalIds,
     networkText: text,
+  };
+}
+
+/**
+ * Parse a Pajek file or an edge list together with the node ids Infomap keys
+ * its output by. One format decision drives both the parse and the ids:
+ * - Pajek: the ids are the vertex numbers (the parser puts vertex v at dense
+ *   index v - 1); the vertex labels are names, whatever they look like.
+ * - Edge list: there are no names; each node token is the node's id. Infomap
+ *   reads only integer ids, so a file with any other token has no ids.
+ */
+function parseWithIds(
+  text: string,
+  filename: string,
+): { parsed: ParsedPajek; physicalIds?: number[] } {
+  if (detectFormat(text, filename) === "pajek") {
+    const parsed = parsePajek(text);
+    const physicalIds = Array.from(
+      { length: parsed.nodeCount },
+      (_, i) => i + 1,
+    );
+    return { parsed, physicalIds };
+  }
+  const parsed = { ...parseEdgeList(text), directed: false };
+  const integerIds = parsed.labels.every((l) => /^\d+$/.test(l));
+  return {
+    parsed,
+    physicalIds: integerIds ? parsed.labels.map(Number) : undefined,
   };
 }
 

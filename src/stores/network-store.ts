@@ -250,7 +250,7 @@ export class NetworkStore {
         name: cur.names[id] ?? String(id),
         path,
         flow: nodeFlow ? nodeFlow[id] : null,
-        physicalId: cur.physicalIds[id] ?? null,
+        physicalId: cur.physicalIds?.[id] ?? null,
       };
       if (path) this.breadcrumb = path.slice(0, -1);
       return;

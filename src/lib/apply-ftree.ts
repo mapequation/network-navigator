@@ -13,12 +13,16 @@ export function withClustering(
   // Raw states networks are keyed by state id; plain networks by physical id.
   const keyOf = (n: InfomapTreeNode): number =>
     net.isStates ? (n.stateId ?? n.id) : n.id;
+  const ids = net.isStates && net.stateIds ? net.stateIds : net.physicalIds;
+  if (!ids) {
+    throw new Error(
+      `${net.filename} has no integer node ids to match Infomap output to`,
+    );
+  }
   const denseIndex = new Map<number, number>();
-  (net.isStates && net.stateIds ? net.stateIds : net.physicalIds).forEach(
-    (id, i) => {
-      denseIndex.set(id, i);
-    },
-  );
+  ids.forEach((id, i) => {
+    denseIndex.set(id, i);
+  });
 
   const modules: ModuleNode[] = new Array(net.graph.nodeCount);
   const nodeFlow = new Float32Array(net.graph.nodeCount);

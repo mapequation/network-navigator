@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { loadFiles, networkToLoaded } from "./load-files";
 import { type RunInfomapOptions, runInfomap } from "./run-infomap";
-import type { InfomapTree } from "./types";
+import type { InfomapTree, InfomapTreeNode } from "./types";
 
 vi.mock("./run-infomap", () => ({ runInfomap: vi.fn() }));
 
@@ -13,6 +13,41 @@ const PAJEK = `*Vertices 3
 1 2 1
 2 3 2
 `;
+
+/** 1-based vertex ids with 0-based numeric names, as SNAP conversions write. */
+const PAJEK_NUMERIC = `*Vertices 3
+1 "0"
+2 "1"
+3 "2"
+*Arcs
+1 2 1
+2 3 1
+`;
+
+/** SNAP-style edge list: sparse, 0-based integer node ids. */
+const EDGES = `# FromNodeId ToNodeId
+5 0
+0 7
+`;
+
+const NAMED_EDGES = "a b\nb c\n";
+
+/** Infomap `-o json` output (header values hand-picked). */
+const infomapTree = (nodes: InfomapTreeNode[]): InfomapTree => ({
+  version: "v2.14.0",
+  args: "",
+  startedAt: "",
+  completedIn: 0,
+  codelength: 1.5,
+  numLevels: 2,
+  numTopModules: 2,
+  relativeCodelengthSavings: 0,
+  directed: false,
+  flowModel: "undirected",
+  higherOrder: false,
+  nodes,
+  modules: [],
+});
 
 const FTREE = `# path flow name node_id
 1:1 0.6 "n1" 1
@@ -31,6 +66,38 @@ describe("networkToLoaded", () => {
     expect(net.names).toEqual(["n1", "n2", "n3"]);
     expect(net.physicalIds).toEqual([1, 2, 3]);
     expect(net.networkText).toBe(PAJEK);
+  });
+
+  it("keeps Pajek vertex numbers as ids when the labels are numbers", () => {
+    const net = networkToLoaded(PAJEK_NUMERIC, "snap.net");
+    expect(net.physicalIds).toEqual([1, 2, 3]);
+    expect(net.names).toEqual(["0", "1", "2"]);
+    expect(net.directed).toBe(true);
+  });
+
+  it("names unlabelled Pajek vertices by their number", () => {
+    const net = networkToLoaded("*Vertices 3\n*Edges\n1 3\n", "bare.net");
+    expect(net.physicalIds).toEqual([1, 2, 3]);
+    expect(net.names).toEqual(["1", "2", "3"]);
+  });
+
+  it("goes by the format, not the extension: content-detected Pajek keeps vertex ids", () => {
+    const net = networkToLoaded(PAJEK_NUMERIC, "snap.paj");
+    expect(net.physicalIds).toEqual([1, 2, 3]);
+    expect(net.names).toEqual(["0", "1", "2"]);
+  });
+
+  it("uses edge-list node tokens as the ids and the names", () => {
+    const net = networkToLoaded(EDGES, "snap.txt");
+    expect(net.graph.nodeCount).toBe(3);
+    expect(net.physicalIds).toEqual([5, 0, 7]);
+    expect(net.names).toEqual(["5", "0", "7"]);
+  });
+
+  it("gives an edge list with non-integer tokens names but no ids", () => {
+    const net = networkToLoaded(NAMED_EDGES, "named.txt");
+    expect(net.names).toEqual(["a", "b", "c"]);
+    expect(net.physicalIds).toBeUndefined();
   });
 
   it("detects state networks", () => {
@@ -158,5 +225,83 @@ describe("loadFiles", () => {
         noInfomap: false,
       }),
     ).rejects.toThrow(/unsupported/i);
+  });
+});
+
+describe("loadFiles: a partition applies by Infomap's node ids", () => {
+  const opts = { directed: false, twoLevel: false, noInfomap: true };
+
+  it.each([
+    {
+      format: "Pajek with names",
+      network: { name: "toy.net", text: PAJEK },
+      partition: { name: "p.tree", text: "" },
+      // Infomap lists nodes in tree order, keyed by vertex number.
+      nodes: [
+        { path: [1, 1], flow: 0.4, name: "n3", id: 3 },
+        { path: [1, 2], flow: 0.3, name: "n1", id: 1 },
+        { path: [2, 1], flow: 0.3, name: "n2", id: 2 },
+      ],
+      paths: [
+        [1, 2],
+        [2, 1],
+        [1, 1],
+      ],
+      names: ["n1", "n2", "n3"],
+    },
+    {
+      format: "Pajek with numeric names",
+      network: { name: "snap.net", text: PAJEK_NUMERIC },
+      partition: { name: "snap.tree", text: "" },
+      nodes: [
+        { path: [1, 1], flow: 0.4, name: "2", id: 3 },
+        { path: [1, 2], flow: 0.3, name: "0", id: 1 },
+        { path: [2, 1], flow: 0.3, name: "1", id: 2 },
+      ],
+      paths: [
+        [1, 2],
+        [2, 1],
+        [1, 1],
+      ],
+      names: ["0", "1", "2"],
+    },
+    {
+      format: "edge list",
+      network: { name: "snap.txt", text: EDGES },
+      partition: { name: "snap.clu", text: "" },
+      // Infomap names edge-list nodes by their id.
+      nodes: [
+        { path: [1, 1], flow: 0.4, name: "7", id: 7 },
+        { path: [1, 2], flow: 0.3, name: "0", id: 0 },
+        { path: [2, 1], flow: 0.3, name: "5", id: 5 },
+      ],
+      paths: [
+        [2, 1],
+        [1, 2],
+        [1, 1],
+      ],
+      names: ["5", "0", "7"],
+    },
+  ])("$format", async ({ network, partition, nodes, paths, names }) => {
+    vi.mocked(runInfomap).mockResolvedValueOnce(infomapTree(nodes));
+    const net = await loadFiles([network, partition], opts);
+    expect(net.kind).toBe("clustered");
+    expect(net.modules?.map((m) => m.path)).toEqual(paths);
+    expect(net.names).toEqual(names);
+  });
+
+  it("an edge list with non-integer tokens cannot take a partition", async () => {
+    vi.mocked(runInfomap).mockResolvedValueOnce(
+      infomapTree([{ path: [1, 1], flow: 1, name: "a", id: 1 }]),
+    );
+    await expect(
+      loadFiles(
+        [
+          { name: "named.txt", text: NAMED_EDGES },
+          { name: "p.clu", text: "" },
+        ],
+        opts,
+      ),
+    ).rejects.toThrow("named.txt has no integer node ids");
   });
 });
