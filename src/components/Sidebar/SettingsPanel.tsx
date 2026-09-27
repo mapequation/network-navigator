@@ -300,7 +300,7 @@ export const RenderingPanel = observer(function RenderingPanel() {
       </Row>
       <Row
         label="Layout backend"
-        hint="auto: force layouts on the GPU where supported, maps of modules on a worker · applies from the next layout"
+        hint="auto: chosen for each layout and device · applies from the next layout"
       >
         <Segmented
           label="Layout backend"
