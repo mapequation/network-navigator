@@ -19,8 +19,16 @@ export function withClustering(
       `${net.filename} has no integer node ids to match Infomap output to`,
     );
   }
+  // Each node needs an id of its own: two nodes sharing one would leave one of
+  // them unmatched, so name the pair rather than report it as missing below.
   const denseIndex = new Map<number, number>();
   ids.forEach((id, i) => {
+    const first = denseIndex.get(id);
+    if (first !== undefined) {
+      throw new Error(
+        `${net.filename}: nodes "${net.names[first]}" and "${net.names[i]}" are two nodes here but one to Infomap (id ${id})`,
+      );
+    }
     denseIndex.set(id, i);
   });
 

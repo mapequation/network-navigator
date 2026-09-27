@@ -304,4 +304,27 @@ describe("loadFiles: a partition applies by Infomap's node ids", () => {
       ),
     ).rejects.toThrow("named.txt has no integer node ids");
   });
+
+  it("an edge list whose distinct tokens Infomap reads as one id says so", async () => {
+    // The parse keeps "01" and "1" apart; Infomap reads both as node 1
+    // (Infomap CLI 2.9.2 outputs nodes 1, 2, 3 for this file).
+    vi.mocked(runInfomap).mockResolvedValueOnce(
+      infomapTree([
+        { path: [1, 1], flow: 0.5, name: "1", id: 1 },
+        { path: [1, 2], flow: 0.25, name: "2", id: 2 },
+        { path: [1, 3], flow: 0.25, name: "3", id: 3 },
+      ]),
+    );
+    await expect(
+      loadFiles(
+        [
+          { name: "lead.txt", text: "01 2\n1 3\n" },
+          { name: "p.clu", text: "" },
+        ],
+        opts,
+      ),
+    ).rejects.toThrow(
+      'lead.txt: nodes "01" and "1" are two nodes here but one to Infomap (id 1)',
+    );
+  });
 });

@@ -91,8 +91,11 @@ export function networkToLoaded(
  * its output by. One format decision drives both the parse and the ids:
  * - Pajek: the ids are the vertex numbers (the parser puts vertex v at dense
  *   index v - 1); the vertex labels are names, whatever they look like.
- * - Edge list: there are no names; each node token is the node's id. Infomap
- *   reads only integer ids, so a file with any other token has no ids.
+ * - Edge list: there are no names; each node token, read as an integer the way
+ *   Infomap reads it, is the node's id. Infomap reads only integer ids, so a
+ *   file with any other token has no ids. The parse keeps distinct tokens
+ *   apart even when Infomap reads them as one id ("01" and "1"); withClustering
+ *   reports such a pair.
  */
 function parseWithIds(
   text: string,
