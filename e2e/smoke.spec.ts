@@ -84,6 +84,39 @@ async function settledTransform(page: Page): Promise<Transform> {
 /** d3gl's layoutTransport for a layout that ran on the worker. */
 const WORKER_TRANSPORT = /^(shared|copy)$/;
 
+/** Where d3gl's "auto" runs a layout on this page, the nested map of modules
+ * and the force layout alike: on the GPU where its WebGL2 device renders to
+ * and blends into float textures (what d3gl's GPU layout needs), else on the
+ * worker. (d3gl also probes that the blending sums right; a device that
+ * fails the probe would take the worker and show here as a mismatch.) */
+async function autoTransport(page: Page): Promise<string | RegExp> {
+  const gpu = await page.evaluate(() => {
+    const gl = document.createElement("canvas").getContext("webgl2");
+    if (!gl) return false;
+    const ok =
+      gl.getExtension("EXT_color_buffer_float") !== null &&
+      gl.getExtension("EXT_float_blend") !== null;
+    gl.getExtension("WEBGL_lose_context")?.loseContext();
+    return ok;
+  });
+  return gpu ? "gpu" : WORKER_TRANSPORT;
+}
+
+/** The latest layout has landed where "auto" runs it, as a nested map of the
+ * modules or not (the view's data-nested-map: the transport doesn't tell). */
+async function autoLayoutLanded(
+  page: Page,
+  { nested }: { nested: boolean },
+): Promise<void> {
+  const view = page.locator("main [aria-busy]");
+  await expect(view).toHaveAttribute(
+    "data-layout-transport",
+    await autoTransport(page),
+    { timeout: 30_000 },
+  );
+  await expect(view).toHaveAttribute("data-nested-map", String(nested));
+}
+
 /** Counts the layout view's aria-busy changes from now on. A layout starts in
  * the same task as the change that starts it, so after that task a count of 0
  * shows that none started (no auto-retry needed). */
@@ -464,10 +497,10 @@ test.describe("Network Navigator smoke", () => {
 
     // The settings are there with no network, but for the simulation: a load
     // always lays its network out. "auto" would run the example's map of
-    // modules on the worker; pick the GPU.
+    // modules on the GPU where the page can; pick the worker.
     await expect(simulation).toBeDisabled();
-    await group.getByRole("radio", { name: "gpu" }).click();
-    await expect(group.getByRole("radio", { name: "gpu" })).toBeChecked();
+    await group.getByRole("radio", { name: "worker" }).click();
+    await expect(group.getByRole("radio", { name: "worker" })).toBeChecked();
     await screenshot(page, "empty-state");
 
     // L opens the dialog from a Settings switch too (a checkbox input, which
@@ -489,9 +522,11 @@ test.describe("Network Navigator smoke", () => {
     await openFromEmpty.click();
     await dialog.getByRole("button", { name: "Load example" }).click();
     await expect(heading).toBeHidden({ timeout: MODAL_CLOSE_TIMEOUT });
-    await expect(view).toHaveAttribute("data-layout-transport", "gpu", {
-      timeout: 30_000,
-    });
+    await expect(view).toHaveAttribute(
+      "data-layout-transport",
+      WORKER_TRANSPORT,
+      { timeout: 30_000 },
+    );
 
     expect(errors.filter(isFatal)).toEqual([]);
   });
@@ -650,29 +685,25 @@ test.describe("Network Navigator smoke", () => {
     page,
   }) => {
     const errors = collectErrors(page);
-    const { view } = layoutControls(page);
     const nested = page.getByRole("switch", { name: "Nested layout" });
     await loadExample(page);
     await expect(nested).toBeChecked();
-    // "auto" runs the map of modules on the worker...
-    await expect(view).toHaveAttribute("data-layout-transport", WORKER_TRANSPORT, {
-      timeout: 30_000,
-    });
+    await autoLayoutLanded(page, { nested: true });
 
-    // ...and the force layout on the GPU.
+    // Off, the example is laid out again: the force layout.
+    let changes = await watchBusy(page);
     await nested.click({ force: true }); // see the partition test
     await expect(nested).not.toBeChecked();
-    await expect(view).toHaveAttribute("data-layout-transport", "gpu", {
-      timeout: 30_000,
-    });
+    await autoLayoutLanded(page, { nested: false });
+    expect(await changes()).toBeGreaterThan(0);
     const flat = await settledTransform(page);
 
     // Back on, the map is laid out from the current positions and eased in:
     // the camera stays.
-    const changes = await watchBusy(page);
+    changes = await watchBusy(page);
     await nested.click({ force: true });
     await expect(nested).toBeChecked();
-    await expect(view).toHaveAttribute("aria-busy", "false", { timeout: 30_000 });
+    await autoLayoutLanded(page, { nested: true });
     expect(await changes()).toBeGreaterThan(0);
     expect(await settledTransform(page)).toEqual(flat);
 
@@ -722,13 +753,12 @@ test.describe("Network Navigator smoke", () => {
     const { view, simulation } = layoutControls(page);
     const nested = page.getByRole("switch", { name: "Nested layout" });
     await loadExample(page);
-    await expect(view).toHaveAttribute("data-layout-transport", WORKER_TRANSPORT, {
-      timeout: 30_000,
-    });
+    await autoLayoutLanded(page, { nested: true });
     await simulation.click({ force: true }); // see the partition test
     await expect(simulation).not.toBeChecked();
 
-    // Switched either way, nothing moves: the nodes and the camera stay.
+    // Switched either way, nothing moves: the nodes (still the map) and the
+    // camera stay.
     const before = await settledTransform(page);
     const changes = await watchBusy(page);
     await nested.click({ force: true });
@@ -739,14 +769,12 @@ test.describe("Network Navigator smoke", () => {
     await expect(nested).not.toBeChecked();
     expect(await changes()).toBe(0);
     expect(await viewTransform(page)).toEqual(before);
+    await expect(view).toHaveAttribute("data-nested-map", "true");
 
-    // Back on, the simulation lays the example out as set: the force layout
-    // (on the GPU under "auto").
+    // Back on, the simulation lays the example out as set: the force layout.
     await simulation.click({ force: true });
     await expect(simulation).toBeChecked();
-    await expect(view).toHaveAttribute("data-layout-transport", "gpu", {
-      timeout: 30_000,
-    });
+    await autoLayoutLanded(page, { nested: false });
 
     expect(errors.filter(isFatal)).toEqual([]);
   });
@@ -762,11 +790,13 @@ test.describe("Network Navigator smoke", () => {
     await addFiles(page, [fixture("toy.net")]);
     await page.getByRole("button", { name: "Load", exact: true }).click();
     await expect(heading).toBeHidden({ timeout: MODAL_CLOSE_TIMEOUT });
-    await expect(view).toHaveAttribute("aria-busy", "false", { timeout: 30_000 });
+    // No modules yet: the force layout.
+    await autoLayoutLanded(page, { nested: false });
     await simulation.click({ force: true }); // see the partition test
     await expect(simulation).not.toBeChecked();
 
-    // The new modules lay nothing out: the nodes and the camera stay.
+    // The new modules lay nothing out: the nodes (no map of them) and the
+    // camera stay.
     const before = await settledTransform(page);
     const changes = await watchBusy(page);
     await page.getByRole("button", { name: "Run Infomap", exact: true }).click();
@@ -775,14 +805,12 @@ test.describe("Network Navigator smoke", () => {
     ).toBeVisible({ timeout: 30_000 });
     expect(await changes()).toBe(0);
     expect(await viewTransform(page)).toEqual(before);
+    await expect(view).toHaveAttribute("data-nested-map", "false");
 
-    // Back on, the simulation lays the new map of modules out (on the worker
-    // under "auto").
+    // Back on, the simulation lays the new map of modules out.
     await simulation.click({ force: true });
     await expect(simulation).toBeChecked();
-    await expect(view).toHaveAttribute("data-layout-transport", WORKER_TRANSPORT, {
-      timeout: 30_000,
-    });
+    await autoLayoutLanded(page, { nested: true });
 
     expect(errors.filter(isFatal)).toEqual([]);
   });

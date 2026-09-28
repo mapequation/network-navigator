@@ -26,10 +26,8 @@ const LINE_BEND = 0.15;
 // positions yet. With a module hierarchy (given to data(), whatever the LOD
 // mode) and Nested layout on in Settings (the default), that's the nested map
 // of modules (d3gl#324): each module's children inside it, by their own links
-// only, streamed top-down off-thread ("auto" runs it on the worker,
-// d3gl#375). Otherwise it's the force layout: "auto" solves it on the GPU
-// where the device can, else on the worker, silently. fit keeps the camera
-// framed while it streams.
+// only. Otherwise it's the force layout. fit keeps the camera framed while it
+// streams.
 const LAYOUT = { fit: true } as const;
 // A re-clustering or a Nested layout switch keeps the nodes where they are
 // unless the kind of layout they have (a nested map of the modules, or not)
@@ -37,11 +35,10 @@ const LAYOUT = { fit: true } as const;
 // network is laid out again. (With it off nothing moves the nodes until it's
 // switched back on, which lays the network out anew as set then.) A nested
 // map is laid out from the current positions (d3gl#328) and eased in, so the
-// camera stays; as on a load, "auto" keeps it on the worker. A force layout
-// is laid out as a load does, framed: d3gl has no warm start for it. So with
-// Nested layout off a re-clustering lays nothing out: the new modules regroup
-// the LOD and recolour the nodes where they are. (A states network's
-// re-clustering is a load, see NetworkStore.)
+// camera stays. A force layout is laid out as a load does, framed: d3gl has
+// no warm start for it. So with Nested layout off a re-clustering lays
+// nothing out: the new modules regroup the LOD and recolour the nodes where
+// they are. (A states network's re-clustering is a load, see NetworkStore.)
 const RELAYOUT = { nested: { warm: true }, transition: 600 } as const;
 // Rings around the modules the LOD cut has opened (d3gl#329): thin and low
 // contrast, context rather than content. They are the discs of a nested map
@@ -394,6 +391,16 @@ export const NetworkView = observer(function NetworkView() {
           host.setAttribute("aria-busy", String(!done));
           if (done) host.dataset.layoutTransport = net.layoutTransport;
           else delete host.dataset.layoutTransport;
+        },
+        { fireImmediately: true },
+      ),
+      // For the e2e tests too: data-nested-map says whether the positions are
+      // a nested map of the modules the engine holds, landed (as the module
+      // rings follow). The transport alone doesn't tell the kind of layout.
+      reaction(
+        () => discs.get(),
+        (landed) => {
+          host.dataset.nestedMap = String(landed);
         },
         { fireImmediately: true },
       ),
