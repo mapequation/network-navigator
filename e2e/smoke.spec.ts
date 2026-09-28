@@ -84,36 +84,23 @@ async function settledTransform(page: Page): Promise<Transform> {
 /** d3gl's layoutTransport for a layout that ran on the worker. */
 const WORKER_TRANSPORT = /^(shared|copy)$/;
 
-/** Where d3gl's "auto" runs a layout on this page, the nested map of modules
- * and the force layout alike: on the GPU where its WebGL2 device renders to
- * and blends into float textures (what d3gl's GPU layout needs), else on the
- * worker. (d3gl also probes that the blending sums right; a device that
- * fails the probe would take the worker and show here as a mismatch.) */
-async function autoTransport(page: Page): Promise<string | RegExp> {
-  const gpu = await page.evaluate(() => {
-    const gl = document.createElement("canvas").getContext("webgl2");
-    if (!gl) return false;
-    const ok =
-      gl.getExtension("EXT_color_buffer_float") !== null &&
-      gl.getExtension("EXT_float_blend") !== null;
-    gl.getExtension("WEBGL_lose_context")?.loseContext();
-    return ok;
-  });
-  return gpu ? "gpu" : WORKER_TRANSPORT;
-}
+/** d3gl's layoutTransport for a layout that landed under "auto": which one
+ * is d3gl's choice (d3gl#375), so any but "none" (stopped first). */
+const AUTO_TRANSPORT = /^(gpu|shared|copy)$/;
 
-/** The latest layout has landed where "auto" runs it, as a nested map of the
- * modules or not (the view's data-nested-map: the transport doesn't tell). */
+/** The latest layout has landed, wherever "auto" ran it, and the view laid
+ * the network out as a nested map of its modules or not: data-nested-map,
+ * the kind the view asked d3gl for (what the module rings follow). Neither
+ * the transport nor any d3gl getter tells the kind d3gl ran (d3gl#434), so
+ * that it lays out what it's asked for is d3gl's tests' to check. */
 async function autoLayoutLanded(
   page: Page,
   { nested }: { nested: boolean },
 ): Promise<void> {
   const view = page.locator("main [aria-busy]");
-  await expect(view).toHaveAttribute(
-    "data-layout-transport",
-    await autoTransport(page),
-    { timeout: 30_000 },
-  );
+  await expect(view).toHaveAttribute("data-layout-transport", AUTO_TRANSPORT, {
+    timeout: 30_000,
+  });
   await expect(view).toHaveAttribute("data-nested-map", String(nested));
 }
 
@@ -496,19 +483,23 @@ test.describe("Network Navigator smoke", () => {
     await expect(heading).toBeHidden();
 
     // The settings are there with no network, but for the simulation: a load
-    // always lays its network out. "auto" would run the example's map of
-    // modules on the GPU where the page can; pick the worker.
+    // always lays its network out. Pick the worker, and switch Nested layout
+    // off below: the example, a map of modules, then gets the force layout on
+    // every device. The worker tells from "auto" only where "auto" would take
+    // the GPU (d3gl's call); where only the worker runs, nothing can.
     await expect(simulation).toBeDisabled();
     await group.getByRole("radio", { name: "worker" }).click();
     await expect(group.getByRole("radio", { name: "worker" })).toBeChecked();
     await screenshot(page, "empty-state");
 
     // L opens the dialog from a Settings switch too (a checkbox input, which
-    // types no text), and a click on the backdrop dismisses it.
+    // types no text: Space switches it), and a click on the backdrop
+    // dismisses it.
+    const nested = page.getByRole("switch", { name: "Nested layout" });
     await page.keyboard.press("Tab");
-    await expect(
-      page.getByRole("switch", { name: "Nested layout" }),
-    ).toBeFocused();
+    await expect(nested).toBeFocused();
+    await page.keyboard.press("Space");
+    await expect(nested).not.toBeChecked();
     await page.keyboard.press("l");
     await expect(heading).toBeVisible();
     await page.mouse.click(8, 8);
@@ -527,6 +518,7 @@ test.describe("Network Navigator smoke", () => {
       WORKER_TRANSPORT,
       { timeout: 30_000 },
     );
+    await expect(view).toHaveAttribute("data-nested-map", "false");
 
     expect(errors.filter(isFatal)).toEqual([]);
   });
@@ -633,7 +625,7 @@ test.describe("Network Navigator smoke", () => {
     // "auto" leaves the choice to d3gl.
     await expect(view).toHaveAttribute(
       "data-layout-transport",
-      /^(gpu|shared|copy)$/,
+      AUTO_TRANSPORT,
       { timeout: 30_000 },
     );
     await cycle();

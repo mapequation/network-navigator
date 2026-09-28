@@ -394,9 +394,10 @@ export const NetworkView = observer(function NetworkView() {
         },
         { fireImmediately: true },
       ),
-      // For the e2e tests too: data-nested-map says whether the positions are
-      // a nested map of the modules the engine holds, landed (as the module
-      // rings follow). The transport alone doesn't tell the kind of layout.
+      // For the e2e tests too: data-nested-map says whether the latest layout,
+      // landed, is the nested map of the modules the view asked d3gl for (what
+      // the module rings follow). It's the view's record, not d3gl's report:
+      // neither the transport nor any d3gl getter tells the kind (d3gl#434).
       reaction(
         () => discs.get(),
         (landed) => {
