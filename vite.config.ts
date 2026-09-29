@@ -14,7 +14,7 @@ export default defineConfig({
     fs: {
       allow: [
         searchForWorkspaceRoot(process.cwd()),
-        "/Users/daniel/dev/projects/icelab/code/web/d3gl/.claude/worktrees/fill-by-metric",
+        "/Users/daniel/dev/projects/icelab/code/web/d3gl/.claude/worktrees/navigator-test",
       ],
     },
   },
