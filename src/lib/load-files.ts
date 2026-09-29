@@ -200,14 +200,14 @@ async function loadStructure(
   const partition = partitions[0];
   const args = buildInfomapArgs({ ...opts, clusterFilename: partition.name });
   cb.onInfomapStart?.(`infomap ${infomapArgString(args)}`);
-  const tree = await runInfomap({
+  const { tree, flow } = await runInfomap({
     network: networks[0].text,
     filename: networks[0].name,
     args,
     files: { [partition.name]: partition.text },
     onLog: cb.onLog,
   });
-  const clustered = withClustering(net, tree);
+  const clustered = withClustering(net, tree, flow);
   clustered.sources = [
     ...net.sources,
     {

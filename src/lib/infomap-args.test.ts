@@ -2,11 +2,11 @@ import { describe, expect, it } from "vitest";
 import { buildInfomapArgs, infomapArgString } from "./infomap-args";
 
 describe("buildInfomapArgs", () => {
-  it("always requests JSON output, not silenced", () => {
+  it("always requests JSON and flow output, not silenced", () => {
     expect(
       buildInfomapArgs({ directed: false, twoLevel: false, noInfomap: false }),
     ).toEqual({
-      output: ["json"],
+      output: ["json", "flow"],
     });
   });
 
@@ -19,7 +19,7 @@ describe("buildInfomapArgs", () => {
         clusterFilename: "p.clu",
       }),
     ).toEqual({
-      output: ["json"],
+      output: ["json", "flow"],
       directed: true,
       twoLevel: true,
       noInfomap: true,
@@ -40,6 +40,6 @@ describe("infomapArgString", () => {
         }),
         "  -N 5   --seed 7 ",
       ),
-    ).toBe("--output json --two-level --regularized -N 5 --seed 7");
+    ).toBe("--output json,flow --two-level --regularized -N 5 --seed 7");
   });
 });

@@ -178,7 +178,7 @@ describe("loadFiles", () => {
       ],
       modules: [],
     };
-    vi.mocked(runInfomap).mockResolvedValueOnce(tree);
+    vi.mocked(runInfomap).mockResolvedValueOnce({ tree });
     const commands: string[] = [];
     const net = await loadFiles(
       [
@@ -189,10 +189,10 @@ describe("loadFiles", () => {
       { onInfomapStart: (c) => commands.push(c) },
     );
     const opts = vi.mocked(runInfomap).mock.calls[0][0] as RunInfomapOptions;
-    expect(opts.args.output).toEqual(["json"]);
+    expect(opts.args.output).toEqual(["json", "flow"]);
     expect(opts.files).toEqual({ "p.clu": "1 1\n2 1\n3 2\n" });
     expect(commands).toEqual([
-      "infomap --cluster-data p.clu --no-infomap --output json",
+      "infomap --cluster-data p.clu --no-infomap --output json,flow",
     ]);
     expect(net.kind).toBe("clustered");
     expect(net.infomap?.codelength).toBe(1.5);
@@ -283,7 +283,7 @@ describe("loadFiles: a partition applies by Infomap's node ids", () => {
       names: ["5", "0", "7"],
     },
   ])("$format", async ({ network, partition, nodes, paths, names }) => {
-    vi.mocked(runInfomap).mockResolvedValueOnce(infomapTree(nodes));
+    vi.mocked(runInfomap).mockResolvedValueOnce({ tree: infomapTree(nodes) });
     const net = await loadFiles([network, partition], opts);
     expect(net.kind).toBe("clustered");
     expect(net.modules?.map((m) => m.path)).toEqual(paths);
@@ -291,9 +291,9 @@ describe("loadFiles: a partition applies by Infomap's node ids", () => {
   });
 
   it("an edge list with non-integer tokens cannot take a partition", async () => {
-    vi.mocked(runInfomap).mockResolvedValueOnce(
-      infomapTree([{ path: [1, 1], flow: 1, name: "a", id: 1 }]),
-    );
+    vi.mocked(runInfomap).mockResolvedValueOnce({
+      tree: infomapTree([{ path: [1, 1], flow: 1, name: "a", id: 1 }]),
+    });
     await expect(
       loadFiles(
         [
@@ -308,13 +308,13 @@ describe("loadFiles: a partition applies by Infomap's node ids", () => {
   it("an edge list whose distinct tokens Infomap reads as one id says so", async () => {
     // The parse keeps "01" and "1" apart; Infomap reads both as node 1
     // (Infomap CLI 2.9.2 outputs nodes 1, 2, 3 for this file).
-    vi.mocked(runInfomap).mockResolvedValueOnce(
-      infomapTree([
+    vi.mocked(runInfomap).mockResolvedValueOnce({
+      tree: infomapTree([
         { path: [1, 1], flow: 0.5, name: "1", id: 1 },
         { path: [1, 2], flow: 0.25, name: "2", id: 2 },
         { path: [1, 3], flow: 0.25, name: "3", id: 3 },
       ]),
-    );
+    });
     await expect(
       loadFiles(
         [

@@ -1,14 +1,20 @@
 import type { ModuleNode } from "@mapequation/d3gl/network";
+import { boundaryFlow, moduleFlowOf } from "./boundary-flow";
 import type { InfomapTree, InfomapTreeNode, LoadedNetwork } from "./types";
 
 /**
  * Attach an Infomap JSON tree to a raw network, keeping the real edges.
  * No moduleLinks: the raw graph already holds every leaf edge, and d3gl sums
  * moduleLinks on top of the graph's edges, so they would count twice.
+ *
+ * `flowText` is the same run's flow output (-o flow). With it, a plain
+ * network gets each node's boundary flow (its flow-border ring) when that
+ * adds up to the tree's module enter/exit flow; see boundaryFlow.
  */
 export function withClustering(
   net: LoadedNetwork,
   tree: InfomapTree,
+  flowText?: string,
 ): LoadedNetwork {
   // Raw states networks are keyed by state id; plain networks by physical id.
   const keyOf = (n: InfomapTreeNode): number =>
@@ -52,6 +58,17 @@ export function withClustering(
     );
   }
 
+  // A states network is drawn through d3gl's state views, each of its own
+  // node count, so its rings would need a physical and a state variant.
+  let ring: Float32Array | undefined;
+  if (flowText && !net.isStates) {
+    const r = boundaryFlow(tree, flowText, net.graph.nodeCount, (id) =>
+      denseIndex.get(id),
+    );
+    if (r.ok) ring = r.node;
+    else console.info(`No flow borders: ${r.reason}`);
+  }
+
   return {
     ...net,
     kind: "clustered",
@@ -66,5 +83,7 @@ export function withClustering(
       relativeCodelengthSavings: tree.relativeCodelengthSavings,
     },
     infomapJson: tree,
+    boundaryFlow: ring,
+    moduleFlow: moduleFlowOf(tree),
   };
 }

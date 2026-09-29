@@ -36,14 +36,14 @@ export const ModulesPanel = observer(function ModulesPanel() {
     let error: string | null = null;
     try {
       ui.startInfomap(command);
-      const tree = await runInfomap({
+      const { tree, flow } = await runInfomap({
         network: cur.networkText,
         filename: cur.filename,
         args,
         flags: ui.infomapFlags,
         onLog: ui.onInfomapLog,
       });
-      store.applyClustering(tree);
+      store.applyClustering(tree, flow);
     } catch (err) {
       error = err instanceof Error ? err.message : String(err);
       ui.setInfomapError(error);

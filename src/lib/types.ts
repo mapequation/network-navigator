@@ -6,6 +6,7 @@ import type {
 } from "@mapequation/d3gl/network";
 import type { Header, Module } from "@mapequation/infomap";
 import type { TreeNode, TreeStateNode } from "@mapequation/infomap/filetypes";
+import type { ModuleFlow } from "./boundary-flow";
 import type { FileKind } from "./file-kinds";
 import type { NetworkStats } from "./network-stats";
 
@@ -85,6 +86,15 @@ export interface LoadedNetwork {
   infomap?: InfomapSummary;
   /** JSON tree of the in-app Infomap run — export source. */
   infomapJson?: InfomapTree;
+  /**
+   * Per dense node: the Infomap link flow crossing its bottom module's
+   * boundary (the flow-border ring). Only from an in-app Infomap run of a
+   * plain network, and only when it adds up to Infomap's module enter + exit
+   * flow (see boundaryFlow): an .ftree has no cross-module leaf links.
+   */
+  boundaryFlow?: Float32Array;
+  /** Every module's enter/exit flow from the in-app Infomap run, by pathKey (root ""). */
+  moduleFlow?: Map<string, ModuleFlow>;
   /** Raw network file text — enables (re-)clustering with Infomap. */
   networkText?: string;
 }

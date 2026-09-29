@@ -102,6 +102,8 @@ export class NetworkStore {
    * so module super-edges and leaf links share one scale.
    */
   maxLinkFlow = 0;
+  /** Largest node boundary flow (LoadedNetwork.boundaryFlow): the flow-border rings' domain. */
+  maxBoundaryFlow = 0;
   /**
    * Bumped on every load (setNetwork): the view takes the network as new data,
    * lays it out from scratch and frames it. A re-clustering of a plain network
@@ -169,6 +171,10 @@ export class NetworkStore {
     this.maxDegree = maxDegree;
     this.maxWeight = maxWeight;
     this.maxLinkFlow = maxLinkFlowOf(net, maxWeight);
+    let maxBoundaryFlow = 0;
+    for (const v of net.boundaryFlow ?? [])
+      if (v > maxBoundaryFlow) maxBoundaryFlow = v;
+    this.maxBoundaryFlow = maxBoundaryFlow;
     this.moduleTopLeaf = topLeaves(net);
   }
 
@@ -196,17 +202,19 @@ export class NetworkStore {
     this.maxDegree = 0;
     this.maxWeight = 0;
     this.maxLinkFlow = 0;
+    this.maxBoundaryFlow = 0;
     this.moduleLeafCache.clear();
     this.moduleTopLeaf = new Map();
   }
 
-  applyClustering(tree: InfomapTree): void {
+  /** Cluster the current network with an in-app Infomap run's tree and flow text. */
+  applyClustering(tree: InfomapTree, flowText?: string): void {
     const cur = this.current;
     const built = this.built;
     if (!cur || !built) return;
     // Re-clustering keeps the dense node ids, so metadata-overlap files stay valid.
     const occurrenceFiles = this.occurrenceFiles;
-    const net = withClustering(cur, tree);
+    const net = withClustering(cur, tree, flowText);
     // A partition the network was loaded with no longer produced these modules.
     net.sources = cur.sources.filter((f) => f.kind === "network");
     if (cur.isStates) {

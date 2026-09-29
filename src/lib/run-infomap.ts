@@ -14,10 +14,18 @@ export interface RunInfomapOptions {
   onLog?: (line: string) => void;
 }
 
-/** Run Infomap in its web worker; resolve with the JSON tree (states variant preferred). */
-export async function runInfomap(
-  opts: RunInfomapOptions,
-): Promise<InfomapTree> {
+export interface InfomapRun {
+  /** The JSON tree (the states variant when there is one). */
+  tree: InfomapTree;
+  /**
+   * The flow output of a plain network (-o flow): its nodes' and links'
+   * flow. A states network writes `flow_as_physical` instead, left out here.
+   */
+  flow?: string;
+}
+
+/** Run Infomap in its web worker; resolve with its JSON tree and flow text. */
+export async function runInfomap(opts: RunInfomapOptions): Promise<InfomapRun> {
   const infomap = new Infomap();
   if (opts.onLog) infomap.on("data", opts.onLog);
   const result = await infomap.runAsync({
@@ -28,5 +36,5 @@ export async function runInfomap(
   });
   const tree: InfomapTree | undefined = result.json_states ?? result.json;
   if (!tree) throw new Error("Infomap finished without JSON output");
-  return tree;
+  return { tree, flow: result.flow };
 }
