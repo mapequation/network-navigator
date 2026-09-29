@@ -15,8 +15,8 @@ importers:
         specifier: ^3.2.1
         version: 3.2.1(tailwind-merge@3.4.0)(tailwindcss@4.3.2)
       '@mapequation/d3gl':
-        specifier: link:/Users/daniel/dev/projects/icelab/code/web/d3gl/.claude/worktrees/large-force/packages/d3gl
-        version: link:../d3gl/.claude/worktrees/large-force/packages/d3gl
+        specifier: link:/Users/daniel/dev/projects/icelab/code/web/d3gl/.claude/worktrees/fill-by-metric/packages/d3gl
+        version: link:../d3gl/.claude/worktrees/fill-by-metric/packages/d3gl
       '@mapequation/infomap':
         specifier: ^2.14.0
         version: 2.14.0(react@19.2.7)

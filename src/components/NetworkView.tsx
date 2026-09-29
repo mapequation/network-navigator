@@ -11,6 +11,7 @@ import { computed, observable, reaction, runInAction } from "mobx";
 import { observer } from "mobx-react-lite";
 import { useEffect, useRef } from "react";
 import { fitTransform } from "../lib/fit-transform";
+import { pathKey } from "../lib/path-key";
 import type { LoadedNetwork } from "../lib/types";
 import { useStores } from "../stores";
 import type { NetworkStore } from "../stores/network-store";
@@ -25,8 +26,9 @@ const NODE_BORDER_RANGE: [string, string] = ["#FFAE38", "#f9a327"];
 const LINK_RANGE: [string, string] = ["#71B2D7", "#418EC7"];
 // Color by module: one neutral ring colour, the module rings' grey.
 const NEUTRAL_RING = "rgb(90,100,120)";
-// Flow-border ring width (px in screen size mode) at the largest boundary flow.
-const RING_MAX_WIDTH = 4;
+// Flow-border ring width (px in screen size mode) at the largest node boundary
+// flow; a module's ring extrapolates above it.
+const RING_NODE_MAX_WIDTH = 4;
 const HALF_ARROW_BEND = 0.15; // d3gl#299: half-arrow bend is a chord fraction too
 const LINE_BEND = 0.15;
 // Every layout runs on the layout backend chosen in Settings when it starts
@@ -129,28 +131,36 @@ export function buildStyle(
           : ["rgba(90,100,120,0.12)", "rgba(60,70,90,0.85)"],
       )
       .clamp(true),
-    // TODO: by flow, an aggregate's fill is its members' averaged colour
-    // until d3gl's nodeFill: { by: "flow", scale } lands (the d3gl
-    // per-module flow PR); then colour aggregates by their summed flow.
-    nodeFill:
-      occurrences.length || colors || flowColors
-        ? (i: number, g: { flow: Float32Array | null }) => {
-            for (const f of occurrences) if (f.idSet.has(i)) return f.color;
-            return fillOf(i, g);
-          }
-        : DEFAULT_NODE_FILL,
-    // Rings only where an in-app Infomap run gave each node's boundary flow.
-    // TODO: an aggregate's ring is its members' summed rings (d3gl's current
-    // behaviour, so a module's own internal boundaries count too) until the
-    // d3gl per-module flowBorder PR lands; then give modules their enter +
-    // exit flow from LoadedNetwork.moduleFlow.
+    // Occurrence colours win, per node. Otherwise by flow each glyph takes
+    // the flow scale's colour of its own flow: a module's is its members'
+    // summed flow (d3gl#446), not a member's colour.
+    nodeFill: occurrences.length
+      ? (i: number, g: { flow: Float32Array | null }) => {
+          for (const f of occurrences) if (f.idSet.has(i)) return f.color;
+          return fillOf(i, g);
+        }
+      : flowColors
+        ? { by: "flow", scale: flowFill }
+        : colors
+          ? (i: number) => colors[i] ?? DEFAULT_NODE_FILL
+          : DEFAULT_NODE_FILL,
+    // Rings only where an in-app Infomap run gave each node's boundary flow
+    // (checked against the modules' enter + exit flow). A module of the
+    // hierarchy rings by Infomap's own enter + exit flow for it (d3gl#446):
+    // summing its members' rings would count the flow between its own
+    // submodules too.
     flowBorder: ring
       ? {
           flow: ring,
           scale: makeScale(settings.nodeScale)
             .domain(ringDomain)
-            .range([0, RING_MAX_WIDTH])
-            .clamp(true),
+            .range([0, RING_NODE_MAX_WIDTH]),
+          // Not clamped: a module's ring extrapolates on the nodes' scale, as
+          // its radius does on nodeRadius's, so ring and disc grow together.
+          moduleFlow: (path: readonly number[]) => {
+            const m = cur?.moduleFlow?.get(pathKey(path));
+            return m ? m.enterFlow + m.exitFlow : undefined;
+          },
           color: flowColors ? (v: number) => ringColor(v) : NEUTRAL_RING,
         }
       : undefined,

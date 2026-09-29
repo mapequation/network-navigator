@@ -14,7 +14,7 @@ export default defineConfig({
     fs: {
       allow: [
         searchForWorkspaceRoot(process.cwd()),
-        "/Users/daniel/dev/projects/icelab/code/web/d3gl/.claude/worktrees/large-force",
+        "/Users/daniel/dev/projects/icelab/code/web/d3gl/.claude/worktrees/fill-by-metric",
       ],
     },
   },

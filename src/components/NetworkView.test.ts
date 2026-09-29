@@ -71,10 +71,13 @@ describe("buildStyle colours and flow borders", () => {
   };
   const colors = ["#a00000", "#a00000", "#00a000", "#00a000"];
   const graph = { flow: new Float32Array([0.4, 0.3, 0.2, 0.1]) };
-  const fillOf = (s: ReturnType<typeof buildStyle>, i: number) =>
-    typeof s.nodeFill === "function"
-      ? s.nodeFill(i, graph as never)
-      : s.nodeFill;
+  const fillOf = (s: ReturnType<typeof buildStyle>, i: number) => {
+    const fill = s.nodeFill;
+    if (typeof fill === "function") return fill(i, graph as never);
+    if (typeof fill === "object" && fill.by === "flow")
+      return fill.scale(graph.flow[i] ?? 0);
+    return fill;
+  };
 
   it("draws no rings without an in-app Infomap run's boundary flow", () => {
     const { store, settings } = setup();
@@ -92,11 +95,30 @@ describe("buildStyle colours and flow borders", () => {
     expect(fillOf(style, 2)).toBe("#00a000");
   });
 
+  it("rings a module by Infomap's enter + exit flow for it, not its members' sum", () => {
+    const boundaryFlow = new Float32Array([0, 0.1, 0.1, 0.05]);
+    const moduleFlow = new Map([
+      ["1", { enterFlow: 0.05, exitFlow: 0.07 }],
+      ["", { enterFlow: 0, exitFlow: 0 }],
+    ]);
+    const { store, settings } = setup({
+      ...clustered(),
+      boundaryFlow,
+      moduleFlow,
+    });
+    const ringOf = buildStyle(store, settings, colors).flowBorder?.moduleFlow;
+    expect(ringOf?.([1])).toBeCloseTo(0.12);
+    expect(ringOf?.([])).toBe(0);
+    expect(ringOf?.([9])).toBeUndefined(); // unknown: d3gl sums the members
+  });
+
   it("by flow, shades the fill, the rings and the links like d3gl's flow-borders example", () => {
     const boundaryFlow = new Float32Array([0, 0.1, 0.1, 0.05]);
     const { store, settings } = setup({ ...clustered(), boundaryFlow });
     settings.set("colorBy", "flow");
     const style = buildStyle(store, settings, colors);
+    // { by: "flow" }: d3gl fills a module by its members' summed flow too.
+    expect(style.nodeFill).toMatchObject({ by: "flow" });
     expect(fillOf(style, 0)).toBe("rgb(215, 89, 8)"); // max flow: #D75908
     expect(fillOf(style, 3)).not.toBe(fillOf(style, 0));
     const ring = style.flowBorder?.color;
