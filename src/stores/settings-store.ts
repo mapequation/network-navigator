@@ -3,6 +3,12 @@ import { makeAutoObservable } from "mobx";
 export type NodeSizeBy = "flow" | "degree";
 export type ScaleKind = "linear" | "root";
 /**
+ * Node and link colours: a categorical colour per module, or shades of flow
+ * (node flow for the fill, the flow-border value for the rings, the link
+ * weight for the links), as in d3gl's flow-borders example.
+ */
+export type ColorBy = "module" | "flow";
+/**
  * LOD aggregation source: the Infomap module tree (spatial for a network
  * without one), d3gl's spatial quadtree (nearby nodes), or none.
  */
@@ -21,6 +27,7 @@ export type LayoutBackend = "auto" | "gpu" | "worker";
 export class SettingsStore {
   nodeSizeBy: NodeSizeBy = "flow";
   nodeScale: ScaleKind = "root";
+  colorBy: ColorBy = "module";
   linkScale: ScaleKind = "root";
   labelsVisible = true;
   maxLabels = 50;

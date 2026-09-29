@@ -17,6 +17,16 @@ import type { NetworkStore } from "../stores/network-store";
 import type { ScaleKind, SettingsStore } from "../stores/settings-store";
 
 const DEFAULT_NODE_FILL = "#4878d0";
+// Color by flow: the colour ranges of d3gl's "Flow borders and half-arrows"
+// example (website/src/examples/flow-borders/data.ts), low → high, over
+// [0, max] of this network's values.
+const NODE_FILL_RANGE: [string, string] = ["#EF7518", "#D75908"];
+const NODE_BORDER_RANGE: [string, string] = ["#FFAE38", "#f9a327"];
+const LINK_RANGE: [string, string] = ["#71B2D7", "#418EC7"];
+// Color by module: one neutral ring colour, the module rings' grey.
+const NEUTRAL_RING = "rgb(90,100,120)";
+// Flow-border ring width (px in screen size mode) at the largest boundary flow.
+const RING_MAX_WIDTH = 4;
 const HALF_ARROW_BEND = 0.15; // d3gl#299: half-arrow bend is a chord fraction too
 const LINE_BEND = 0.15;
 // Every layout runs on the layout backend chosen in Settings when it starts
@@ -52,7 +62,7 @@ const ZOOM_EXTENT: [number, number] = [0.002, 200];
 const makeScale = (kind: ScaleKind) =>
   kind === "root" ? scaleSqrt() : scaleLinear();
 
-function buildStyle(
+export function buildStyle(
   store: NetworkStore,
   settings: SettingsStore,
   colors: string[] | null,
@@ -63,6 +73,23 @@ function buildStyle(
   // half-arrow only makes sense with direction; undirected graphs render lines.
   const linkStyle = cur?.directed ? settings.linkStyle : "line";
   const halfArrow = linkStyle === "half-arrow";
+  // Flow colours need node flow; without it the module colours stand in.
+  const flowColors = settings.colorBy === "flow" && !!cur?.graph.nodeFlow;
+  const linkDomain: [number, number] = [0, store.maxLinkFlow || 1];
+  const flowFill = scaleLinear<string>()
+    .domain([0, store.maxFlow || 1])
+    .range(NODE_FILL_RANGE)
+    .clamp(true);
+  const fillOf = (i: number, g: { flow: Float32Array | null }): string =>
+    flowColors
+      ? flowFill(g.flow?.[i] ?? 0)
+      : (colors?.[i] ?? DEFAULT_NODE_FILL);
+  const ring = cur?.boundaryFlow;
+  const ringDomain: [number, number] = [0, store.maxBoundaryFlow || 1];
+  const ringColor = scaleLinear<string>()
+    .domain(ringDomain)
+    .range(NODE_BORDER_RANGE)
+    .clamp(true);
   return {
     directed: cur?.directed,
     sizeMode: settings.sizeMode,
@@ -87,22 +114,46 @@ function buildStyle(
         .range([0.4, 4])
         .clamp(true),
     },
-    // Opacity rises with flow so weak links recede and overlaps read as
-    // density (as in d3gl's directed map of modules).
+    // By module, opacity rises with flow so weak links recede and overlaps
+    // read as density (as in d3gl's directed map of modules). By flow, the
+    // blues of the flow-borders example, over the same per-link value as the
+    // width (the link weight; super-edges their summed weight).
     linkStroke: (settings.linkScale === "root"
       ? scaleSqrt<string>()
       : scaleLinear<string>()
     )
-      .domain([0, store.maxLinkFlow || 1])
-      .range(["rgba(90,100,120,0.12)", "rgba(60,70,90,0.85)"])
+      .domain(linkDomain)
+      .range(
+        flowColors
+          ? LINK_RANGE
+          : ["rgba(90,100,120,0.12)", "rgba(60,70,90,0.85)"],
+      )
       .clamp(true),
+    // TODO: by flow, an aggregate's fill is its members' averaged colour
+    // until d3gl's nodeFill: { by: "flow", scale } lands (the d3gl
+    // per-module flow PR); then colour aggregates by their summed flow.
     nodeFill:
-      occurrences.length || colors
-        ? (i: number) => {
+      occurrences.length || colors || flowColors
+        ? (i: number, g: { flow: Float32Array | null }) => {
             for (const f of occurrences) if (f.idSet.has(i)) return f.color;
-            return colors?.[i] ?? DEFAULT_NODE_FILL;
+            return fillOf(i, g);
           }
         : DEFAULT_NODE_FILL,
+    // Rings only where an in-app Infomap run gave each node's boundary flow.
+    // TODO: an aggregate's ring is its members' summed rings (d3gl's current
+    // behaviour, so a module's own internal boundaries count too) until the
+    // d3gl per-module flowBorder PR lands; then give modules their enter +
+    // exit flow from LoadedNetwork.moduleFlow.
+    flowBorder: ring
+      ? {
+          flow: ring,
+          scale: makeScale(settings.nodeScale)
+            .domain(ringDomain)
+            .range([0, RING_MAX_WIDTH])
+            .clamp(true),
+          color: flowColors ? (v: number) => ringColor(v) : NEUTRAL_RING,
+        }
+      : undefined,
   };
 }
 
@@ -402,6 +453,14 @@ export const NetworkView = observer(function NetworkView() {
         () => discs.get(),
         (landed) => {
           host.dataset.nestedMap = String(landed);
+        },
+        { fireImmediately: true },
+      ),
+      // For the e2e tests: whether the nodes carry flow-border rings.
+      reaction(
+        () => !!style.get().flowBorder,
+        (on) => {
+          host.dataset.flowBorders = String(on);
         },
         { fireImmediately: true },
       ),

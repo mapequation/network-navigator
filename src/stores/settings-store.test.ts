@@ -43,3 +43,9 @@ describe("SettingsStore nested layout", () => {
     expect(settings.layoutBackend).toBe("auto");
   });
 });
+
+describe("SettingsStore colour", () => {
+  it("colours by module by default", () => {
+    expect(new SettingsStore().colorBy).toBe("module");
+  });
+});

@@ -1,7 +1,11 @@
 import { ListBox, NumberField, Select, Slider } from "@heroui/react";
 import { observer } from "mobx-react-lite";
 import { useStores } from "../../stores";
-import type { LayoutBackend, LodMode } from "../../stores/settings-store";
+import type {
+  ColorBy,
+  LayoutBackend,
+  LodMode,
+} from "../../stores/settings-store";
 import { Group, Row, Segmented, Toggle } from "./controls";
 
 function SliderRow({
@@ -79,6 +83,27 @@ export const DisplayPanel = observer(function DisplayPanel() {
             onChange={(v) => settings.set("nodeSizeBy", v)}
           />
         </Row>
+        <Row
+          label="Color by"
+          hint={
+            hasFlow
+              ? "module: a colour per module · flow: shades of node flow, links by weight"
+              : undefined
+          }
+        >
+          <Segmented
+            label="Color by"
+            value={hasFlow ? settings.colorBy : "module"}
+            options={["module", "flow"] as const satisfies ColorBy[]}
+            isDisabled={!hasFlow}
+            onChange={(v) => settings.set("colorBy", v)}
+          />
+        </Row>
+        {!hasFlow && (
+          <p className="text-xs text-neutral-400">
+            Flow colours need node flow: run Infomap first.
+          </p>
+        )}
         <Row label="Radius scale">
           <Segmented
             label="Node radius scale"
