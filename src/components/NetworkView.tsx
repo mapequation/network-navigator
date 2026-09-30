@@ -41,17 +41,45 @@ const LINE_BEND = 0.15;
 // only. Otherwise it's the force layout. fit keeps the camera framed while it
 // streams.
 const LAYOUT = { fit: true } as const;
-// A re-clustering or a Nested layout switch keeps the nodes where they are
-// unless the kind of layout they have (a nested map of the modules, or not)
-// is no longer the kind asked for; then, while the simulation runs, the
-// network is laid out again. (With it off nothing moves the nodes until it's
-// switched back on, which lays the network out anew as set then.) A nested
-// map is laid out from the current positions (d3gl#328) and eased in, so the
-// camera stays. A force layout is laid out as a load does, framed: d3gl has
-// no warm start for it. So with Nested layout off a re-clustering lays
-// nothing out: the new modules regroup the LOD and recolour the nodes where
-// they are. (A states network's re-clustering is a load, see NetworkStore.)
-const RELAYOUT = { nested: { warm: true }, transition: 600 } as const;
+
+/**
+ * The layout after new modules or a Nested layout switch, or null for none.
+ * The nodes stay where they are unless the kind of layout they have (a nested
+ * map of the modules, or not: `have`) is no longer the kind asked for
+ * (`want`); then, while the simulation runs, the layout goes on from where the
+ * nodes are (d3gl#454, `warm`), streamed from its first frame: nothing
+ * restarts from a disc, and nothing is solved out of sight first. (With the
+ * simulation off nothing moves the nodes until it's switched back on, which
+ * lays the network out anew as set then.)
+ *
+ * - A nested map of the (new) modules streams from the positions on screen:
+ *   the nodes glide into their modules' discs as it forms, and it goes to its
+ *   own size, centred where the nodes are. Switched on from a force layout it
+ *   shrinks to about a third of the force layout's width, framed as it goes
+ *   (fit). A re-clustering (`recluster`) streams the same way but keeps the
+ *   camera the user left: a nested map of the old modules has the new one's
+ *   size already, so it stays in view.
+ * - A force layout streams from the nested map and glides out to the force
+ *   model's own scale (about 3× wider) as it converges, framed as it grows.
+ * Either way d3gl eases the nodes from where they are toward each frame of
+ * the solve as it lands, so the switch glides rather than steps.
+ *
+ * So with Nested layout off a re-clustering lays nothing out: the new modules
+ * regroup the LOD and recolour the nodes where they are. (A states network's
+ * re-clustering is a load, see NetworkStore.)
+ */
+export function relayoutOf(
+  want: boolean,
+  have: boolean,
+  simulation: boolean,
+  recluster = false,
+): Omit<NetworkLayoutOptions, "backend"> | null {
+  if (!simulation || want === have) return null;
+  if (!want) return { fit: true, warm: true };
+  return recluster
+    ? { nested: true, warm: true }
+    : { nested: true, warm: true, fit: true };
+}
 // Rings around the modules the LOD cut has opened (d3gl#329): thin and low
 // contrast, context rather than content. They are the discs of a nested map
 // of the modules; without one d3gl rings each module's centroid + extent,
@@ -337,16 +365,20 @@ export const NetworkView = observer(function NetworkView() {
     const layoutAnew = (): void =>
       layout({ ...LAYOUT, nested: settings.nestedLayout });
     /**
-     * After new modules or a Nested layout switch: lays the network out again
-     * if the kind of layout it has isn't the kind asked for and the
-     * simulation runs (see RELAYOUT); otherwise the LOD regroups in place.
+     * After new modules (`recluster`) or a Nested layout switch: goes on with
+     * the layout the network should have now, from where it is (see
+     * relayoutOf); otherwise the LOD regroups in place.
      */
-    const relayout = (): void => {
+    const relayout = (recluster = false): void => {
       const nested = settings.nestedLayout && !!hierarchyOf(store.current);
-      if (!settings.simulation || nested === latest.get().nested) {
-        applyLod(lod.get());
-      } else if (nested) layout(RELAYOUT);
-      else layoutAnew();
+      const next = relayoutOf(
+        nested,
+        latest.get().nested,
+        settings.simulation,
+        recluster,
+      );
+      if (next) layout(next);
+      else applyLod(lod.get());
     };
 
     const show = (): void => {
@@ -382,7 +414,7 @@ export const NetworkView = observer(function NetworkView() {
       // is none of the new ones.
       layoutRun++;
       runInAction(() => latest.set({ nested: false, settled: true }));
-      relayout();
+      relayout(true);
     };
 
     const disposers = [
@@ -435,7 +467,7 @@ export const NetworkView = observer(function NetworkView() {
           else net.stopLayout();
         },
       ),
-      // Nested layout switched: see RELAYOUT. A network without a module
+      // Nested layout switched: see relayoutOf. A network without a module
       // hierarchy has the force layout either way.
       reaction(
         () => settings.nestedLayout,

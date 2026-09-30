@@ -582,7 +582,7 @@ test.describe("Network Navigator smoke", () => {
     await expect(
       page.getByRole("button", { name: "Re-run Infomap" }),
     ).toBeVisible({ timeout: 30_000 });
-    await page.waitForTimeout(1000); // the relayout's transition
+    await page.waitForTimeout(1000); // the relayout streams from the current map
     expect(await settledTransform(page)).toEqual(zoomed);
     await expect(canvas).toHaveAttribute("data-e2e-engine", "first");
 
@@ -689,7 +689,7 @@ test.describe("Network Navigator smoke", () => {
     expect(errors.filter(isFatal)).toEqual([]);
   });
 
-  test("nested layout: switching it re-lays the example out; on, from where it is", async ({
+  test("nested layout: switching it goes on from where the nodes are, both ways", async ({
     page,
   }) => {
     const errors = collectErrors(page);
@@ -697,23 +697,27 @@ test.describe("Network Navigator smoke", () => {
     await loadExample(page);
     await expect(nested).toBeChecked();
     await autoLayoutLanded(page, { nested: true });
+    const map = await settledTransform(page);
 
-    // Off, the example is laid out again: the force layout.
+    // Off, the force layout runs from the map on screen (d3gl#454) and
+    // spreads out to its own scale, about 3× the map's: the camera, framing
+    // it as it grows, ends zoomed out.
     let changes = await watchBusy(page);
     await nested.click({ force: true }); // see the partition test
     await expect(nested).not.toBeChecked();
     await autoLayoutLanded(page, { nested: false });
     expect(await changes()).toBeGreaterThan(0);
     const flat = await settledTransform(page);
+    expect(flat.k).toBeLessThan(map.k * 0.7);
 
-    // Back on, the map is laid out from the current positions and eased in:
-    // the camera stays.
+    // Back on, the map streams from the force layout on screen and shrinks
+    // to its own size: the camera, framing it as it goes, ends zoomed in.
     changes = await watchBusy(page);
     await nested.click({ force: true });
     await expect(nested).toBeChecked();
     await autoLayoutLanded(page, { nested: true });
     expect(await changes()).toBeGreaterThan(0);
-    expect(await settledTransform(page)).toEqual(flat);
+    expect((await settledTransform(page)).k).toBeGreaterThan(flat.k * 1.4);
 
     await screenshot(page, "nested-layout");
     expect(errors.filter(isFatal)).toEqual([]);

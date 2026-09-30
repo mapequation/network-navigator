@@ -3,7 +3,7 @@ import { computeStats } from "../lib/network-stats";
 import type { LoadedNetwork } from "../lib/types";
 import { NetworkStore } from "../stores/network-store";
 import { SettingsStore } from "../stores/settings-store";
-import { buildLod, buildStyle } from "./NetworkView";
+import { buildLod, buildStyle, relayoutOf } from "./NetworkView";
 
 const clustered = (): LoadedNetwork => ({
   kind: "clustered",
@@ -147,5 +147,41 @@ describe("buildStyle colours and flow borders", () => {
     store.addOccurrenceFile({ name: "m.txt", size: 5, text: "gamma" });
     const color = store.occurrenceFiles[0]?.color;
     expect(fillOf(buildStyle(store, settings, colors), 2)).toBe(color);
+  });
+});
+
+describe("relayoutOf", () => {
+  it("lays nothing out while the kind of layout is the one asked for", () => {
+    expect(relayoutOf(true, true, true)).toBeNull();
+    expect(relayoutOf(false, false, true)).toBeNull();
+  });
+
+  it("lays nothing out with the simulation off", () => {
+    expect(relayoutOf(true, false, false)).toBeNull();
+    expect(relayoutOf(false, true, false)).toBeNull();
+  });
+
+  it("goes on from where the nodes are: a nested map, framed as it goes", () => {
+    // Streamed from the positions on screen (d3gl#454): warm, no transition
+    // (that would solve out of sight first). It goes to its own size, about
+    // a third of a force layout's width, and the camera follows it.
+    expect(relayoutOf(true, false, true)).toEqual({
+      nested: true,
+      warm: true,
+      fit: true,
+    });
+  });
+
+  it("a re-clustering streams the new map the same way, but keeps the camera", () => {
+    // From a nested map of the old modules the new one has the same size.
+    expect(relayoutOf(true, false, true, true)).toEqual({
+      nested: true,
+      warm: true,
+    });
+    expect(relayoutOf(false, false, true, true)).toBeNull();
+  });
+
+  it("goes on from where the nodes are: the force layout, framed as it grows", () => {
+    expect(relayoutOf(false, true, true)).toEqual({ fit: true, warm: true });
   });
 });
