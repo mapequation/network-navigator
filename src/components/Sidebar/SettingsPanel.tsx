@@ -230,6 +230,16 @@ export const LodPanel = observer(function LodPanel() {
         onChange={(v) => settings.set("expandPx", v)}
       />
       <SliderRow
+        label="Overlap spacing"
+        value={settings.overlapSpacing}
+        format={(v) => `${v.toFixed(1)}×`}
+        min={1}
+        max={10}
+        step={0.5}
+        isDisabled={off}
+        onChange={(v) => settings.set("overlapSpacing", v)}
+      />
+      <SliderRow
         label="Max aggregate radius"
         value={settings.maxAggregateRadius}
         format={(v) => `${v} px`}

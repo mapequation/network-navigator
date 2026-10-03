@@ -36,6 +36,11 @@ export class SettingsStore {
   /** null = d3gl's tree-adaptive default (opens a module tree as a map of modules). */
   expandPx: number | null = null;
   maxAggregateRadius = 26;
+  /**
+   * d3gl's `lod({ overlapSpacing })` (d3gl#449, temporary, to pick its default): members count as
+   * overlapping until they are this many times their radii apart, so an aggregate opens later.
+   */
+  overlapSpacing = 1;
   declutter = true;
   superEdges = true;
   /** Keep super-edges between an expanded module and still-collapsed ones (d3gl crossLevelEdges). */

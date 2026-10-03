@@ -227,6 +227,7 @@ export function buildLod(
     ...(cutsModules && discs ? { moduleBoundary: MODULE_BOUNDARY } : {}),
     ...(settings.expandPx !== null ? { expandPx: settings.expandPx } : {}),
     maxAggregateRadius: settings.maxAggregateRadius,
+    overlapSpacing: settings.overlapSpacing,
     declutter: settings.declutter,
     superEdges: settings.superEdges,
     crossLevelEdges: settings.crossLevelEdges,
