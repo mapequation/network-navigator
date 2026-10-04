@@ -1,4 +1,4 @@
-import { Alert, Button, Chip, Modal, Switch } from "@heroui/react";
+import { Alert, Button, Chip, Modal, ProgressBar, Switch } from "@heroui/react";
 import { runInAction } from "mobx";
 import { observer } from "mobx-react-lite";
 import { useCallback, useEffect, useState } from "react";
@@ -16,6 +16,7 @@ import {
 import { formatBytes } from "../lib/network-stats";
 import type { LoadedNetwork } from "../lib/types";
 import { useStores } from "../stores";
+import { nextPaint } from "../stores/ui-store";
 import { ConsoleButton, InfomapProgressBar } from "./InfomapConsole";
 
 export const LoadModal = observer(function LoadModal() {
@@ -84,12 +85,19 @@ export const LoadModal = observer(function LoadModal() {
     ui.setLoadOpen(false);
     reset();
   };
-  /** Show a new network, then match the staged metadata files against it. */
-  const finish = (
+  /**
+   * Show a new network, then match the staged metadata files against it. The view then builds the graph,
+   * starts the layout and, with its first frame, the link styles and tables, on the main thread: the dialog
+   * says so (painted before that work starts) and stays open, busy, until the network is on screen
+   * (ui.viewReady, from the view).
+   */
+  const finish = async (
     net: LoadedNetwork,
     metadata: readonly StagedFile[] = [],
     ranInfomap = false,
-  ): void => {
+  ): Promise<void> => {
+    ui.setViewPhase("Laying out and building the view…");
+    await nextPaint();
     // One transaction: views react once to the network and its metadata.
     runInAction(() => {
       store.setNetwork(net);
@@ -97,10 +105,11 @@ export const LoadModal = observer(function LoadModal() {
       // The console keeps only a run that produced this network.
       if (!ranInfomap) ui.clearInfomapRun();
     });
-    close();
   };
-  const fail = (err: unknown): void =>
+  const fail = (err: unknown): void => {
+    ui.setViewPhase(null);
     ui.setLoadError(err instanceof Error ? err.message : String(err));
+  };
 
   const fetchOk = async (url: string): Promise<Response> => {
     const res = await fetch(url);
@@ -120,7 +129,7 @@ export const LoadModal = observer(function LoadModal() {
       ]);
       const net = ftreeToNetwork(ftree, "citation_data.ftree");
       net.moduleNames = new Map(Object.entries(names));
-      finish(net);
+      await finish(net);
     } catch (err) {
       fail(err);
     } finally {
@@ -133,7 +142,7 @@ export const LoadModal = observer(function LoadModal() {
     try {
       const item = await loadInfomapOnline();
       if (!item) throw new Error("No network stored by Infomap Online");
-      finish(ftreeToNetwork(item.text, item.filename));
+      await finish(ftreeToNetwork(item.text, item.filename));
     } catch (err) {
       fail(err);
     } finally {
@@ -161,6 +170,9 @@ export const LoadModal = observer(function LoadModal() {
     }
     setBusy(true);
     setRanInfomap(false);
+    // Parsing runs on the main thread: let the label paint before it starts.
+    ui.setViewPhase("Reading the network…");
+    await nextPaint();
     let error: string | null = null;
     let ran = false;
     try {
@@ -168,11 +180,12 @@ export const LoadModal = observer(function LoadModal() {
         onInfomapStart: (command) => {
           ran = true;
           setRanInfomap(true);
+          ui.setViewPhase(null); // Infomap shows its own progress
           ui.startInfomap(command);
         },
         onLog: ui.onInfomapLog,
       });
-      finish(
+      await finish(
         net,
         files.filter((f) => f.kind === "metadata"),
         ran,
@@ -190,7 +203,8 @@ export const LoadModal = observer(function LoadModal() {
   const hasNetwork = Boolean(store.current);
   // Dismissable with or without a network (e.g. to change Settings before
   // the first load), but not while a load or its Infomap run is in flight.
-  const canDismiss = !ui.infomapRunning && !busy;
+  const loading = busy || ui.viewPhase !== null;
+  const canDismiss = !ui.infomapRunning && !loading;
 
   return (
     <Modal.Backdrop
@@ -316,6 +330,22 @@ export const LoadModal = observer(function LoadModal() {
                 </div>
               </div>
             )}
+            {ui.viewPhase && (
+              // The bar's indeterminate animation is a CSS transform, which the browser runs on the compositor:
+              // it keeps moving while the main thread is busy parsing, laying out and building the view.
+              <div className="flex flex-col gap-1" role="status">
+                <span className="text-xs text-neutral-500">{ui.viewPhase}</span>
+                <ProgressBar
+                  size="sm"
+                  aria-label={ui.viewPhase}
+                  isIndeterminate
+                >
+                  <ProgressBar.Track>
+                    <ProgressBar.Fill />
+                  </ProgressBar.Track>
+                </ProgressBar>
+              </div>
+            )}
             {ui.loadError && (
               // HeroUI's Alert doesn't set an ARIA role itself (verified against
               // its source: AlertRoot spreads `rest` onto a plain div with no
@@ -332,7 +362,7 @@ export const LoadModal = observer(function LoadModal() {
           <Modal.Footer className="flex flex-wrap gap-2">
             <Button
               variant="secondary"
-              isPending={busy}
+              isPending={loading}
               isDisabled={ui.infomapRunning}
               onPress={loadExample}
             >
@@ -340,7 +370,7 @@ export const LoadModal = observer(function LoadModal() {
             </Button>
             <Button
               variant="secondary"
-              isPending={busy}
+              isPending={loading}
               isDisabled={!onlineAvailable || ui.infomapRunning}
               onPress={loadOnline}
             >
@@ -349,10 +379,10 @@ export const LoadModal = observer(function LoadModal() {
             {/* Pending, not disabled, while busy: a disabled button drops
                 focus to <body>, where the dialog's keys stop working. */}
             <Button
-              isPending={busy}
+              isPending={loading}
               isDisabled={
                 (files.length === 0 && !hasNetwork) ||
-                (ui.infomapRunning && !busy)
+                (ui.infomapRunning && !loading)
               }
               onPress={load}
             >

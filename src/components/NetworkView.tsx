@@ -236,7 +236,7 @@ export function buildLod(
 }
 
 export const NetworkView = observer(function NetworkView() {
-  const { network: store, settings } = useStores();
+  const { network: store, settings, ui } = useStores();
   const hostRef = useRef<HTMLDivElement>(null);
   const backend = settings.backend;
 
@@ -382,10 +382,41 @@ export const NetworkView = observer(function NetworkView() {
       else applyLod(lod.get());
     };
 
+    // A load waits in its dialog until its network is on screen (ui.viewPhase). d3gl reports no load phase
+    // or first frame (proposed upstream: d3gl#466), so this watches what it does expose: with LOD on, the engine has a
+    // tree to draw (lodSource); with LOD off it draws on data(). Then two more frames: the frame that draws
+    // the tree, with the view's one-time builds (link styles and tables), has run by then.
+    let readyWatch = 0;
+    const watchFirstFrame = (): void => {
+      if (ui.viewPhase === null) return;
+      const watch = ++readyWatch;
+      let after = -1;
+      const step = (): void => {
+        if (watch !== readyWatch || ui.viewPhase === null) return;
+        if (
+          after < 0 &&
+          (lod.get() === false ||
+            net.lodSource !== "none" ||
+            latest.get().settled)
+        )
+          after = 2;
+        if (after === 0) {
+          ui.viewReady();
+          return;
+        }
+        if (after > 0) after--;
+        requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
+    };
+
     const show = (): void => {
       const cur = store.current;
       const graph = store.built;
-      if (!cur || !graph) return; // cleared: the view is unmounting
+      if (!cur || !graph) {
+        ui.viewReady(); // nothing to wait for
+        return; // cleared: the view is unmounting
+      }
       const reCluster =
         shown !== null && shownTopology === store.topologyVersion;
       shown = cur;
@@ -407,6 +438,7 @@ export const NetworkView = observer(function NetworkView() {
       }
       if (flowFirst) applyStyle(s);
       net.select("nodes", store.searchHighlight);
+      watchFirstFrame();
       if (!reCluster) {
         layoutAnew();
         return;
@@ -528,13 +560,14 @@ export const NetworkView = observer(function NetworkView() {
     ];
 
     return () => {
+      readyWatch++;
       for (const dispose of disposers) dispose();
       host.removeEventListener("dblclick", onDblClick);
       store.zoomTo = null;
       if (store.engine === net) store.engine = null;
       net.destroy();
     };
-  }, [store, settings, backend]);
+  }, [store, settings, ui, backend]);
 
   return <div ref={hostRef} className="absolute inset-0" />;
 });

@@ -17,8 +17,19 @@ function onNextFrame(cb: () => void): void {
   else setTimeout(cb, 16);
 }
 
+/** Resolves once the browser has painted a frame: a label set before this shows before the work after it. */
+export function nextPaint(): Promise<void> {
+  return new Promise((resolve) => onNextFrame(() => setTimeout(resolve, 0)));
+}
+
 export class UiStore {
   loadOpen = true;
+  /**
+   * What a load is doing until its network is on screen ("Reading the network…", then the layout and the
+   * view's one-time builds), shown in the load dialog with an indeterminate bar; null when no load is in
+   * flight. The dialog stays open, busy, until the view has drawn its first frame (viewReady).
+   */
+  viewPhase: string | null = null;
   helpOpen = false;
   consoleOpen = false;
   infomapRunning = false;
@@ -94,6 +105,15 @@ export class UiStore {
   };
   setLoadError = (message: string | null): void => {
     this.loadError = message;
+  };
+  setViewPhase = (phase: string | null): void => {
+    this.viewPhase = phase;
+  };
+  /** The loaded network is on screen: the load is done and its dialog closes. */
+  viewReady = (): void => {
+    if (this.viewPhase === null) return;
+    this.viewPhase = null;
+    this.loadOpen = false;
   };
   startInfomap = (command: string): void => {
     this.infomapRunning = true;
