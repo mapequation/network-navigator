@@ -37,10 +37,10 @@ export class SettingsStore {
   expandPx: number | null = null;
   maxAggregateRadius = 26;
   /**
-   * d3gl's `lod({ declutterSpacing })` (temporary, to pick its default): declutter hides a glyph that
-   * crowds a kept, more important one, with the crowding distance scaled by this factor.
+   * d3gl's `lod({ declutterSpacing })`: declutter hides a glyph whose centre is within this many times
+   * the two glyphs' summed radii of a kept, more important one, so drawn nodes keep their links visible.
    */
-  declutterSpacing = 1;
+  declutterSpacing = 2;
   declutter = true;
   superEdges = true;
   /** Keep super-edges between an expanded module and still-collapsed ones (d3gl crossLevelEdges). */
