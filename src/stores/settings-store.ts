@@ -37,10 +37,10 @@ export class SettingsStore {
   expandPx: number | null = null;
   maxAggregateRadius = 26;
   /**
-   * d3gl's `lod({ overlapSpacing })` (d3gl#449, temporary, to pick its default): members count as
-   * overlapping until they are this many times their radii apart, so an aggregate opens later.
+   * d3gl's `lod({ declutterSpacing })` (temporary, to pick its default): declutter hides a glyph that
+   * crowds a kept, more important one, with the crowding distance scaled by this factor.
    */
-  overlapSpacing = 1;
+  declutterSpacing = 1;
   declutter = true;
   superEdges = true;
   /** Keep super-edges between an expanded module and still-collapsed ones (d3gl crossLevelEdges). */
