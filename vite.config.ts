@@ -5,7 +5,7 @@ import { defineConfig } from "vitest/config";
 import pkg from "./package.json";
 
 export default defineConfig({
-  base: "/navigator2/",
+  base: "/network-navigator/",
   plugins: [react(), tailwindcss()],
   // @mapequation/d3gl is linked from a local d3gl worktree outside this
   // project, so the dev server must be allowed to serve it, and it must not be
