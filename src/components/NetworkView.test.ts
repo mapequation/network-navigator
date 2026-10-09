@@ -117,12 +117,12 @@ describe("buildStyle colours and flow borders", () => {
     expect(buildStyle(store, settings, colors).flowBorder).toBeUndefined();
   });
 
-  it("rings every node by its boundary flow, in one neutral colour by module", () => {
+  it("rings every node by its boundary flow, in a darker shade of its own fill by module", () => {
     const boundaryFlow = new Float32Array([0, 0.1, 0.1, 0.05]);
     const { store, settings } = setup({ ...clustered(), boundaryFlow });
     const style = buildStyle(store, settings, colors);
     expect(style.flowBorder?.flow).toBe(boundaryFlow);
-    expect(typeof style.flowBorder?.color).toBe("string");
+    expect(style.flowBorder?.color).toBeUndefined(); // d3gl darkens the fill
     expect(style.flowBorder?.scale(0)).toBe(0);
     expect(style.flowBorder?.scale(0.1)).toBeCloseTo(4);
     expect(fillOf(style, 2)).toBe("#00a000");

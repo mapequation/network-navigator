@@ -24,8 +24,6 @@ const DEFAULT_NODE_FILL = "#4878d0";
 const NODE_FILL_RANGE: [string, string] = ["#EF7518", "#D75908"];
 const NODE_BORDER_RANGE: [string, string] = ["#FFAE38", "#f9a327"];
 const LINK_RANGE: [string, string] = ["#71B2D7", "#418EC7"];
-// Color by module: one neutral ring colour, the module rings' grey.
-const NEUTRAL_RING = "rgb(90,100,120)";
 // Flow-border ring width (px in screen size mode) at the largest node exit
 // flow, or, without node rings, the largest node flow; a module's ring
 // extrapolates above it.
@@ -209,7 +207,8 @@ export function buildStyle(
     // hierarchy rings by Infomap's own exit flow for it (d3gl#446), from the
     // run or an .ftree's *Links headers: summing its members' rings would
     // count the flow between its own submodules too. Without node rings, a
-    // module without its own flow draws none (d3gl#471).
+    // module without its own flow draws none (d3gl#471). By module, with no
+    // colour given, d3gl rings each glyph in a darker shade of its own fill.
     flowBorder:
       ring || moduleFlow
         ? {
@@ -217,7 +216,7 @@ export function buildStyle(
             scale: ringScale,
             moduleFlow: (path: readonly number[]) =>
               moduleFlow?.get(pathKey(path))?.exitFlow,
-            color: flowColors ? (v: number) => ringColor(v) : NEUTRAL_RING,
+            ...(flowColors ? { color: (v: number) => ringColor(v) } : {}),
           }
         : undefined,
   };
