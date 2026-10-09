@@ -27,7 +27,10 @@ describe("parseFlowLinks", () => {
     expect(Array.from(links.source.subarray(0, 2))).toEqual([1, 2]);
     expect(Array.from(links.target.subarray(0, 2))).toEqual([2, 1]);
     expect(Array.from(links.flow.subarray(0, 2))).toEqual([0.25, 1.11022e-16]);
-    expect(parseFlowLinks("*Edges\n0 7 0.1\n*Links\n7 0 0.2").count).toBe(2);
+    expect(links.undirected).toBe(false);
+    const edges = parseFlowLinks("*Edges\n0 7 0.1\n*Links\n7 0 0.2");
+    expect(edges.count).toBe(2);
+    expect(edges.undirected).toBe(true);
   });
 
   it("grows past its initial capacity", () => {
@@ -68,7 +71,7 @@ const dense = new Map([
 ]);
 
 describe("boundaryFlow", () => {
-  it("adds each cross-module link's flow to both of its ends", () => {
+  it("adds each cross-module arc's flow to its source: the flow leaving the module", () => {
     const tree = toyTree([
       toyModule([0], 0, 0),
       toyModule([1], 0.2, 0.2),
@@ -77,20 +80,31 @@ describe("boundaryFlow", () => {
     const r = boundaryFlow(tree, toyFlow, 3, (id) => dense.get(id));
     expect(r.ok).toBe(true);
     if (!r.ok) return;
-    // 10→20 stays in module 1; 20→30 and 30→10 cross.
-    expect(Array.from(r.node)).toEqual([
-      Math.fround(0.2),
-      Math.fround(0.2),
-      Math.fround(0.4),
-    ]);
-    expect(r.max).toBe(Math.fround(0.4));
+    // 10→20 stays in module 1; 20→30 leaves module 1, 30→10 leaves module 2.
+    expect(Array.from(r.node)).toEqual([0, Math.fround(0.2), Math.fround(0.2)]);
+    expect(r.max).toBe(Math.fround(0.2));
   });
 
-  it("refuses rings that don't add up to a module's enter + exit flow", () => {
+  it("splits a cross-module edge's flow (both ways) between its ends", () => {
+    const tree = toyTree([
+      toyModule([0], 0, 0),
+      toyModule([1], 0.2, 0.2),
+      toyModule([2], 0.2, 0.2),
+    ]);
+    const edges = toyFlow.replace("*Arcs", "*Edges");
+    const r = boundaryFlow(tree, edges, 3, (id) => dense.get(id));
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(Array.from(r.node)).toEqual(
+      [0.1, 0.1, 0.2].map((v) => Math.fround(v)),
+    );
+  });
+
+  it("refuses rings that don't add up to a module's exit flow", () => {
     // As with recorded teleportation: flow crosses without a link.
     const tree = toyTree([
       toyModule([0], 0, 0),
-      toyModule([1], 0.25, 0.25),
+      toyModule([1], 0.2, 0.25),
       toyModule([2], 0.2, 0.2),
     ]);
     const r = boundaryFlow(tree, toyFlow, 3, (id) => dense.get(id));
@@ -119,7 +133,7 @@ describe("boundaryFlow", () => {
 
 /**
  * Through the real Infomap (its node runner), as the app runs it: every
- * bottom module's leaves' rings must add up to the module's enter + exit
+ * bottom module's leaves' rings must add up to the module's exit
  * flow in the JSON tree, within the 6-digit rounding of Infomap's output.
  */
 describe("flow-border rings against Infomap's module flow", () => {
@@ -161,10 +175,10 @@ describe("flow-border rings against Infomap's module flow", () => {
       const m = flows.get(key);
       expect(m, `module ${key}`).toBeDefined();
       if (!m) continue;
-      const want = m.enterFlow + m.exitFlow;
+      const want = m.exitFlow;
       expect(
         Math.abs(got - want),
-        `module ${key}: rings ${got}, enter + exit ${want}`,
+        `module ${key}: rings ${got}, exit ${want}`,
       ).toBeLessThanOrEqual(2e-5 * Math.max(got, want) + 1e-12);
     }
     return sum.size;
@@ -182,6 +196,21 @@ describe("flow-border rings against Infomap's module flow", () => {
     expect(
       expectRingsMatch(
         await cluster("e2e/fixtures/toy.net", { directed: true }),
+      ),
+    ).toBe(2);
+  });
+
+  it.each([
+    ["teleportation to nodes", "--to-nodes", true],
+    ["two levels", "--two-level", true],
+    ["two levels, undirected", "--two-level", false],
+    ["the undirdir flow model", "--flow-model undirdir", false],
+    ["the outdirdir flow model", "--flow-model outdirdir", false],
+    ["the rawdir flow model", "--flow-model rawdir", false],
+  ])("matches with %s", async (_, flags, directed) => {
+    expect(
+      expectRingsMatch(
+        await cluster("e2e/fixtures/toy.net", { directed, flags }),
       ),
     ).toBe(2);
   });

@@ -8,8 +8,8 @@ import type { InfomapTree, InfomapTreeNode, LoadedNetwork } from "./types";
  * moduleLinks on top of the graph's edges, so they would count twice.
  *
  * `flowText` is the same run's flow output (-o flow). With it, a plain
- * network gets each node's boundary flow (its flow-border ring) when that
- * adds up to the tree's module enter/exit flow; see boundaryFlow.
+ * network gets each node's exit flow (its flow-border ring) when that adds
+ * up to the tree's module exit flow; see boundaryFlow.
  */
 export function withClustering(
   net: LoadedNetwork,

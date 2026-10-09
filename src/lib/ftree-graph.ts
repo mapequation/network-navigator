@@ -1,5 +1,6 @@
 import type { ModuleLink } from "@mapequation/d3gl/network";
 import { parseTree } from "@mapequation/infomap-parser";
+import type { ModuleFlow } from "./boundary-flow";
 import { byteLength, computeStats } from "./network-stats";
 import { normalizeModulePath, parseNodePath, pathKey } from "./path-key";
 import type { LoadedNetwork } from "./types";
@@ -56,8 +57,15 @@ export function ftreeToNetwork(
   const target: number[] = [];
   const weight: number[] = [];
   const moduleLinks: ModuleLink[] = [];
+  // Each module's own enter/exit flow, from its `*Links path enterFlow exitFlow …` header.
+  const moduleFlow = new Map<string, ModuleFlow>();
+  let moduleFlowOk = true;
   for (const module of result.modules ?? []) {
     const modPath = normalizeModulePath(module.path);
+    const { enterFlow, exitFlow } = module;
+    if (Number.isFinite(enterFlow) && Number.isFinite(exitFlow))
+      moduleFlow.set(pathKey(modPath), { enterFlow, exitFlow });
+    else moduleFlowOk = false;
     const endpoint = (child: number): number[] => {
       const path = [...modPath, child];
       const key = pathKey(path);
@@ -104,6 +112,7 @@ export function ftreeToNetwork(
     moduleLinks,
     ftree: text,
   };
+  if (moduleFlowOk && moduleFlow.size > 0) net.moduleFlow = moduleFlow;
 
   if (isStates) {
     net.stateIds = stateIds;

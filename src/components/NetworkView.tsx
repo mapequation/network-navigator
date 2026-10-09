@@ -172,11 +172,10 @@ export function buildStyle(
         : colors
           ? (i: number) => colors[i] ?? DEFAULT_NODE_FILL
           : DEFAULT_NODE_FILL,
-    // Rings only where an in-app Infomap run gave each node's boundary flow
-    // (checked against the modules' enter + exit flow). A module of the
-    // hierarchy rings by Infomap's own enter + exit flow for it (d3gl#446):
-    // summing its members' rings would count the flow between its own
-    // submodules too.
+    // Rings show exit flow, only where an in-app Infomap run gave each node's
+    // (checked against the modules' exit flow). A module of the hierarchy
+    // rings by Infomap's own exit flow for it (d3gl#446): summing its
+    // members' rings would count the flow between its own submodules too.
     flowBorder: ring
       ? {
           flow: ring,
@@ -187,7 +186,7 @@ export function buildStyle(
           // its radius does on nodeRadius's, so ring and disc grow together.
           moduleFlow: (path: readonly number[]) => {
             const m = cur?.moduleFlow?.get(pathKey(path));
-            return m ? m.enterFlow + m.exitFlow : undefined;
+            return m?.exitFlow;
           },
           color: flowColors ? (v: number) => ringColor(v) : NEUTRAL_RING,
         }

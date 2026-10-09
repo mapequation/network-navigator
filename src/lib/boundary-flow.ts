@@ -10,6 +10,12 @@ export interface FlowLinks {
   source: Float64Array;
   target: Float64Array;
   flow: Float64Array;
+  /**
+   * The rows came from an `*Edges` section (an undirected flow model): a
+   * row's flow is the flow along the link in both directions together. In an
+   * `*Arcs` section it runs from source to target only.
+   */
+  undirected: boolean;
 }
 
 /** A module's enter and exit flow, as Infomap's JSON tree reports them. */
@@ -30,6 +36,7 @@ export function parseFlowLinks(text: string): FlowLinks {
   let flow = new Float64Array(cap);
   let count = 0;
   let inLinks = false;
+  let undirected = false;
   const len = text.length;
   let pos = 0;
   while (pos < len) {
@@ -42,6 +49,7 @@ export function parseFlowLinks(text: string): FlowLinks {
         head.startsWith("*arcs") ||
         head.startsWith("*edges") ||
         head.startsWith("*links");
+      if (head.startsWith("*edges")) undirected = true;
     } else if (inLinks && c !== 35 /* # */ && end > pos) {
       // "s t f": two integer ids, then the flow (may be in e-notation).
       let i = pos;
@@ -84,7 +92,7 @@ export function parseFlowLinks(text: string): FlowLinks {
     }
     pos = end + 1;
   }
-  return { count, source, target, flow };
+  return { count, source, target, flow, undirected };
 }
 
 /** Every module's enter/exit flow from the JSON tree, by pathKey (root: ""). */
@@ -110,14 +118,15 @@ export type BoundaryFlowResult =
   | { ok: false; reason: string };
 
 /**
- * Per node: the Infomap link flow crossing its bottom module's boundary. For
- * every link s→t with flow f whose endpoints sit in different bottom
- * modules, ring[s] += f and ring[t] += f. Summed over a bottom module's
- * leaves that is the flow leaving plus the flow entering it, which the JSON
- * tree reports as exitFlow + enterFlow; the result is checked against those
- * for every bottom module and refused (ok: false) on any mismatch — as with
- * recorded teleportation or regularization, whose teleportation flow crosses
- * module boundaries without a link.
+ * Per node: the Infomap link flow leaving its bottom module from it (the
+ * node's exit flow). For every link whose endpoints sit in different bottom
+ * modules: an arc s→t with flow f adds f to s; an undirected edge, whose f is
+ * the flow both ways, adds f/2 to each end. Summed over a bottom module's
+ * leaves that is the flow leaving it, which the JSON tree reports as
+ * exitFlow; the result is checked against it for every bottom module and
+ * refused (ok: false) on any mismatch — as with recorded teleportation or
+ * regularization, whose teleportation flow crosses module boundaries without
+ * a link.
  *
  * `denseOf` maps an Infomap node id to the node's dense index (the ids the
  * tree's nodes are keyed by, as withClustering matches them).
@@ -168,8 +177,10 @@ export function boundaryFlow(
     }
     if (bottomOf[s] === bottomOf[t]) continue;
     const f = links.flow[e];
-    ring[s] += f;
-    ring[t] += f;
+    if (links.undirected) {
+      ring[s] += f / 2;
+      ring[t] += f / 2;
+    } else ring[s] += f;
   }
 
   const sum = new Float64Array(bottomKeys.length);
@@ -183,7 +194,7 @@ export function boundaryFlow(
         ok: false,
         reason: `module ${bottomKeys[b]} is missing from the tree`,
       };
-    const want = m.enterFlow + m.exitFlow;
+    const want = m.exitFlow;
     const got = sum[b];
     if (
       Math.abs(got - want) >
@@ -191,7 +202,7 @@ export function boundaryFlow(
     ) {
       return {
         ok: false,
-        reason: `module ${bottomKeys[b]}: its links carry ${got} across its boundary, Infomap reports enter + exit flow ${want}`,
+        reason: `module ${bottomKeys[b]}: its links carry ${got} out of it, Infomap reports exit flow ${want}`,
       };
     }
   }

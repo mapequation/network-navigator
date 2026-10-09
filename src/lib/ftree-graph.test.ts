@@ -11,10 +11,10 @@ const FTREE = `# path flow name node_id
 *Links directed
 *Links root 0 0 1 2
 1 2 0.5
-*Links 1 0 0.1 2 3
+*Links 1 0.15 0.1 2 3
 1 2 0.2
 2 3 0.1
-*Links 2 0 0.2 1 2
+*Links 2 0.05 0.2 1 2
 1 2 0.3
 `;
 
@@ -65,6 +65,16 @@ describe("ftreeToNetwork", () => {
     expect(net.ftree).toBe(FTREE);
   });
 
+  it("reads each module's enter/exit flow from its *Links header", () => {
+    expect(net.moduleFlow).toEqual(
+      new Map([
+        ["", { enterFlow: 0, exitFlow: 0 }],
+        ["1", { enterFlow: 0.15, exitFlow: 0.1 }],
+        ["2", { enterFlow: 0.05, exitFlow: 0.2 }],
+      ]),
+    );
+  });
+
   it("handles the converted example network", () => {
     const text = readFileSync("public/citation_data.ftree", "utf8");
     const example = ftreeToNetwork(text, "citation_data.ftree");
@@ -72,5 +82,9 @@ describe("ftreeToNetwork", () => {
     expect((example.graph.source as number[]).length).toBeGreaterThan(50000);
     expect(example.directed).toBe(true);
     expect(example.isStates).toBe(false);
+    expect(example.moduleFlow?.get("1")).toEqual({
+      enterFlow: 0.0206387,
+      exitFlow: 0.0206387,
+    });
   });
 });

@@ -95,7 +95,7 @@ describe("buildStyle colours and flow borders", () => {
     expect(fillOf(style, 2)).toBe("#00a000");
   });
 
-  it("rings a module by Infomap's enter + exit flow for it, not its members' sum", () => {
+  it("rings a module by Infomap's exit flow for it, not its members' sum", () => {
     const boundaryFlow = new Float32Array([0, 0.1, 0.1, 0.05]);
     const moduleFlow = new Map([
       ["1", { enterFlow: 0.05, exitFlow: 0.07 }],
@@ -107,7 +107,7 @@ describe("buildStyle colours and flow borders", () => {
       moduleFlow,
     });
     const ringOf = buildStyle(store, settings, colors).flowBorder?.moduleFlow;
-    expect(ringOf?.([1])).toBeCloseTo(0.12);
+    expect(ringOf?.([1])).toBe(0.07);
     expect(ringOf?.([])).toBe(0);
     expect(ringOf?.([9])).toBeUndefined(); // unknown: d3gl sums the members
   });
