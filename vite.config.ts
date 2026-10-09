@@ -1,24 +1,11 @@
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
-import { searchForWorkspaceRoot } from "vite";
 import { defineConfig } from "vitest/config";
 import pkg from "./package.json";
 
 export default defineConfig({
   base: "/network-navigator/",
   plugins: [react(), tailwindcss()],
-  // @mapequation/d3gl is linked from a local d3gl worktree outside this
-  // project, so the dev server must be allowed to serve it, and it must not be
-  // pre-bundled (its dist is rebuilt while the dev server runs).
-  server: {
-    fs: {
-      allow: [
-        searchForWorkspaceRoot(process.cwd()),
-        "/Users/daniel/dev/projects/icelab/code/web/d3gl/.claude/worktrees/navigator-test",
-      ],
-    },
-  },
-  optimizeDeps: { exclude: ["@mapequation/d3gl"] },
   define: {
     "import.meta.env.VITE_APP_VERSION": JSON.stringify(pkg.version),
   },
