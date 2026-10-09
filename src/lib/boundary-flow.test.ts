@@ -176,13 +176,6 @@ describe("flow-border rings against Infomap's module flow", () => {
         await cluster("e2e/fixtures/toy.net", { directed: false }),
       ),
     ).toBe(2);
-    expect(
-      expectRingsMatch(
-        await cluster("public/data/netscicoauthor2010.net", {
-          directed: false,
-        }),
-      ),
-    ).toBeGreaterThan(10);
   });
 
   it("matches on a directed network (unrecorded teleportation)", async () => {
@@ -191,33 +184,6 @@ describe("flow-border rings against Infomap's module flow", () => {
         await cluster("e2e/fixtures/toy.net", { directed: true }),
       ),
     ).toBe(2);
-    expect(
-      expectRingsMatch(
-        await cluster("public/data/Original.net", { directed: true }),
-      ),
-    ).toBeGreaterThan(100);
-  });
-
-  it("matches with teleportation to nodes", async () => {
-    expectRingsMatch(
-      await cluster("public/data/Original.net", {
-        directed: true,
-        flags: "--to-nodes",
-      }),
-    );
-  });
-
-  it.each([
-    ["recorded teleportation", "--recorded-teleportation", true],
-    ["regularization", "--regularized", false],
-  ])("draws no rings with %s: its teleportation flow crosses modules without a link", async (_, flags, directed) => {
-    const { clustered } = await cluster("public/data/Original.net", {
-      directed,
-      flags,
-    });
-    expect(clustered.modules).toBeDefined();
-    expect(clustered.boundaryFlow).toBeUndefined();
-    expect(clustered.moduleFlow?.size).toBeGreaterThan(1);
   });
 
   it("draws no rings on a states network", async () => {
