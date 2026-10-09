@@ -26,8 +26,9 @@ const NODE_BORDER_RANGE: [string, string] = ["#FFAE38", "#f9a327"];
 const LINK_RANGE: [string, string] = ["#71B2D7", "#418EC7"];
 // Color by module: one neutral ring colour, the module rings' grey.
 const NEUTRAL_RING = "rgb(90,100,120)";
-// Flow-border ring width (px in screen size mode) at the largest node boundary
-// flow; a module's ring extrapolates above it.
+// Flow-border ring width (px in screen size mode) at the largest node exit
+// flow, or, without node rings, the largest node flow; a module's ring
+// extrapolates above it.
 const RING_NODE_MAX_WIDTH = 4;
 const HALF_ARROW_BEND = 0.15; // d3gl#299: half-arrow bend is a chord fraction too
 const LINE_BEND = 0.15;
@@ -80,17 +81,47 @@ export function relayoutOf(
     ? { nested: true, warm: true }
     : { nested: true, warm: true, fit: true };
 }
-// Rings around the modules the LOD cut has opened (d3gl#329): thin and low
-// contrast, context rather than content. They are the discs of a nested map
-// of the modules; without one d3gl rings each module's centroid + extent,
+// Rings around the modules the LOD cut has opened (d3gl#329), drawn over the
+// links in each module's own colour (d3gl#471). They are the discs of a nested
+// map of the modules; without one d3gl rings each module's centroid + extent,
 // which over other (e.g. force) positions is a tangle of huge rings. So they
 // follow the positions, not the setting: drawn once a nested map of the
 // modules the engine holds has landed, whatever Nested layout is set to now.
-const MODULE_BOUNDARY = { width: 1, color: "rgb(90,100,120)", opacity: 0.35 };
+const MODULE_BOUNDARY = { width: 1, color: "fill", opacity: 0.8 } as const;
 const ZOOM_EXTENT: [number, number] = [0.002, 200];
 
 const makeScale = (kind: ScaleKind) =>
   kind === "root" ? scaleSqrt() : scaleLinear();
+
+/**
+ * Flow → ring width, shared by the flow-border rings (exit flow) and the open
+ * modules' boundaries (enter flow), so the two read on one scale. Not clamped:
+ * a module's ring extrapolates on the nodes' scale, as its radius does on
+ * nodeRadius's, so ring and disc grow together.
+ */
+function ringScaleOf(store: NetworkStore, settings: SettingsStore) {
+  return makeScale(settings.nodeScale)
+    .domain([0, store.maxBoundaryFlow || store.maxFlow || 1])
+    .range([0, RING_NODE_MAX_WIDTH]);
+}
+
+/**
+ * The open-module boundary: as wide as the module's enter flow on the ring
+ * scale (its collapsed ring shows the exit flow), never thinner than the
+ * plain line it is without module flow.
+ */
+function moduleBoundaryOf(store: NetworkStore, settings: SettingsStore) {
+  const flows = store.current?.moduleFlow;
+  if (!flows) return MODULE_BOUNDARY;
+  const scale = ringScaleOf(store, settings);
+  return {
+    ...MODULE_BOUNDARY,
+    width: (path: readonly number[]) => {
+      const m = flows.get(pathKey(path));
+      return m && Math.max(MODULE_BOUNDARY.width, scale(m.enterFlow));
+    },
+  };
+}
 
 export function buildStyle(
   store: NetworkStore,
@@ -115,9 +146,10 @@ export function buildStyle(
       ? flowFill(g.flow?.[i] ?? 0)
       : (colors?.[i] ?? DEFAULT_NODE_FILL);
   const ring = cur?.boundaryFlow;
-  const ringDomain: [number, number] = [0, store.maxBoundaryFlow || 1];
+  const moduleFlow = cur?.moduleFlow;
+  const ringScale = ringScaleOf(store, settings);
   const ringColor = scaleLinear<string>()
-    .domain(ringDomain)
+    .domain(ringScale.domain())
     .range(NODE_BORDER_RANGE)
     .clamp(true);
   return {
@@ -172,25 +204,22 @@ export function buildStyle(
         : colors
           ? (i: number) => colors[i] ?? DEFAULT_NODE_FILL
           : DEFAULT_NODE_FILL,
-    // Rings show exit flow, only where an in-app Infomap run gave each node's
-    // (checked against the modules' exit flow). A module of the hierarchy
-    // rings by Infomap's own exit flow for it (d3gl#446): summing its
-    // members' rings would count the flow between its own submodules too.
-    flowBorder: ring
-      ? {
-          flow: ring,
-          scale: makeScale(settings.nodeScale)
-            .domain(ringDomain)
-            .range([0, RING_NODE_MAX_WIDTH]),
-          // Not clamped: a module's ring extrapolates on the nodes' scale, as
-          // its radius does on nodeRadius's, so ring and disc grow together.
-          moduleFlow: (path: readonly number[]) => {
-            const m = cur?.moduleFlow?.get(pathKey(path));
-            return m?.exitFlow;
-          },
-          color: flowColors ? (v: number) => ringColor(v) : NEUTRAL_RING,
-        }
-      : undefined,
+    // Rings show exit flow. A node rings only where an in-app Infomap run gave
+    // its own (checked against the modules' exit flow). A module of the
+    // hierarchy rings by Infomap's own exit flow for it (d3gl#446), from the
+    // run or an .ftree's *Links headers: summing its members' rings would
+    // count the flow between its own submodules too. Without node rings, a
+    // module without its own flow draws none (d3gl#471).
+    flowBorder:
+      ring || moduleFlow
+        ? {
+            ...(ring ? { flow: ring } : {}),
+            scale: ringScale,
+            moduleFlow: (path: readonly number[]) =>
+              moduleFlow?.get(pathKey(path))?.exitFlow,
+            color: flowColors ? (v: number) => ringColor(v) : NEUTRAL_RING,
+          }
+        : undefined,
   };
 }
 
@@ -223,7 +252,9 @@ export function buildLod(
   const cutsModules = settings.lodMode === "modules" && !!hierarchyOf(cur);
   return {
     source: cutsModules ? "modules" : "spatial",
-    ...(cutsModules && discs ? { moduleBoundary: MODULE_BOUNDARY } : {}),
+    ...(cutsModules && discs
+      ? { moduleBoundary: moduleBoundaryOf(store, settings) }
+      : {}),
     ...(settings.expandPx !== null ? { expandPx: settings.expandPx } : {}),
     maxAggregateRadius: settings.maxAggregateRadius,
     declutter: settings.declutter,

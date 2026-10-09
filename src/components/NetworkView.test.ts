@@ -54,6 +54,39 @@ describe("buildLod module rings", () => {
     expect(lod).not.toHaveProperty("moduleBoundary");
   });
 
+  it("rings each open module in its fill, as wide as its enter flow on the ring scale", () => {
+    const store = new NetworkStore();
+    store.setNetwork({
+      ...clustered(),
+      moduleFlow: new Map([
+        ["1", { enterFlow: 0.4, exitFlow: 0.1 }],
+        ["2", { enterFlow: 0.001, exitFlow: 0.001 }],
+      ]),
+    });
+    const settings = new SettingsStore();
+    settings.set("nodeScale", "linear");
+    const lod = buildLod(store, settings, true);
+    const boundary = lod ? lod.moduleBoundary : undefined;
+    expect(boundary?.color).toBe("fill");
+    const width = boundary?.width;
+    expect(typeof width).toBe("function");
+    if (typeof width !== "function") return;
+    // No node rings: the scale tops out at the largest node flow, 0.4.
+    expect(width([1])).toBeCloseTo(4);
+    expect(width([2])).toBe(1); // never thinner than the plain line
+    expect(width([9])).toBeUndefined(); // no flow: d3gl's constant width
+  });
+
+  it("draws the plain line, in the module fill, without module flow", () => {
+    const { store, settings } = setup(true);
+    const lod = buildLod(store, settings, true);
+    expect(lod ? lod.moduleBoundary : undefined).toEqual({
+      width: 1,
+      color: "fill",
+      opacity: 0.8,
+    });
+  });
+
   it("rings nothing when the LOD doesn't cut the modules", () => {
     const { store, settings } = setup(true);
     settings.set("lodMode", "spatial");
@@ -93,6 +126,17 @@ describe("buildStyle colours and flow borders", () => {
     expect(style.flowBorder?.scale(0)).toBe(0);
     expect(style.flowBorder?.scale(0.1)).toBeCloseTo(4);
     expect(fillOf(style, 2)).toBe("#00a000");
+  });
+
+  it("rings only the modules of an .ftree, by the exit flow in its headers", () => {
+    const moduleFlow = new Map([["1", { enterFlow: 0.05, exitFlow: 0.07 }]]);
+    const { store, settings } = setup({ ...clustered(), moduleFlow });
+    const ring = buildStyle(store, settings, colors).flowBorder;
+    expect(ring).toBeDefined();
+    expect(ring?.flow).toBeUndefined(); // no node has a ring
+    expect(ring?.moduleFlow?.([1])).toBe(0.07);
+    expect(ring?.moduleFlow?.([2])).toBeUndefined(); // d3gl draws none
+    expect(ring?.scale(0.4)).toBeCloseTo(4); // tops out at the largest node flow
   });
 
   it("rings a module by Infomap's exit flow for it, not its members' sum", () => {
