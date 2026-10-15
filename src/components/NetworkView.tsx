@@ -1,6 +1,5 @@
 import {
   type ModuleNode,
-  moduleColors,
   type NetworkLayoutOptions,
   type NetworkLODOptions,
   type NetworkStyle,
@@ -10,6 +9,7 @@ import { scaleLinear, scaleSqrt } from "d3-scale";
 import { computed, observable, reaction, runInAction } from "mobx";
 import { observer } from "mobx-react-lite";
 import { useEffect, useRef } from "react";
+import { c3ModuleColors } from "../lib/c3-module-colors";
 import { fitTransform } from "../lib/fit-transform";
 import { pathKey } from "../lib/path-key";
 import type { LoadedNetwork } from "../lib/types";
@@ -165,13 +165,13 @@ export function buildStyle(
       by: byFlow ? "flow" : "degree",
       scale: makeScale(settings.nodeScale)
         .domain([0, (byFlow ? store.maxFlow : store.maxDegree) || 1])
-        .range([2, 14]),
+        .range([...settings.nodeRadiusRange]),
     },
     linkWidth: {
       by: "weight",
       scale: makeScale(settings.linkScale)
         .domain([0, store.maxLinkFlow || 1])
-        .range([0.4, 4])
+        .range([...settings.linkWidthRange])
         .clamp(true),
     },
     // By module, opacity rises with flow so weak links recede and overlaps
@@ -279,11 +279,21 @@ export const NetworkView = observer(function NetworkView() {
     store.engine = net;
 
     let colorsFor: ArrayLike<ModuleNode> | undefined;
+    let paletteFor: string | undefined;
     let colors: string[] | null = null;
     const colorsOf = (cur: LoadedNetwork | null): string[] | null => {
-      if (cur?.modules !== colorsFor) {
+      const { colorTone: tone, colorHue: hue, colorOffset: offset } = settings;
+      const palette = `${tone}:${hue}:${offset}`;
+      if (cur?.modules !== colorsFor || palette !== paletteFor) {
         colorsFor = cur?.modules;
-        colors = colorsFor ? moduleColors(colorsFor) : null;
+        paletteFor = palette;
+        colors = colorsFor
+          ? c3ModuleColors(colorsFor, cur?.graph.nodeFlow, {
+              hue,
+              ...(tone !== null ? { tone } : {}),
+              ...(offset !== null ? { offset } : {}),
+            })
+          : null;
       }
       return colors;
     };

@@ -14,6 +14,9 @@ importers:
       '@heroui/styles':
         specifier: ^3.2.1
         version: 3.2.1(tailwind-merge@3.4.0)(tailwindcss@4.3.2)
+      '@mapequation/c3':
+        specifier: ^2.0.0
+        version: 2.0.0
       '@mapequation/d3gl':
         specifier: ^0.11.3
         version: 0.11.3(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -248,6 +251,9 @@ packages:
     resolution: {integrity: sha512-D3GqnxTgQI+vsyH56hX5+jwqdVUhvhbpnPurTwbQOSlSQ8mshhNKcRdrZytTy10qiodDwrcjTnndPEAP6UgCzA==, tarball: https://registry.npmjs.org/@luma.gl/webgl/-/webgl-9.4.2.tgz}
     peerDependencies:
       '@luma.gl/core': ~9.4.0
+
+  '@mapequation/c3@2.0.0':
+    resolution: {integrity: sha512-0JbRo3feWHt+Oe/Vb0kp2R2NT2FcPyG/MW8mIT8L942hRtTWTIxlXd66bn+ezCtQlYQTgJDmPDSwV3nm95fOsQ==, tarball: https://registry.npmjs.org/@mapequation/c3/-/c3-2.0.0.tgz}
 
   '@mapequation/d3gl@0.11.3':
     resolution: {integrity: sha512-4REdOZuOL6BQ03CHM0wsHgsEogK3r3zXdNC4CffjcNrFpszqOE1mTcWRwH9KeZDaCrSAcaL36tK2Xl+O5dTkgA==, tarball: https://registry.npmjs.org/@mapequation/d3gl/-/d3gl-0.11.3.tgz}
@@ -837,6 +843,10 @@ packages:
 
   d3-path@3.1.0:
     resolution: {integrity: sha512-p3KP5HCf/bvjBSSKuXid6Zqijx7wIfNW+J/maPs+iwR35at5JCbLUT0LzF1cnjbCHWhqzQTIN2Jpe8pRebIEFQ==, tarball: https://registry.npmjs.org/d3-path/-/d3-path-3.1.0.tgz}
+    engines: {node: '>=12'}
+
+  d3-scale-chromatic@3.1.0:
+    resolution: {integrity: sha512-A3s5PWiZ9YCXFye1o246KoscMWqf8BsD9eRiJ3He7C9OBaxKhAd5TFCdEx/7VbKtxxTsu//1mMJFrEt572cEyQ==, tarball: https://registry.npmjs.org/d3-scale-chromatic/-/d3-scale-chromatic-3.1.0.tgz}
     engines: {node: '>=12'}
 
   d3-scale@4.0.2:
@@ -1567,6 +1577,11 @@ snapshots:
       '@math.gl/types': 4.1.0
       '@probe.gl/env': 4.1.2
 
+  '@mapequation/c3@2.0.0':
+    dependencies:
+      d3-color: 3.1.0
+      d3-scale-chromatic: 3.1.0
+
   '@mapequation/d3gl@0.11.3(react-dom@19.2.7(react@19.2.7))(react@19.2.7)':
     dependencies:
       '@luma.gl/core': 9.4.2
@@ -2055,6 +2070,11 @@ snapshots:
       d3-color: 3.1.0
 
   d3-path@3.1.0: {}
+
+  d3-scale-chromatic@3.1.0:
+    dependencies:
+      d3-color: 3.1.0
+      d3-interpolate: 3.0.1
 
   d3-scale@4.0.2:
     dependencies:

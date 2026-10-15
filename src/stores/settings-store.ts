@@ -1,3 +1,4 @@
+import type { SchemeName, ToneName } from "@mapequation/c3";
 import { makeAutoObservable } from "mobx";
 
 export type NodeSizeBy = "flow" | "degree";
@@ -8,6 +9,8 @@ export type ScaleKind = "linear" | "root";
  * weight for the links), as in d3gl's flow-borders example.
  */
 export type ColorBy = "module" | "flow";
+/** c3's hue source for the module colours: the OKLCH hue circle or a d3 colour scheme. */
+export type ColorHue = "Oklch" | SchemeName;
 /**
  * LOD aggregation source: the Infomap module tree (spatial for a network
  * without one), d3gl's spatial quadtree (nearby nodes), or none.
@@ -28,6 +31,19 @@ export class SettingsStore {
   nodeSizeBy: NodeSizeBy = "flow";
   nodeScale: ScaleKind = "root";
   colorBy: ColorBy = "module";
+  /**
+   * Module colours from c3's hierarchy(): its tone (null = c3's default:
+   * strong, or inferred from a scheme), hue source, and the offset of the
+   * first colour on it in degrees (null = c3's default: 245 on the circle,
+   * a scheme's start).
+   */
+  colorTone: ToneName | null = null;
+  colorHue: ColorHue = "Oklch";
+  colorOffset: number | null = null;
+  /** Node radius [min, max] in the sizeMode's units (px in screen mode). */
+  nodeRadiusRange: [number, number] = [4, 14];
+  /** Link width [min, max] in the sizeMode's units (px in screen mode). */
+  linkWidthRange: [number, number] = [0.4, 4];
   linkScale: ScaleKind = "root";
   labelsVisible = true;
   maxLabels = 50;

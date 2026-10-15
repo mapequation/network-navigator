@@ -512,7 +512,7 @@ test.describe("Network Navigator smoke", () => {
     // types no text: Space switches it), and a click on the backdrop
     // dismisses it.
     const nested = page.getByRole("switch", { name: "Nested layout" });
-    await page.keyboard.press("Tab");
+    await nested.focus();
     await expect(nested).toBeFocused();
     await page.keyboard.press("Space");
     await expect(nested).not.toBeChecked();

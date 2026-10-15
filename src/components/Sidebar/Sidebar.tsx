@@ -10,7 +10,13 @@ import { MetadataOverlap } from "./MetadataOverlap";
 import { ModulesPanel } from "./ModulesPanel";
 import { Search } from "./Search";
 import { SelectedNode } from "./SelectedNode";
-import { DisplayPanel, LodPanel, RenderingPanel } from "./SettingsPanel";
+import {
+  ColorPanel,
+  DisplayPanel,
+  LayoutPanel,
+  LodPanel,
+  RenderingPanel,
+} from "./SettingsPanel";
 
 export const Sidebar = observer(function Sidebar() {
   const { network: store, ui } = useStores();
@@ -55,8 +61,14 @@ export const Sidebar = observer(function Sidebar() {
         </>
       )}
       {/* Settings with or without a network: set before a load, they apply to it. */}
+      <Section title="Color">
+        <ColorPanel />
+      </Section>
       <Section title="Display">
         <DisplayPanel />
+      </Section>
+      <Section title="Layout">
+        <LayoutPanel />
       </Section>
       <Section title="Level of detail">
         <LodPanel />
