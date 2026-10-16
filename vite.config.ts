@@ -1,11 +1,21 @@
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
+import { searchForWorkspaceRoot } from "vite";
 import { defineConfig } from "vitest/config";
 import pkg from "./package.json";
 
 export default defineConfig({
   base: "/network-navigator/",
   plugins: [react(), tailwindcss()],
+  server: {
+    fs: {
+      allow: [
+        searchForWorkspaceRoot(process.cwd()),
+        "/Users/daniel/dev/projects/icelab/code/web/d3gl/.claude/worktrees/try-state-networks",
+      ],
+    },
+  },
+  optimizeDeps: { exclude: ["@mapequation/d3gl"] },
   define: {
     "import.meta.env.VITE_APP_VERSION": JSON.stringify(pkg.version),
   },
