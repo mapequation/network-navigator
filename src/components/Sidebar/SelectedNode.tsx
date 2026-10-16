@@ -13,7 +13,11 @@ export const SelectedNode = observer(function SelectedNode() {
     );
 
   const rows: [string, string][] = [["Name", sel.name]];
-  if (sel.aggregate) rows.push(["Nodes", sel.ids.length.toLocaleString()]);
+  if (sel.aggregate)
+    rows.push([
+      sel.physical ? "State nodes" : "Nodes",
+      sel.ids.length.toLocaleString(),
+    ]);
   if (sel.path) rows.push(["Module", sel.path.join(":") || "root"]);
   if (sel.flow !== null) rows.push(["Flow", sel.flow.toExponential(2)]);
   if (sel.physicalId !== null) rows.push(["Node id", String(sel.physicalId)]);

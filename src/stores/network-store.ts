@@ -10,11 +10,15 @@ import { withClustering } from "../lib/apply-ftree";
 import { parseNodeNames } from "../lib/node-names";
 import { OCCURRENCE_COLORS } from "../lib/occurrence-colors";
 import { pathKey } from "../lib/path-key";
+import { statesOf } from "../lib/state-ids";
 import type { InfomapTree, LoadedNetwork } from "../lib/types";
 
 export interface SelectionInfo {
+  /** Node ids (a state network's state ids): the node, or an aggregate's members. */
   ids: number[];
   aggregate: boolean;
+  /** A physical node of a state network: named and weighed as itself, `ids` its state nodes. */
+  physical: boolean;
   name: string;
   path: number[] | null;
   flow: number | null;
@@ -72,6 +76,21 @@ function maxLinkFlowOf(net: LoadedNetwork, maxLeafWeight: number): number {
   return max;
 }
 
+/** The largest node flow, degree and link weight of a built graph. */
+function maximaOf(g: NetworkGraph): {
+  flow: number;
+  degree: number;
+  weight: number;
+} {
+  let flow = 0;
+  let degree = 0;
+  let weight = 0;
+  if (g.flow) for (const f of g.flow) flow = Math.max(flow, f);
+  for (const d of g.csr.degree) degree = Math.max(degree, d);
+  for (const w of g.weight) weight = Math.max(weight, w);
+  return { flow, degree, weight };
+}
+
 /** Module pathKey → highest-flow leaf, over every module prefix. O(nodes · depth). */
 function topLeaves(net: LoadedNetwork): Map<string, number> {
   const out = new Map<string, number>();
@@ -104,6 +123,11 @@ export class NetworkStore {
   maxLinkFlow = 0;
   /** Largest node boundary flow (LoadedNetwork.boundaryFlow): the flow-border rings' domain. */
   maxBoundaryFlow = 0;
+  /**
+   * A state network's physical graph's largest node flow (its state nodes'
+   * summed flow), degree and link weight: the physical view's scale domains.
+   */
+  physicalMax: { flow: number; degree: number; weight: number } | null = null;
   /**
    * Bumped on every load (setNetwork): the view takes the network as new data,
    * lays it out from scratch and frames it. A re-clustering of a plain network
@@ -153,24 +177,21 @@ export class NetworkStore {
   /** Make `net` (built as `g`) current and reset everything derived from it. */
   private adopt(net: LoadedNetwork, g: NetworkGraph): void {
     this.built = g;
-    this.builtState =
-      net.stateGraph && net.modules ? buildStateGraph(net.stateGraph) : null;
+    this.builtState = net.stateGraph ? buildStateGraph(net.stateGraph) : null;
     this.moduleLeafCache.clear();
     this.current = net;
     this.selection = null;
     this.searchHighlight = null;
     this.occurrenceFiles = [];
     this.breadcrumb = [];
-    let maxFlow = 0;
-    let maxDegree = 0;
-    let maxWeight = 0;
-    if (g.flow) for (const f of g.flow) maxFlow = Math.max(maxFlow, f);
-    for (const d of g.csr.degree) maxDegree = Math.max(maxDegree, d);
-    for (const w of g.weight) maxWeight = Math.max(maxWeight, w);
-    this.maxFlow = maxFlow;
-    this.maxDegree = maxDegree;
-    this.maxWeight = maxWeight;
-    this.maxLinkFlow = maxLinkFlowOf(net, maxWeight);
+    const max = maximaOf(g);
+    this.maxFlow = max.flow;
+    this.maxDegree = max.degree;
+    this.maxWeight = max.weight;
+    this.maxLinkFlow = maxLinkFlowOf(net, max.weight);
+    this.physicalMax = this.builtState
+      ? maximaOf(this.builtState.physical)
+      : null;
     let maxBoundaryFlow = 0;
     for (const v of net.boundaryFlow ?? [])
       if (v > maxBoundaryFlow) maxBoundaryFlow = v;
@@ -203,6 +224,7 @@ export class NetworkStore {
     this.maxWeight = 0;
     this.maxLinkFlow = 0;
     this.maxBoundaryFlow = 0;
+    this.physicalMax = null;
     this.moduleLeafCache.clear();
     this.moduleTopLeaf = new Map();
   }
@@ -218,8 +240,8 @@ export class NetworkStore {
     // A partition the network was loaded with no longer produced these modules.
     net.sources = cur.sources.filter((f) => f.kind === "network");
     if (cur.isStates) {
-      // A clustered states network is shown as a state network — new data for
-      // the engine, so this is a load.
+      // A state network takes its modules with the state graph
+      // (stateNetwork()) — new data for the engine, so this is a load.
       this.setNetwork(net);
     } else {
       // Same nodes and edges: share every buffer of the built graph (no CSR
@@ -241,20 +263,46 @@ export class NetworkStore {
     this.breadcrumb = [];
   }
 
+  /**
+   * Select a hit: a node, an aggregate of `members`, or, in a state network,
+   * the physical node `physical` (the physical view's node, or a both-view
+   * container), whose state nodes are its members (whatever the hit's own
+   * `members`, which in the physical view are physical ids).
+   */
   selectFromHit(
     id: number,
     aggregate: boolean,
     members: number[] | null,
+    physical: number | null = null,
   ): void {
     const cur = this.current;
     if (!cur) return;
     const nodeFlow = cur.graph.nodeFlow as Float32Array | undefined;
+    const sg = this.builtState;
+    if (physical !== null && sg) {
+      const ids = statesOf(sg.physicalToState, physical);
+      const path = cur.modules
+        ? commonPathPrefix(ids.map((i) => cur.modules?.[i]?.path ?? []))
+        : null;
+      this.selection = {
+        ids,
+        aggregate: true,
+        physical: true,
+        name: cur.physicalNames?.[physical] ?? String(physical),
+        path,
+        flow: sg.physical.flow?.[physical] ?? null,
+        physicalId: cur.physicalIds?.[ids[0] ?? -1] ?? null,
+      };
+      if (path) this.breadcrumb = path;
+      return;
+    }
     if (!aggregate) {
       const record = cur.modules?.[id];
       const path = record ? Array.from(record.path) : null;
       this.selection = {
         ids: [id],
         aggregate: false,
+        physical: false,
         name: cur.names[id] ?? String(id),
         path,
         flow: nodeFlow ? nodeFlow[id] : null,
@@ -271,6 +319,7 @@ export class NetworkStore {
     this.selection = {
       ids,
       aggregate: true,
+      physical: false,
       name: this.moduleName(path, ids),
       path,
       flow,

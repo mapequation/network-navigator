@@ -116,10 +116,15 @@ export function ftreeToNetwork(
 
   if (isStates) {
     net.stateIds = stateIds;
+    // A state row names its physical node.
     const physicalIndex = new Map<number, number>();
-    for (const id of physicalIds) {
-      if (!physicalIndex.has(id)) physicalIndex.set(id, physicalIndex.size);
-    }
+    const physicalNames: string[] = [];
+    physicalIds.forEach((id, i) => {
+      if (physicalIndex.has(id)) return;
+      physicalIndex.set(id, physicalIndex.size);
+      physicalNames.push(names[i] ?? String(id));
+    });
+    net.physicalNames = physicalNames;
     net.stateGraph = {
       stateCount: nodes.length,
       stateToPhysical: physicalIds.map((id) => physicalIndex.get(id) ?? 0),

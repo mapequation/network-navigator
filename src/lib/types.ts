@@ -58,10 +58,12 @@ export interface LoadedNetwork {
   isStates: boolean;
   /** Leaf graph (state-node graph when isStates). Rendered via buildGraph(). */
   graph: BuildGraphInput;
-  /** Present when isStates — enables stateNetwork()/view() once clustered. */
+  /** Present when isStates: the engine shows it through stateNetwork()/view(). */
   stateGraph?: BuildStateGraphInput;
   /** Display name per dense node index (state names when isStates). */
   names: string[];
+  /** States only: display name per dense physical node (stateGraph's physical index). */
+  physicalNames?: string[];
   /**
    * The id Infomap keys each node by, per dense index (for states: the state's
    * physical id). Absent when the file has none: an edge list with non-integer

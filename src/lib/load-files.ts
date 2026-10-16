@@ -54,6 +54,7 @@ export function networkToLoaded(
       graph: parsed.graph,
       stateGraph: parsed.stateGraph,
       names: parsed.names,
+      physicalNames: parsed.physicalNames,
       physicalIds: parsed.physicalIds,
       stateIds: parsed.stateIds,
       networkText: text,

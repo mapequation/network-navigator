@@ -35,6 +35,10 @@ describe("parseStates", () => {
     expect(parsed.names).toEqual(["alpha-in", "alpha-out", "beta", "gamma-x"]);
   });
 
+  it("names the physical nodes by their dense index", () => {
+    expect(parsed.physicalNames).toEqual(["alpha", "beta", "gamma"]);
+  });
+
   it("builds the flat state-level graph from links", () => {
     expect(parsed.graph.nodeCount).toBe(4);
     expect(Array.from(parsed.graph.source as number[])).toEqual([0, 1, 2]);

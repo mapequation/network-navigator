@@ -50,7 +50,11 @@ export const Sidebar = observer(function Sidebar() {
             <Search />
           </Section>
           <Section
-            title={store.selection?.aggregate ? "Selected module" : "Selection"}
+            title={
+              store.selection?.aggregate && !store.selection.physical
+                ? "Selected module"
+                : "Selection"
+            }
           >
             <SelectedNode />
             <Distributions />

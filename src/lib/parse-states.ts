@@ -8,6 +8,8 @@ export interface ParsedStates {
   /** Flat state-level graph for raw rendering (same edges, state nodes as nodes). */
   graph: BuildGraphInput;
   names: string[];
+  /** Name per dense physical node (the state graph's physical index). */
+  physicalNames: string[];
   physicalIds: number[];
   stateIds: number[];
 }
@@ -84,8 +86,11 @@ export function parseStates(
   });
 
   const physicalIndex = new Map<number, number>();
+  const densePhysicalNames: string[] = [];
   for (const id of physicalIds) {
-    if (!physicalIndex.has(id)) physicalIndex.set(id, physicalIndex.size);
+    if (physicalIndex.has(id)) continue;
+    physicalIndex.set(id, physicalIndex.size);
+    densePhysicalNames.push(physicalNames.get(id) ?? String(id));
   }
 
   return {
@@ -100,6 +105,7 @@ export function parseStates(
     },
     graph: { nodeCount: stateIds.length, source, target, weight, directed },
     names,
+    physicalNames: densePhysicalNames,
     physicalIds,
     stateIds,
   };

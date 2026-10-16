@@ -2,17 +2,22 @@ import { type HierarchyOptions, hierarchy } from "@mapequation/c3";
 import type { ModuleNode } from "@mapequation/d3gl/network";
 import { pathKey } from "./path-key";
 
+/** A module's colour by its path (undefined: not a module of the hierarchy). */
+export type ModuleColor = (path: readonly number[]) => string | undefined;
+
 /**
- * Per-node colours (indexed by node `id`) from c3's `hierarchy()`: each node
- * takes the colour of its enclosing module (`path` minus the final rank), as
- * d3gl's moduleColors does. A module's size is its members' summed node flow,
- * or its member count when the network has no flow.
+ * Module colours from c3's `hierarchy()`, for d3gl's
+ * `nodeFill: { by: "module", color }`: d3gl asks it once per module and gives
+ * each node its enclosing module's colour (`path` minus the final rank). A
+ * module's size is its members' summed node flow (`nodeFlow` indexed by node
+ * `id`), or its member count when the network has no flow. For a state
+ * network the records and the flow are the state nodes'.
  */
-export function c3ModuleColors(
+export function c3ModuleColor(
   modules: ArrayLike<ModuleNode>,
   nodeFlow: ArrayLike<number> | undefined,
   options: HierarchyOptions = {},
-): string[] {
+): ModuleColor {
   const sizes = new Map<string, { path: number[]; flow: number }>();
   for (let r = 0; r < modules.length; r++) {
     const node = modules[r];
@@ -26,13 +31,5 @@ export function c3ModuleColors(
       else sizes.set(key, { path: path.slice(0, k), flow: w });
     }
   }
-  const colorOf = hierarchy([...sizes.values()], options);
-  const out = new Array<string>(modules.length);
-  for (let r = 0; r < modules.length; r++) {
-    const node = modules[r];
-    if (!node) continue;
-    const color = colorOf(Array.from(node.path).slice(0, -1));
-    if (color) out[node.id] = color;
-  }
-  return out;
+  return hierarchy([...sizes.values()], options);
 }

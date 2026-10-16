@@ -104,7 +104,7 @@ describe("withClustering", () => {
 
   it("matches state trees by state id", () => {
     const states = networkToLoaded(
-      '*Vertices 2\n1 "a"\n2 "b"\n*States\n1 1\n2 1\n3 2\n*Links\n1 3 1\n3 2 1\n',
+      '*Vertices 2\n1 "a"\n2 "b"\n*States\n1 1 "a-in"\n2 1 "a-out"\n3 2\n*Links\n1 3 1\n3 2 1\n',
       "toy_states.net",
     );
     const out = withClustering(
@@ -123,6 +123,9 @@ describe("withClustering", () => {
     expect(Array.from(out.stateGraph?.nodeFlow as Float32Array)).toEqual(
       [0.3, 0.5, 0.2].map((v) => Math.fround(v)),
     );
+    // Infomap names states by their physical node; the file's names stay.
+    expect(out.names).toEqual(["a-in", "a-out", "b"]);
+    expect(out.physicalNames).toEqual(["a", "b"]);
   });
 
   it("does not mutate the input", () => {

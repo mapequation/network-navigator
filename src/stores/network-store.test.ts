@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { networkToLoaded } from "../lib/load-files";
 import { computeStats } from "../lib/network-stats";
 import type { LoadedNetwork } from "../lib/types";
 import { NetworkStore } from "./network-store";
@@ -191,6 +192,66 @@ describe("NetworkStore", () => {
     expect(store.topologyVersion).toBe(version);
     store.setNetwork(toy());
     expect(store.topologyVersion).toBe(version + 1);
+  });
+
+  it("builds a raw state network's state graph, and selects a physical node as itself", () => {
+    // Four state nodes over three physical nodes: alpha {0, 1}, beta {2}, gamma {3}.
+    const text = `*Vertices 3
+1 "alpha"
+2 "beta"
+3 "gamma"
+*States
+1 1 "alpha-in"
+2 1 "alpha-out"
+3 2
+4 3
+*Links
+1 3 1
+3 2 1
+2 4 2
+4 1 1
+`;
+    const raw = networkToLoaded(text, "toy_states.net");
+    const store = new NetworkStore();
+    store.setNetwork(raw);
+    expect(store.builtState?.physicalCount).toBe(3);
+    expect(store.physicalMax?.flow).toBe(0); // raw: no flow
+
+    store.selectFromHit(0, false, [0], 0); // the physical view's alpha
+    expect(store.selection).toMatchObject({
+      ids: [0, 1],
+      aggregate: true,
+      physical: true,
+      name: "alpha",
+      flow: null,
+      physicalId: 1,
+    });
+    store.selectFromHit(0, false, null); // the state view's alpha-in
+    expect(store.selection).toMatchObject({
+      name: "alpha-in",
+      physical: false,
+    });
+
+    // Clustered: both-view containers (id stateCount + p), weighed by flow.
+    const nodeFlow = new Float32Array([0.3, 0.3, 0.1, 0.3]);
+    store.setNetwork({
+      ...raw,
+      kind: "clustered",
+      graph: { ...raw.graph, nodeFlow },
+      stateGraph: raw.stateGraph && { ...raw.stateGraph, nodeFlow },
+      modules: [
+        { id: 0, path: [2, 1] },
+        { id: 1, path: [1, 1] },
+        { id: 2, path: [1, 2] },
+        { id: 3, path: [2, 2] },
+      ],
+    });
+    expect(store.physicalMax?.flow).toBeCloseTo(0.6, 5);
+    store.selectFromHit(4, true, [0, 1], 0);
+    expect(store.selection?.flow).toBeCloseTo(0.6, 5);
+    expect(store.selection?.path).toEqual([]); // alpha spans modules 2 and 1
+    store.selectFromHit(5, true, [2], 1);
+    expect(store.selection).toMatchObject({ name: "beta", path: [1] });
   });
 
   it("resets all network-derived state on clear", () => {

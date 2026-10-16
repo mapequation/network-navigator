@@ -1,5 +1,7 @@
 import {
   type ModuleNode,
+  type NetworkGraph,
+  type NetworkHit,
   type NetworkLayoutOptions,
   type NetworkLODOptions,
   type NetworkStyle,
@@ -9,9 +11,10 @@ import { scaleLinear, scaleSqrt } from "d3-scale";
 import { computed, observable, reaction, runInAction } from "mobx";
 import { observer } from "mobx-react-lite";
 import { useEffect, useRef } from "react";
-import { c3ModuleColors } from "../lib/c3-module-colors";
+import { c3ModuleColor, type ModuleColor } from "../lib/c3-module-colors";
 import { fitTransform } from "../lib/fit-transform";
 import { pathKey } from "../lib/path-key";
+import { physicalModule, viewIds } from "../lib/state-ids";
 import type { LoadedNetwork } from "../lib/types";
 import { useStores } from "../stores";
 import type { NetworkStore } from "../stores/network-store";
@@ -87,6 +90,9 @@ export function relayoutOf(
 // modules the engine holds has landed, whatever Nested layout is set to now.
 const MODULE_BOUNDARY = { width: 1, color: "fill", opacity: 0.8 } as const;
 const ZOOM_EXTENT: [number, number] = [0.002, 200];
+// Longest a node label is drawn, in screen px: longer names end in "…" and
+// show in full while their node is hovered (d3gl#496).
+const LABEL_MAX_WIDTH = 160;
 
 const makeScale = (kind: ScaleKind) =>
   kind === "root" ? scaleSqrt() : scaleLinear();
@@ -121,10 +127,15 @@ function moduleBoundaryOf(store: NetworkStore, settings: SettingsStore) {
   };
 }
 
+/**
+ * The style. `color` is the module colour (c3ModuleColor) of the modules the
+ * engine holds — a plain network's, given to data(), or a state network's,
+ * given to stateNetwork() — or null without modules.
+ */
 export function buildStyle(
   store: NetworkStore,
   settings: SettingsStore,
-  colors: string[] | null,
+  color: ModuleColor | null,
 ): NetworkStyle {
   const cur = store.current;
   const occurrences = store.occurrenceFiles.filter((f) => f.enabled);
@@ -134,15 +145,45 @@ export function buildStyle(
   const halfArrow = linkStyle === "half-arrow";
   // Flow colours need node flow; without it the module colours stand in.
   const flowColors = settings.colorBy === "flow" && !!cur?.graph.nodeFlow;
-  const linkDomain: [number, number] = [0, store.maxLinkFlow || 1];
+  // A state network's physical view draws its physical graph: the scales span
+  // that graph's flow, degree and link weights. (The both view draws the
+  // state nodes and links.)
+  const sg = cur?.isStates ? store.builtState : null;
+  const physical =
+    sg && settings.stateView === "physical" ? store.physicalMax : null;
+  const maxFlow = physical ? physical.flow : store.maxFlow;
+  const maxDegree = physical ? physical.degree : store.maxDegree;
+  const maxLinkFlow = physical ? physical.weight : store.maxLinkFlow;
+  const linkDomain: [number, number] = [0, maxLinkFlow || 1];
   const flowFill = scaleLinear<string>()
-    .domain([0, store.maxFlow || 1])
+    .domain([0, maxFlow || 1])
     .range(NODE_FILL_RANGE)
     .clamp(true);
-  const fillOf = (i: number, g: { flow: Float32Array | null }): string =>
-    flowColors
-      ? flowFill(g.flow?.[i] ?? 0)
-      : (colors?.[i] ?? DEFAULT_NODE_FILL);
+  // Node i's module colour, as d3gl's { by: "module" } gives it: a node's
+  // enclosing module's, a state network's physical node its first module's.
+  const modules = cur?.modules;
+  const moduleFillOf = (i: number, g: NetworkGraph): string => {
+    if (!color || !modules) return DEFAULT_NODE_FILL;
+    const path =
+      sg && g === sg.physical
+        ? physicalModule(sg.physicalToState, i, modules)
+        : Array.from(modules[i]?.path ?? []).slice(0, -1);
+    return color(path) ?? DEFAULT_NODE_FILL;
+  };
+  const fillOf = (i: number, g: NetworkGraph): string =>
+    flowColors ? flowFill(g.flow?.[i] ?? 0) : moduleFillOf(i, g);
+  // Occurrence ids are state ids in a state network: its physical graph's
+  // nodes take the colour of a file that holds one of their state nodes.
+  const stateOccurrences = occurrences.map((f) => ({
+    color: f.color,
+    ids: f.idSet,
+  }));
+  const physicalOccurrences = sg
+    ? occurrences.map((f) => ({
+        color: f.color,
+        ids: new Set(viewIds(f.ids, "physical", sg.stateToPhysical)),
+      }))
+    : stateOccurrences;
   const ring = cur?.boundaryFlow;
   const moduleFlow = cur?.moduleFlow;
   const ringScale = ringScaleOf(store, settings);
@@ -164,13 +205,13 @@ export function buildStyle(
     nodeRadius: {
       by: byFlow ? "flow" : "degree",
       scale: makeScale(settings.nodeScale)
-        .domain([0, (byFlow ? store.maxFlow : store.maxDegree) || 1])
+        .domain([0, (byFlow ? maxFlow : maxDegree) || 1])
         .range([...settings.nodeRadiusRange]),
     },
     linkWidth: {
       by: "weight",
       scale: makeScale(settings.linkScale)
-        .domain([0, store.maxLinkFlow || 1])
+        .domain(linkDomain)
         .range([...settings.linkWidthRange])
         .clamp(true),
     },
@@ -191,16 +232,19 @@ export function buildStyle(
       .clamp(true),
     // Occurrence colours win, per node. Otherwise by flow each glyph takes
     // the flow scale's colour of its own flow: a module's is its members'
-    // summed flow (d3gl#446), not a member's colour.
+    // summed flow (d3gl#446), not a member's colour. By module d3gl asks
+    // `color` once per module, in every view of a state network (d3gl#494).
     nodeFill: occurrences.length
-      ? (i: number, g: { flow: Float32Array | null }) => {
-          for (const f of occurrences) if (f.idSet.has(i)) return f.color;
+      ? (i: number, g: NetworkGraph) => {
+          const files =
+            g === sg?.physical ? physicalOccurrences : stateOccurrences;
+          for (const f of files) if (f.ids.has(i)) return f.color;
           return fillOf(i, g);
         }
       : flowColors
         ? { by: "flow", scale: flowFill }
-        : colors
-          ? (i: number) => colors[i] ?? DEFAULT_NODE_FILL
+        : color
+          ? { by: "module", color }
           : DEFAULT_NODE_FILL,
     // Rings show exit flow. A node rings only where an in-app Infomap run gave
     // its own (checked against the modules' exit flow). A module of the
@@ -225,8 +269,8 @@ export function buildStyle(
 /**
  * The module hierarchy the engine holds as data (d3gl#326), or undefined.
  * `modules` is dense-indexed by node id in `cur.graph` (buildGraph's space).
- * A *States network's records are state-indexed, but the engine renders its
- * physical graph — so it keeps stateNetwork()'s own module handling instead.
+ * A *States network's records are state-indexed and go to stateNetwork()
+ * instead, which colours, and in the state view cuts, by them.
  */
 function hierarchyOf(cur: LoadedNetwork | null) {
   return cur?.modules && !cur.isStates
@@ -278,24 +322,31 @@ export const NetworkView = observer(function NetworkView() {
     const net = network(host, { backend });
     store.engine = net;
 
-    let colorsFor: ArrayLike<ModuleNode> | undefined;
+    let colorFor: ArrayLike<ModuleNode> | undefined;
     let paletteFor: string | undefined;
-    let colors: string[] | null = null;
-    const colorsOf = (cur: LoadedNetwork | null): string[] | null => {
+    let color: ModuleColor | null = null;
+    const colorOf = (cur: LoadedNetwork | null): ModuleColor | null => {
       const { colorTone: tone, colorHue: hue, colorOffset: offset } = settings;
       const palette = `${tone}:${hue}:${offset}`;
-      if (cur?.modules !== colorsFor || palette !== paletteFor) {
-        colorsFor = cur?.modules;
+      if (cur?.modules !== colorFor || palette !== paletteFor) {
+        colorFor = cur?.modules;
         paletteFor = palette;
-        colors = colorsFor
-          ? c3ModuleColors(colorsFor, cur?.graph.nodeFlow, {
+        color = colorFor
+          ? c3ModuleColor(colorFor, cur?.graph.nodeFlow, {
               hue,
               ...(tone !== null ? { tone } : {}),
               ...(offset !== null ? { offset } : {}),
             })
           : null;
       }
-      return colors;
+      return color;
+    };
+
+    // A state network's ids in the store are state ids; the engine draws the
+    // view's own (see viewIds).
+    const inView = (ids: readonly number[]): readonly number[] => {
+      const sg = store.current?.isStates ? store.builtState : null;
+      return sg ? viewIds(ids, settings.stateView, sg.stateToPhysical) : ids;
     };
 
     net.enableZoom(ZOOM_EXTENT);
@@ -312,16 +363,21 @@ export const NetworkView = observer(function NetworkView() {
           store.clearSelection();
           return;
         }
-        const aggregate =
-          (hit.datum as { aggregate?: boolean }).aggregate === true;
+        const datum = hit.datum as NetworkHit;
         const members = hit.members ? hit.members().map(Number) : null;
-        store.selectFromHit(Number(hit.id), aggregate, members);
+        store.selectFromHit(
+          Number(hit.id),
+          datum.aggregate === true,
+          members,
+          // A physical node: the physical view's, or a both-view container.
+          datum.level === "physical" ? (datum.physical ?? null) : null,
+        );
       });
     });
 
     const activePositions = (): Float32Array | null => {
       const cur = store.current;
-      if (cur?.isStates && store.builtState && cur.modules) {
+      if (cur?.isStates && store.builtState) {
         return settings.stateView === "physical"
           ? store.builtState.physical.positions
           : store.builtState.state.positions;
@@ -334,7 +390,7 @@ export const NetworkView = observer(function NetworkView() {
       if (!positions) return;
       const t = fitTransform(
         positions,
-        ids,
+        ids && inView(ids),
         host.clientWidth,
         host.clientHeight,
       );
@@ -357,7 +413,7 @@ export const NetworkView = observer(function NetworkView() {
     // Style and LOD are computed once per change and shared by the reaction
     // that keeps them live and by `show`, so a network swap applies each once.
     const style = computed(() =>
-      buildStyle(store, settings, colorsOf(store.current)),
+      buildStyle(store, settings, colorOf(store.current)),
     );
     // The latest layout: whether it's a nested map of the modules the engine
     // holds, and whether it has landed (converged, or been stopped).
@@ -421,6 +477,11 @@ export const NetworkView = observer(function NetworkView() {
       else applyLod(lod.get());
     };
 
+    // d3gl draws a state network's LOD in its state view only.
+    const drawsLod = (): boolean =>
+      lod.get() !== false &&
+      !(store.current?.isStates && settings.stateView !== "state");
+
     // A load waits in its dialog until its network is on screen (ui.viewPhase). d3gl reports no load phase
     // or first frame (proposed upstream: d3gl#466), so this watches what it does expose: with LOD on, the engine has a
     // tree to draw (lodSource); with LOD off it draws on data(). Then two more frames: the frame that draws
@@ -434,9 +495,7 @@ export const NetworkView = observer(function NetworkView() {
         if (watch !== readyWatch || ui.viewPhase === null) return;
         if (
           after < 0 &&
-          (lod.get() === false ||
-            net.lodSource !== "none" ||
-            latest.get().settled)
+          (!drawsLod() || net.lodSource !== "none" || latest.get().settled)
         )
           after = 2;
         if (after === 0) {
@@ -467,7 +526,7 @@ export const NetworkView = observer(function NetworkView() {
       // swap when the new graph has flow and before it otherwise.
       const flowFirst = !!cur.graph.nodeFlow;
       if (!flowFirst) applyStyle(s);
-      if (cur.isStates && store.builtState && cur.modules) {
+      if (cur.isStates && store.builtState) {
         net.stateNetwork(store.builtState, {
           modules: cur.modules,
           view: settings.stateView,
@@ -476,7 +535,10 @@ export const NetworkView = observer(function NetworkView() {
         net.data(graph, hierarchyOf(cur));
       }
       if (flowFirst) applyStyle(s);
-      net.select("nodes", store.searchHighlight);
+      net.select(
+        "nodes",
+        store.searchHighlight && inView(store.searchHighlight),
+      );
       watchFirstFrame();
       if (!reCluster) {
         layoutAnew();
@@ -490,6 +552,19 @@ export const NetworkView = observer(function NetworkView() {
     };
 
     const disposers = [
+      // A state network's view. Before the style, which follows the view (its
+      // scales), so the new style resolves against the new view's graph. d3gl
+      // maps a clicked selection across the switch (d3gl#316); a search
+      // highlight is the matching state nodes' in the new view.
+      reaction(
+        () => settings.stateView,
+        (view) => {
+          if (!holdsCurrent() || !store.current?.isStates) return;
+          net.view(view);
+          if (store.searchHighlight)
+            net.select("nodes", inView(store.searchHighlight));
+        },
+      ),
       reaction(
         () => style.get(),
         (s) => {
@@ -514,18 +589,24 @@ export const NetworkView = observer(function NetworkView() {
             on
               ? {
                   max,
+                  maxWidth: LABEL_MAX_WIDTH,
                   // Modules are named like v1: curated name, else their
                   // highest-flow node. info.path is the module's Infomap path.
+                  // A state network's physical view labels physical nodes.
                   labelOf: (id, info) =>
                     info.aggregate
                       ? info.path
                         ? store.moduleLabel(info.path)
                         : `${info.count.toLocaleString()} node${info.count === 1 ? "" : "s"}`
-                      : (store.current?.names[Number(id)] ?? ""),
+                      : info.level === "physical"
+                        ? (store.current?.physicalNames?.[id] ?? "")
+                        : (store.current?.names[id] ?? ""),
                   importanceOf: (id, info) =>
                     info.aggregate
                       ? info.count
-                      : (store.built?.flow?.[Number(id)] ?? 0),
+                      : info.level === "physical"
+                        ? (store.builtState?.physical.flow?.[id] ?? 0)
+                        : (store.built?.flow?.[id] ?? 0),
                 }
               : false,
           ),
@@ -581,20 +662,13 @@ export const NetworkView = observer(function NetworkView() {
       reaction(
         () => store.searchHighlight,
         (ids) => {
-          if (holdsCurrent()) net.select("nodes", ids);
+          if (holdsCurrent()) net.select("nodes", ids && inView(ids));
         },
       ),
       reaction(
         () => settings.pickLinks,
         (p) => net.pickLinks(p),
         { fireImmediately: true },
-      ),
-      reaction(
-        () => settings.stateView,
-        (view) => {
-          const cur = store.current;
-          if (holdsCurrent() && cur?.isStates && cur.modules) net.view(view);
-        },
       ),
     ];
 

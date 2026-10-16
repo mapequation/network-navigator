@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { networkToLoaded } from "../lib/load-files";
 import { computeStats } from "../lib/network-stats";
 import type { LoadedNetwork } from "../lib/types";
 import { NetworkStore } from "../stores/network-store";
@@ -102,15 +103,28 @@ describe("buildStyle colours and flow borders", () => {
     store.setNetwork(net);
     return { store, settings: new SettingsStore() };
   };
-  const colors = ["#a00000", "#a00000", "#00a000", "#00a000"];
+  // Top module 1 red, 2 green, as c3ModuleColor would colour them.
+  const colors = (path: readonly number[]) =>
+    ({ 1: "#a00000", 2: "#00a000" })[path[0] ?? 0];
   const graph = { flow: new Float32Array([0.4, 0.3, 0.2, 0.1]) };
   const fillOf = (s: ReturnType<typeof buildStyle>, i: number) => {
     const fill = s.nodeFill;
     if (typeof fill === "function") return fill(i, graph as never);
     if (typeof fill === "object" && fill.by === "flow")
       return fill.scale(graph.flow[i] ?? 0);
+    if (typeof fill === "object" && fill.by === "module")
+      return fill.color(
+        Array.from(clustered().modules?.[i]?.path ?? []).slice(0, -1),
+      );
     return fill;
   };
+
+  it("colours by module with the one module colour, for d3gl to resolve", () => {
+    const { store, settings } = setup();
+    const fill = buildStyle(store, settings, colors).nodeFill;
+    expect(fill).toEqual({ by: "module", color: colors });
+    expect(buildStyle(store, settings, null).nodeFill).toBe("#4878d0");
+  });
 
   it("draws no rings without an in-app Infomap run's boundary flow", () => {
     const { store, settings } = setup();
@@ -227,5 +241,82 @@ describe("relayoutOf", () => {
 
   it("goes on from where the nodes are: the force layout, framed as it grows", () => {
     expect(relayoutOf(false, true, true)).toEqual({ fit: true, warm: true });
+  });
+});
+
+describe("buildStyle on a state network", () => {
+  // Four state nodes over three physical nodes: alpha {0, 1}, beta {2}, gamma {3}.
+  const STATES = `*Vertices 3
+1 "alpha"
+2 "beta"
+3 "gamma"
+*States
+1 1
+2 1
+3 2
+4 3
+*Links
+1 3 1
+3 2 1
+2 4 2
+4 1 1
+`;
+  const states = (): LoadedNetwork => {
+    const raw = networkToLoaded(STATES, "toy_states.net");
+    const nodeFlow = new Float32Array([0.3, 0.3, 0.1, 0.3]);
+    return {
+      ...raw,
+      kind: "clustered",
+      graph: { ...raw.graph, nodeFlow },
+      stateGraph: raw.stateGraph && { ...raw.stateGraph, nodeFlow },
+      modules: [
+        { id: 0, path: [2, 1] },
+        { id: 1, path: [1, 1] },
+        { id: 2, path: [1, 2] },
+        { id: 3, path: [2, 2] },
+      ],
+    };
+  };
+  const colors = (path: readonly number[]) =>
+    ({ 1: "#a00000", 2: "#00a000" })[path[0] ?? 0];
+  const setup = (view: "physical" | "state" | "both") => {
+    const store = new NetworkStore();
+    store.setNetwork(states());
+    const settings = new SettingsStore();
+    settings.set("stateView", view);
+    settings.set("colorBy", "flow");
+    return { store, settings };
+  };
+
+  it("spans the physical graph's flow in the physical view, the state graph's otherwise", () => {
+    // Physical flow: alpha 0.6, beta 0.1, gamma 0.3; state flow at most 0.3.
+    const top = "rgb(215, 89, 8)"; // #D75908
+    const scaleOf = (view: "physical" | "state" | "both") => {
+      const { store, settings } = setup(view);
+      const fill = buildStyle(store, settings, colors).nodeFill;
+      if (typeof fill !== "object" || fill.by !== "flow") throw new Error();
+      return fill.scale;
+    };
+    expect(scaleOf("physical")(0.6)).toBe(top);
+    expect(scaleOf("physical")(0.3)).not.toBe(top);
+    expect(scaleOf("state")(0.3)).toBe(top);
+    expect(scaleOf("both")(0.3)).toBe(top);
+  });
+
+  it("colours a physical node by the metadata of its state nodes, else by its first module", () => {
+    const { store, settings } = setup("physical");
+    settings.set("colorBy", "module");
+    store.addOccurrenceFile({ name: "m.txt", size: 4, text: "beta" });
+    const color = store.occurrenceFiles[0]?.color;
+    const fill = buildStyle(store, settings, colors).nodeFill;
+    const physical = store.builtState?.physical;
+    if (typeof fill !== "function" || !physical) throw new Error();
+    expect(fill(1, physical)).toBe(color); // beta
+    expect(fill(0, physical)).toBe("#a00000"); // alpha: modules 2 and 1
+    expect(fill(2, physical)).toBe("#00a000"); // gamma: module 2
+    const state = store.builtState?.state;
+    if (!state) throw new Error();
+    expect(fill(2, state)).toBe(color); // beta's state node
+    expect(fill(0, state)).toBe("#00a000"); // alpha's first, in module 2
   });
 });

@@ -49,7 +49,8 @@ export function withClustering(
     if (idx === undefined || modules[idx] !== undefined) continue;
     modules[idx] = { id: idx, path: n.path };
     nodeFlow[idx] = n.flow ?? 0;
-    if (n.name) names[idx] = n.name;
+    // Infomap names a state node by its physical node: keep the file's state names.
+    if (n.name && !net.isStates) names[idx] = n.name;
     covered++;
   }
   if (covered < net.graph.nodeCount) {

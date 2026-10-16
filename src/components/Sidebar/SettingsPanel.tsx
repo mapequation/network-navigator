@@ -242,7 +242,7 @@ export const DisplayPanel = observer(function DisplayPanel() {
 
   return (
     <>
-      {cur?.isStates && cur.modules && (
+      {cur?.isStates && (
         <Row label="State view">
           <Segmented
             label="State view"

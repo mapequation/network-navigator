@@ -123,6 +123,37 @@ async function watchBusy(page: Page): Promise<() => Promise<number>> {
     );
 }
 
+/** The app's node fill without modules (NetworkView's DEFAULT_NODE_FILL). */
+const DEFAULT_FILL = "#4878d0";
+
+/** The node fills on the canvas: colours (hex) that cover at least a small
+ * disc's worth of pixels, most first, skipping the greys of the background,
+ * links, borders and labels. Read from a screenshot, as the WebGL canvas
+ * keeps no drawing buffer to read back. */
+async function nodeColors(page: Page): Promise<string[]> {
+  const png = await page.locator("main canvas").first().screenshot();
+  return page.evaluate(async (b64) => {
+    const blob = await (await fetch(`data:image/png;base64,${b64}`)).blob();
+    const bitmap = await createImageBitmap(blob);
+    const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("no 2d context");
+    ctx.drawImage(bitmap, 0, 0);
+    const px = ctx.getImageData(0, 0, bitmap.width, bitmap.height).data;
+    const counts = new Map<string, number>();
+    for (let i = 0; i < px.length; i += 4) {
+      const [r, g, b] = [px[i] ?? 0, px[i + 1] ?? 0, px[i + 2] ?? 0];
+      if (Math.max(r, g, b) - Math.min(r, g, b) < 40) continue; // a grey
+      const hex = `#${((1 << 24) | (r << 16) | (g << 8) | b).toString(16).slice(1)}`;
+      counts.set(hex, (counts.get(hex) ?? 0) + 1);
+    }
+    return [...counts]
+      .filter(([, n]) => n >= 20)
+      .sort((a, b) => b[1] - a[1])
+      .map(([hex]) => hex);
+  }, png.toString("base64"));
+}
+
 /** The Settings controls a layout-backend test drives. */
 function layoutControls(page: Page) {
   const view = page.locator("main [aria-busy]");
@@ -295,7 +326,7 @@ test.describe("Network Navigator smoke", () => {
     });
   }
 
-  test("states: load toy_states.net, raw then clustered state view", async ({
+  test("states: toy_states.net in all three views, raw then clustered by module", async ({
     page,
   }) => {
     const errors = collectErrors(page);
@@ -307,6 +338,21 @@ test.describe("Network Navigator smoke", () => {
     ).toBeHidden({ timeout: MODAL_CLOSE_TIMEOUT });
     await expect(page.locator("main canvas")).toBeVisible();
 
+    // A raw state network has the three views already, in the plain fill.
+    // (The both view's dots are too small on this tiny map to count: its
+    // switch is checked, its colours not.)
+    const views = page.getByRole("radiogroup", { name: "State view" });
+    await expect(views).toBeVisible();
+    const show = async (view: string): Promise<void> => {
+      await views.getByRole("radio", { name: view }).click();
+      await expect(views.getByRole("radio", { name: view })).toBeChecked();
+    };
+    for (const view of ["state", "both", "physical"]) {
+      await show(view);
+      if (view !== "both")
+        await expect.poll(() => nodeColors(page)).toContain(DEFAULT_FILL);
+    }
+
     const clusterButton = page.getByRole("button", {
       name: "Run Infomap",
       exact: true,
@@ -317,11 +363,33 @@ test.describe("Network Navigator smoke", () => {
       page.getByRole("button", { name: "Re-run Infomap" }),
     ).toBeVisible({ timeout: 30_000 });
 
-    await expect(
-      page.getByRole("radiogroup", { name: "State view" }),
-    ).toBeVisible();
-
+    // Clustered: every view colours its nodes by module, in the app's
+    // palette (the Color settings' tone), the plain fill nowhere.
+    const byModule = async (): Promise<string[]> => {
+      let colors: string[] = [];
+      await expect
+        .poll(async () => {
+          colors = await nodeColors(page);
+          return colors.length > 0 && !colors.includes(DEFAULT_FILL);
+        })
+        .toBe(true);
+      return colors;
+    };
+    const seen: Record<string, string[]> = {};
+    for (const view of ["state", "both", "physical"]) {
+      await show(view);
+      if (view !== "both") seen[view] = await byModule();
+    }
+    // The physical view's discs and wedges are the state nodes' modules.
+    for (const c of seen.physical ?? []) expect(seen.state).toContain(c);
     await screenshot(page, "states");
+
+    await page.getByRole("button", { name: "Module colour tone" }).click();
+    await page.getByRole("option", { name: "deep" }).click();
+    await expect
+      .poll(async () => (await byModule())[0])
+      .not.toBe(seen.physical?.[0]);
+
     expect(errors.filter(isFatal)).toEqual([]);
   });
 
@@ -653,7 +721,7 @@ test.describe("Network Navigator smoke", () => {
     await expect(heading).toBeHidden({ timeout: MODAL_CLOSE_TIMEOUT });
     await page.getByRole("button", { name: "Run Infomap", exact: true }).click();
     await expect(
-      page.getByRole("radiogroup", { name: "State view" }),
+      page.getByRole("button", { name: "Re-run Infomap" }),
     ).toBeVisible({ timeout: 30_000 });
     await cycle();
 
