@@ -426,8 +426,9 @@ test.describe("Network Navigator smoke", () => {
     await show("physical");
     await autoLayoutLanded(page, { nested: false });
 
-    // Each view keeps its layout: a switch lays nothing out and leaves the
-    // camera, so every label (screen px) is back where it was.
+    // Each view keeps its layout and its camera (d3gl#495): a switch lays
+    // nothing out, so every label (screen px) is back where it was. The
+    // physical and both views share one camera, as they share the positions.
     type Labels = Record<string, string>;
     const labels = (): Promise<Labels> =>
       page.evaluate(() =>
@@ -455,12 +456,17 @@ test.describe("Network Navigator smoke", () => {
     const physical = await settledLabels("alpha");
     await show("state");
     const state = await settledLabels("alpha-1");
+    const stateCamera = await viewTransform(page);
+    expect(stateCamera).not.toEqual(camera); // framed by its own first layout
     await show("physical");
     expect(await settledLabels("alpha")).toEqual(physical);
+    expect(await viewTransform(page)).toEqual(camera);
+    await show("both");
+    expect(await viewTransform(page)).toEqual(camera);
     await show("state");
     expect(await settledLabels("alpha-1")).toEqual(state);
     expect(await changes()).toBe(0);
-    expect(await viewTransform(page)).toEqual(camera);
+    expect(await viewTransform(page)).toEqual(stateCamera);
     await expect(page.locator("main [aria-busy]")).toHaveAttribute(
       "data-nested-map",
       "true",
