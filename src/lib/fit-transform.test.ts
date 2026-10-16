@@ -19,6 +19,15 @@ describe("fitTransform", () => {
     expect(t?.k).toBeCloseTo(0.9 * (100 / 10));
   });
 
+  it("clamps the scale to the zoom extent", () => {
+    // A single node has no extent: unclamped it zooms to ~1e11.
+    const one = fitTransform(positions, [3], 100, 100, 0.9, [0.002, 200]);
+    expect(one?.k).toBe(200);
+    expect(one?.x).toBeCloseTo(50 - 10 * 200);
+    const all = fitTransform(positions, null, 100, 100, 0.9, [0.002, 2]);
+    expect(all?.k).toBe(2);
+  });
+
   it("returns null for empty input", () => {
     expect(fitTransform(new Float32Array(0), null, 100, 100)).toBeNull();
     expect(fitTransform(positions, [], 100, 100)).toBeNull();

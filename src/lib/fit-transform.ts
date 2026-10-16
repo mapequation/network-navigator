@@ -15,6 +15,7 @@ export function fitTransform(
   width: number,
   height: number,
   padding = 0.9,
+  extent: readonly [number, number] = [0, Infinity],
 ): ViewTransform | null {
   let minX = Infinity;
   let minY = Infinity;
@@ -37,7 +38,12 @@ export function fitTransform(
 
   const w = Math.max(maxX - minX, 1e-9);
   const h = Math.max(maxY - minY, 1e-9);
-  const k = padding * Math.min(width / w, height / h);
+  // Clamped to the zoom extent: a single node (or nodes on one spot) has no
+  // extent to fit, and would otherwise zoom in without bound.
+  const k = Math.min(
+    extent[1],
+    Math.max(extent[0], padding * Math.min(width / w, height / h)),
+  );
   return {
     k,
     x: width / 2 - ((minX + maxX) / 2) * k,

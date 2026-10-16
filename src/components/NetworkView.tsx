@@ -402,6 +402,8 @@ export const NetworkView = observer(function NetworkView() {
         ids && inView(ids),
         host.clientWidth,
         host.clientHeight,
+        undefined,
+        ZOOM_EXTENT,
       );
       if (!t) return;
       net.setTransform(t);
@@ -415,7 +417,10 @@ export const NetworkView = observer(function NetworkView() {
     const onDblClick = (ev: MouseEvent) => {
       const rect = host.getBoundingClientRect();
       const hit = net.pick(ev.clientX - rect.left, ev.clientY - rect.top);
-      if (hit?.members) store.zoomTo?.(hit.members().map(Number));
+      // A group zooms to its members; a single node has nothing to fit, so
+      // d3-zoom's own double-click zoom applies.
+      const members = hit?.members?.();
+      if (members && members.length > 1) store.zoomTo?.(members.map(Number));
     };
     host.addEventListener("dblclick", onDblClick);
 
