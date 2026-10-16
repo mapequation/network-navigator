@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { networkToLoaded } from "../lib/load-files";
 import { computeStats } from "../lib/network-stats";
 import type { LoadedNetwork } from "../lib/types";
-import { NetworkStore } from "./network-store";
+import { moduleShares, NetworkStore } from "./network-store";
 
 const toy = (): LoadedNetwork => ({
   kind: "clustered",
@@ -250,8 +250,38 @@ describe("NetworkStore", () => {
     store.selectFromHit(4, true, [0, 1], 0);
     expect(store.selection?.flow).toBeCloseTo(0.6, 5);
     expect(store.selection?.path).toEqual([]); // alpha spans modules 2 and 1
+    expect(store.selection?.modules).toEqual([
+      { path: [1], share: 0.5 },
+      { path: [2], share: 0.5 },
+    ]);
     store.selectFromHit(5, true, [2], 1);
-    expect(store.selection).toMatchObject({ name: "beta", path: [1] });
+    expect(store.selection).toMatchObject({
+      name: "beta",
+      path: [1],
+      modules: null,
+    });
+  });
+
+  it("shares a node set's flow over the modules below a prefix", () => {
+    const modules = [
+      { path: [1, 2, 1] },
+      { path: [1, 2, 2] },
+      { path: [1, 3, 1] },
+      { path: [1, 1] }, // directly in module 1: in no submodule
+    ];
+    const ids = [0, 1, 2, 3];
+    expect(moduleShares(ids, modules, [0.1, 0.2, 0.6, 0.1], [1])).toEqual([
+      { path: [1, 3], share: expect.closeTo(0.6, 5) },
+      { path: [1, 2], share: expect.closeTo(0.3, 5) },
+    ]);
+    // Without flow (or with none), by count.
+    expect(moduleShares(ids, modules, undefined, [1])).toEqual([
+      { path: [1, 2], share: 0.5 },
+      { path: [1, 3], share: 0.25 },
+    ]);
+    expect(moduleShares(ids, modules, [0, 0, 0, 0], [])).toEqual([
+      { path: [1], share: 1 },
+    ]);
   });
 
   it("resets all network-derived state on clear", () => {

@@ -21,8 +21,20 @@ export interface SelectionInfo {
   physical: boolean;
   name: string;
   path: number[] | null;
+  /**
+   * A physical node's modules one level below `path` that its state nodes
+   * split over, by share of its flow, largest first (see moduleShares); null
+   * when they don't split.
+   */
+  modules: ModuleShare[] | null;
   flow: number | null;
   physicalId: number | null;
+}
+
+export interface ModuleShare {
+  path: number[];
+  /** Its share of the nodes' flow, or of the nodes without flow. */
+  share: number;
 }
 
 export interface OccurrenceFile {
@@ -52,6 +64,36 @@ function commonPathPrefix(paths: ArrayLike<number>[]): number[] {
     if (!len) break;
   }
   return Array.from({ length: len }, (_, k) => first[k]);
+}
+
+/**
+ * The modules one level below `prefix` that the nodes `ids` are in, by their
+ * share of the nodes' summed flow (their count without flow), largest first.
+ * A node directly in `prefix` is in none of them. O(ids).
+ */
+export function moduleShares(
+  ids: readonly number[],
+  modules: ArrayLike<{ readonly path: ArrayLike<number> } | undefined>,
+  flow: ArrayLike<number> | undefined,
+  prefix: readonly number[],
+): ModuleShare[] {
+  const k = prefix.length;
+  const byFlow = new Map<number, number>();
+  const byCount = new Map<number, number>();
+  let total = 0;
+  for (const i of ids) {
+    const w = flow?.[i] ?? 0;
+    total += w;
+    const path = modules[i]?.path;
+    const m = path && path.length - 1 > k ? path[k] : undefined;
+    if (m === undefined) continue;
+    byFlow.set(m, (byFlow.get(m) ?? 0) + w);
+    byCount.set(m, (byCount.get(m) ?? 0) + 1);
+  }
+  const [by, sum] = total > 0 ? [byFlow, total] : [byCount, ids.length];
+  return [...by]
+    .map(([m, w]) => ({ path: [...prefix, m], share: w / sum }))
+    .sort((a, b) => b.share - a.share || a.path[k] - b.path[k]);
 }
 
 /** See {@link NetworkStore.maxLinkFlow}. */
@@ -284,12 +326,17 @@ export class NetworkStore {
       const path = cur.modules
         ? commonPathPrefix(ids.map((i) => cur.modules?.[i]?.path ?? []))
         : null;
+      const shares =
+        path && cur.modules
+          ? moduleShares(ids, cur.modules, nodeFlow, path)
+          : [];
       this.selection = {
         ids,
         aggregate: true,
         physical: true,
         name: cur.physicalNames?.[physical] ?? String(physical),
         path,
+        modules: shares.length > 1 ? shares : null,
         flow: sg.physical.flow?.[physical] ?? null,
         physicalId: cur.physicalIds?.[ids[0] ?? -1] ?? null,
       };
@@ -305,6 +352,7 @@ export class NetworkStore {
         physical: false,
         name: cur.names[id] ?? String(id),
         path,
+        modules: null,
         flow: nodeFlow ? nodeFlow[id] : null,
         physicalId: cur.physicalIds?.[id] ?? null,
       };
@@ -322,6 +370,7 @@ export class NetworkStore {
       physical: false,
       name: this.moduleName(path, ids),
       path,
+      modules: null,
       flow,
       physicalId: null,
     };

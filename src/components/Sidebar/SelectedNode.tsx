@@ -2,6 +2,9 @@ import { observer } from "mobx-react-lite";
 import { Fragment } from "react";
 import { useStores } from "../../stores";
 
+const percent = (share: number): string =>
+  share > 0 && share < 0.005 ? "<1%" : `${Math.round(share * 100)}%`;
+
 export const SelectedNode = observer(function SelectedNode() {
   const { network: store } = useStores();
   const sel = store.selection;
@@ -18,7 +21,17 @@ export const SelectedNode = observer(function SelectedNode() {
       sel.physical ? "State nodes" : "Nodes",
       sel.ids.length.toLocaleString(),
     ]);
-  if (sel.path) rows.push(["Module", sel.path.join(":") || "root"]);
+  // A physical node whose state nodes split over modules lists them, under
+  // the module they share if any.
+  if (sel.path && (sel.path.length || !sel.modules))
+    rows.push(["Module", sel.path.join(":") || "root"]);
+  if (sel.modules)
+    rows.push([
+      `${sel.path?.length ? "Submodules" : "Modules"} (${sel.modules.length})`,
+      sel.modules
+        .map(({ path, share }) => `${path.join(":")} ${percent(share)}`)
+        .join(", "),
+    ]);
   if (sel.flow !== null) rows.push(["Flow", sel.flow.toExponential(2)]);
   if (sel.physicalId !== null) rows.push(["Node id", String(sel.physicalId)]);
 
