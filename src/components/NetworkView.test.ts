@@ -303,6 +303,25 @@ describe("buildStyle on a state network", () => {
     expect(scaleOf("both")(0.3)).toBe(top);
   });
 
+  it("cuts a clustered state network's modules, held by its state view, in every view", () => {
+    // d3gl draws the LOD in the state view only and keeps it across switches.
+    for (const view of ["physical", "state", "both"] as const) {
+      const { store, settings } = setup(view);
+      expect(buildLod(store, settings, true)).toMatchObject({
+        source: "modules",
+        moduleBoundary: expect.anything(),
+      });
+      expect(buildLod(store, settings, false)).not.toHaveProperty(
+        "moduleBoundary",
+      );
+    }
+    const raw = new NetworkStore();
+    raw.setNetwork(networkToLoaded(STATES, "toy_states.net"));
+    expect(buildLod(raw, new SettingsStore(), true)).toMatchObject({
+      source: "spatial",
+    });
+  });
+
   it("colours a physical node by the metadata of its state nodes, else by its first module", () => {
     const { store, settings } = setup("physical");
     settings.set("colorBy", "module");

@@ -393,6 +393,82 @@ test.describe("Network Navigator smoke", () => {
     expect(errors.filter(isFatal)).toEqual([]);
   });
 
+  test("states: each view keeps its layout; the state view's is a nested map of its modules", async ({
+    page,
+  }) => {
+    const errors = collectErrors(page);
+    await page.goto("/");
+    await addFiles(page, [fixture("toy_states.net")]);
+    await page.getByRole("button", { name: "Load", exact: true }).click();
+    await expect(
+      page.getByRole("heading", { name: "Load network" }),
+    ).toBeHidden({ timeout: MODAL_CLOSE_TIMEOUT });
+    await page.getByRole("button", { name: "Run Infomap", exact: true }).click();
+    await expect(
+      page.getByRole("button", { name: "Re-run Infomap" }),
+    ).toBeVisible({ timeout: 30_000 });
+    // The physical view holds no modules: Nested layout on, it has the force
+    // layout, and no module rings.
+    await expect(
+      page.getByRole("switch", { name: "Nested layout" }),
+    ).toBeChecked();
+    await autoLayoutLanded(page, { nested: false });
+
+    const views = page.getByRole("radiogroup", { name: "State view" });
+    const show = async (view: string): Promise<void> => {
+      await views.getByRole("radio", { name: view }).click();
+      await expect(views.getByRole("radio", { name: view })).toBeChecked();
+    };
+    // The state view holds the modules, as a plain network does: laid out as
+    // it's first shown, as a nested map of them, which the rings outline.
+    await show("state");
+    await autoLayoutLanded(page, { nested: true });
+    await show("physical");
+    await autoLayoutLanded(page, { nested: false });
+
+    // Each view keeps its layout: a switch lays nothing out and leaves the
+    // camera, so every label (screen px) is back where it was.
+    type Labels = Record<string, string>;
+    const labels = (): Promise<Labels> =>
+      page.evaluate(() =>
+        Object.fromEntries(
+          [...document.querySelectorAll<HTMLElement>("main [data-label-id]")]
+            .filter((el) => el.textContent)
+            .map((el) => [el.textContent, `${el.style.left},${el.style.top}`]),
+        ),
+      );
+    /** The labels once two frames' worth apart agree, with `name` among them. */
+    const settledLabels = async (name: string): Promise<Labels> => {
+      let last: Labels = {};
+      await expect
+        .poll(async () => {
+          const now = await labels();
+          const same = JSON.stringify(now) === JSON.stringify(last);
+          last = now;
+          return same && name in now;
+        })
+        .toBe(true);
+      return last;
+    };
+    const camera = await settledTransform(page);
+    const changes = await watchBusy(page);
+    const physical = await settledLabels("alpha");
+    await show("state");
+    const state = await settledLabels("alpha-1");
+    await show("physical");
+    expect(await settledLabels("alpha")).toEqual(physical);
+    await show("state");
+    expect(await settledLabels("alpha-1")).toEqual(state);
+    expect(await changes()).toBe(0);
+    expect(await viewTransform(page)).toEqual(camera);
+    await expect(page.locator("main [aria-busy]")).toHaveAttribute(
+      "data-nested-map",
+      "true",
+    );
+
+    expect(errors.filter(isFatal)).toEqual([]);
+  });
+
   test("load dialog: restages the loaded files and adds metadata in place", async ({
     page,
   }) => {

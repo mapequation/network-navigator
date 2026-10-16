@@ -14,7 +14,7 @@ import { useEffect, useRef } from "react";
 import { c3ModuleColor, type ModuleColor } from "../lib/c3-module-colors";
 import { fitTransform } from "../lib/fit-transform";
 import { pathKey } from "../lib/path-key";
-import { physicalModule, viewIds } from "../lib/state-ids";
+import { physicalModule, type StateView, viewIds } from "../lib/state-ids";
 import type { LoadedNetwork } from "../lib/types";
 import { useStores } from "../stores";
 import type { NetworkStore } from "../stores/network-store";
@@ -37,7 +37,7 @@ const LINE_BEND = 0.15;
 // (d3gl's "auto", "gpu" or "worker"; "auto" by default, d3gl#375). A switch
 // leaves a running layout on its backend and applies from the next layout.
 // A load lays the network out from scratch, simulation or not: it has no
-// positions yet. With a module hierarchy (given to data(), whatever the LOD
+// positions yet. With a module hierarchy (see holdsModules; whatever the LOD
 // mode) and Nested layout on in Settings (the default), that's the nested map
 // of modules (d3gl#324): each module's children inside it, by their own links
 // only. Otherwise it's the force layout. fit keeps the camera framed while it
@@ -270,10 +270,10 @@ export function buildStyle(
 }
 
 /**
- * The module hierarchy the engine holds as data (d3gl#326), or undefined.
+ * The module hierarchy a plain network gives data() (d3gl#326), or undefined.
  * `modules` is dense-indexed by node id in `cur.graph` (buildGraph's space).
  * A *States network's records are state-indexed and go to stateNetwork()
- * instead, which colours, and in the state view cuts, by them.
+ * instead (see holdsModules).
  */
 function hierarchyOf(cur: LoadedNetwork | null) {
   return cur?.modules && !cur.isStates
@@ -282,8 +282,21 @@ function hierarchyOf(cur: LoadedNetwork | null) {
 }
 
 /**
+ * Whether `view` holds the modules as its hierarchy, which d3gl's module LOD,
+ * module rings and nested layout work on: a plain network's, given to data(),
+ * or a clustered state network's in its state view, which d3gl holds as
+ * data(stateGraph, { modules }) would (d3gl#495). The physical and both views
+ * hold none.
+ */
+function holdsModules(cur: LoadedNetwork | null, view: StateView): boolean {
+  return !!cur?.modules && (!cur.isStates || view === "state");
+}
+
+/**
  * The LOD options. `discs`: the positions are a nested map of the modules the
- * engine holds, landed, whose discs the module rings outline.
+ * engine holds, landed, whose discs the module rings outline. A state
+ * network's LOD is its state view's, the one view d3gl draws it in (it keeps
+ * the request across view switches), so `discs` are that view's.
  */
 export function buildLod(
   store: NetworkStore,
@@ -292,10 +305,11 @@ export function buildLod(
 ): NetworkLODOptions | false {
   if (settings.lodMode === "off") return false;
   const cur = store.current;
-  // "modules" cuts the hierarchy the engine holds (see hierarchyOf); without
+  // "modules" cuts the hierarchy the engine holds (see holdsModules); without
   // one it falls back to "spatial", which groups nodes by where the layout
   // put them (a quadtree, d3gl#343), so an aggregate is a compact region.
-  const cutsModules = settings.lodMode === "modules" && !!hierarchyOf(cur);
+  const cutsModules =
+    settings.lodMode === "modules" && holdsModules(cur, "state");
   return {
     source: cutsModules ? "modules" : "spatial",
     ...(cutsModules && discs
@@ -378,18 +392,10 @@ export const NetworkView = observer(function NetworkView() {
       });
     });
 
-    const activePositions = (): Float32Array | null => {
-      const cur = store.current;
-      if (cur?.isStates && store.builtState) {
-        return settings.stateView === "physical"
-          ? store.builtState.physical.positions
-          : store.builtState.state.positions;
-      }
-      return store.built?.positions ?? null;
-    };
-
+    // Positions are the view on screen's, by its own ids (d3gl#495: in the
+    // both view the state dots' at their places in their containers).
     store.zoomTo = (ids) => {
-      const positions = activePositions();
+      const positions = net.positions;
       if (!positions) return;
       const t = fitTransform(
         positions,
@@ -418,14 +424,26 @@ export const NetworkView = observer(function NetworkView() {
     const style = computed(() =>
       buildStyle(store, settings, colorOf(store.current)),
     );
-    // The latest layout: whether it's a nested map of the modules the engine
-    // holds, and whether it has landed (converged, or been stopped).
-    const latest = observable.box(
-      { nested: false, settled: false },
-      { deep: false },
-    );
+    // Each layout's latest run: whether it's a nested map of the modules its
+    // view holds, and whether it has landed (converged, or been stopped). A
+    // state network keeps a layout per view (d3gl#495): the physical and both
+    // views share the physical graph's, the state view has its own. A plain
+    // network has the one, "physical". Not landed: running, or not run yet.
+    const UNLAID = { nested: false, settled: false };
+    const latestOf = {
+      physical: observable.box(UNLAID, { deep: false }),
+      state: observable.box(UNLAID, { deep: false }),
+    };
+    const slotOf = (view: StateView): keyof typeof latestOf =>
+      store.current?.isStates && view === "state" ? "state" : "physical";
+    // The view on screen's layout: what data-nested-map reports.
+    const latest = computed(() => latestOf[slotOf(settings.stateView)].get());
     const discs = computed(() => latest.get().nested && latest.get().settled);
-    const lod = computed(() => buildLod(store, settings, discs.get()));
+    // The LOD's rings follow the layout of the view the LOD draws in.
+    const lod = computed(() => {
+      const l = latestOf[slotOf("state")].get();
+      return buildLod(store, settings, l.nested && l.settled);
+    });
     let appliedStyle: NetworkStyle | null = null;
     let appliedLod: NetworkLODOptions | false | null = null;
     const applyStyle = (s: NetworkStyle): void => {
@@ -448,16 +466,30 @@ export const NetworkView = observer(function NetworkView() {
     const holdsCurrent = () => shown !== null && shown === store.current;
 
     let layoutRun = 0; // a layout's landing counts only while it's the latest
-    const layout = (opts: Omit<NetworkLayoutOptions, "backend">): void => {
+    let lastNested = false; // whether the last layout() asked for a nested map
+    /**
+     * Follows a run of the view on screen's layout, which `start` starts (or
+     * d3gl has): not landed, then landed once it settles, unless another run,
+     * a load or a switch to the other layout comes first. d3gl lays out a
+     * nested map only of a hierarchy the view holds.
+     */
+    const follow = (start?: () => void): void => {
       const run = ++layoutRun;
-      // d3gl lays out a nested map only of a hierarchy it holds as data.
-      const nested = !!opts.nested && !!hierarchyOf(store.current);
-      runInAction(() => latest.set({ nested, settled: false }));
-      applyLod(lod.get());
-      net.layout({ ...opts, backend: settings.layoutBackend });
+      const box = latestOf[slotOf(settings.stateView)];
+      const nested =
+        lastNested && holdsModules(store.current, settings.stateView);
+      runInAction(() => box.set({ nested, settled: false }));
+      start?.();
       void net.whenSettled().then(() => {
         if (run === layoutRun)
-          runInAction(() => latest.set({ nested, settled: true }));
+          runInAction(() => box.set({ nested, settled: true }));
+      });
+    };
+    const layout = (opts: Omit<NetworkLayoutOptions, "backend">): void => {
+      lastNested = !!opts.nested;
+      follow(() => {
+        applyLod(lod.get());
+        net.layout({ ...opts, backend: settings.layoutBackend });
       });
     };
     /** A layout from scratch, framed: a load's or a restarted simulation's. */
@@ -469,7 +501,9 @@ export const NetworkView = observer(function NetworkView() {
      * relayoutOf); otherwise the LOD regroups in place.
      */
     const relayout = (recluster = false): void => {
-      const nested = settings.nestedLayout && !!hierarchyOf(store.current);
+      const nested =
+        settings.nestedLayout &&
+        holdsModules(store.current, settings.stateView);
       const next = relayoutOf(
         nested,
         latest.get().nested,
@@ -544,13 +578,21 @@ export const NetworkView = observer(function NetworkView() {
       );
       watchFirstFrame();
       if (!reCluster) {
+        // No layout of the new network has run: this lays out the view on
+        // screen, d3gl a state network's other layout as it's first shown.
+        runInAction(() => {
+          latestOf.physical.set(UNLAID);
+          latestOf.state.set(UNLAID);
+        });
         layoutAnew();
         return;
       }
       // data() has stopped any layout, and a nested map of the old modules
       // is none of the new ones.
       layoutRun++;
-      runInAction(() => latest.set({ nested: false, settled: true }));
+      runInAction(() =>
+        latestOf.physical.set({ nested: false, settled: true }),
+      );
       relayout(true);
     };
 
@@ -559,13 +601,24 @@ export const NetworkView = observer(function NetworkView() {
       // scales), so the new style resolves against the new view's graph. d3gl
       // maps a clicked selection across the switch (d3gl#316); a search
       // highlight is the matching state nodes' in the new view.
+      //
+      // Each view keeps its layout (d3gl#495). A switch to the other layout
+      // leaves a landed one alive for a drag, and stops a running one where
+      // it is; d3gl goes on with it, or lays out a view not laid out yet, with
+      // the last layout() options as the view is shown. Then, should Nested
+      // layout have been switched in the other view, it goes on with the kind
+      // of layout set now (see relayoutOf).
       reaction(
         () => settings.stateView,
-        (view) => {
+        (view, prev) => {
           if (!holdsCurrent() || !store.current?.isStates) return;
           net.view(view);
           if (store.searchHighlight)
             net.select("nodes", inView(store.searchHighlight));
+          if (slotOf(view) === slotOf(prev)) return;
+          layoutRun++; // the landing of a run stopped by the switch
+          if (!latest.get().settled) follow(); // d3gl started it in view()
+          relayout();
         },
       ),
       reaction(
@@ -643,10 +696,11 @@ export const NetworkView = observer(function NetworkView() {
         },
         { fireImmediately: true },
       ),
-      // For the e2e tests too: data-nested-map says whether the latest layout,
-      // landed, is the nested map of the modules the view asked d3gl for (what
-      // the module rings follow). It's the view's record, not d3gl's report:
-      // neither the transport nor any d3gl getter tells the kind (d3gl#434).
+      // For the e2e tests too: data-nested-map says whether the view on
+      // screen's layout, landed, is the nested map of the modules the view
+      // asked d3gl for (what the module rings follow). It's the view's
+      // record, not d3gl's report: neither the transport nor any d3gl getter
+      // tells the kind (d3gl#434).
       reaction(
         () => discs.get(),
         (landed) => {
