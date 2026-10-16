@@ -113,7 +113,7 @@ describe("buildStyle colours and flow borders", () => {
     if (typeof fill === "object" && fill.by === "flow")
       return fill.scale(graph.flow[i] ?? 0);
     if (typeof fill === "object" && fill.by === "module")
-      return fill.color(
+      return (fill.color ?? s.moduleColor)?.(
         Array.from(clustered().modules?.[i]?.path ?? []).slice(0, -1),
       );
     return fill;

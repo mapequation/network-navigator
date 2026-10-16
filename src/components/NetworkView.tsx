@@ -234,6 +234,9 @@ export function buildStyle(
     // the flow scale's colour of its own flow: a module's is its members'
     // summed flow (d3gl#446), not a member's colour. By module d3gl asks
     // `color` once per module, in every view of a state network (d3gl#494).
+    // The pies and the both view's containers take `moduleColor` whatever
+    // the nodes are filled by.
+    ...(color ? { moduleColor: color } : {}),
     nodeFill: occurrences.length
       ? (i: number, g: NetworkGraph) => {
           const files =
