@@ -11,11 +11,13 @@ Most rendering, layout and LOD work belongs in **d3gl**, not in this app. The li
 `../d3gl` (`/Users/daniel/dev/projects/icelab/code/web/d3gl`, GitHub `mapequation/d3gl`, so pass
 `-R mapequation/d3gl` to `gh`). The package itself is `../d3gl/packages/d3gl`.
 
-- **Read `../d3gl/CLAUDE.md`, and the `../d3gl/AGENTS.md` it imports, before any d3gl work**: changing it,
-  judging its PRs or measurements, or asking the user about them. It is outside this working directory, so
-  Claude Code does not load it automatically. Its rules apply in full: performance at ≈1M with LOD off and on,
-  per-frame regression tests, and "uncertain means blocking". Every prompt that delegates d3gl work to an agent
-  must say to read that file in full and follow all of it.
+- **Read `../d3gl/CLAUDE.md` in full before any d3gl work**, and the docs it points to for the task
+  (`docs/agents/workflow.md` when coordinating issue → PR → release, `docs/agents/performance.md` for per-frame
+  paths and perf guards, the matching `LOG.md` sections): changing it, judging its PRs or measurements, or asking
+  the user about them. It is outside this working directory, so Claude Code does not load it automatically. Its
+  rules apply in full: performance at ≈1M with LOD off and on, per-frame regression tests, and "uncertain means
+  blocking". Every prompt that delegates d3gl work to an agent must say to read it in full, follow all of it,
+  and read the docs it points to.
 - **Linking a local d3gl build** into the app, instead of the published package:
   1. Work in a d3gl worktree (`../d3gl/.claude/worktrees/<name>`) and build it:
      `pnpm --filter @mapequation/d3gl build` (tsdown into `packages/d3gl/dist`). The app imports `dist`, not
