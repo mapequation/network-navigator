@@ -160,13 +160,14 @@ export function buildStyle(
     .range(NODE_FILL_RANGE)
     .clamp(true);
   // Node i's module colour, as d3gl's { by: "module" } gives it: a node's
-  // enclosing module's, a state network's physical node its first module's.
+  // enclosing module's, a state network's physical node its largest top
+  // module's.
   const modules = cur?.modules;
   const moduleFillOf = (i: number, g: NetworkGraph): string => {
     if (!color || !modules) return DEFAULT_NODE_FILL;
     const path =
       sg && g === sg.physical
-        ? physicalModule(sg.physicalToState, i, modules)
+        ? physicalModule(sg.physicalToState, i, modules, sg.state.flow)
         : Array.from(modules[i]?.path ?? []).slice(0, -1);
     return color(path) ?? DEFAULT_NODE_FILL;
   };

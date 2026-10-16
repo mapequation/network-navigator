@@ -44,8 +44,18 @@ describe("physicalModule", () => {
     { id: 4, path: [2, 1, 1] },
   ];
 
-  it("is the first top module the physical node's state nodes are in", () => {
+  it("is the top module with most of the physical node's flow", () => {
+    // alpha: state 0 in module 2, state 1 in module 1.
+    const flow = [0.1, 0.05, 0.2, 0.3, 0.3];
+    expect(physicalModule(sg.physicalToState, 0, modules, flow)).toEqual([2]);
+    expect(physicalModule(sg.physicalToState, 2, modules, flow)).toEqual([2]);
+  });
+
+  it("is by count without flow; a tie goes to the lower module", () => {
     expect(physicalModule(sg.physicalToState, 0, modules)).toEqual([1]);
+    expect(
+      physicalModule(sg.physicalToState, 0, modules, [0, 0, 0, 0, 0]),
+    ).toEqual([1]);
     expect(physicalModule(sg.physicalToState, 1, modules)).toEqual([3]);
     expect(physicalModule(sg.physicalToState, 2, modules)).toEqual([2]);
   });
