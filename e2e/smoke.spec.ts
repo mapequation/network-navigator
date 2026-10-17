@@ -338,9 +338,16 @@ test.describe("Network Navigator smoke", () => {
     ).toBeHidden({ timeout: MODAL_CLOSE_TIMEOUT });
     await expect(page.locator("main canvas")).toBeVisible();
 
-    // A raw state network has the three views already, in the plain fill.
-    // (The both view's dots are too small on this tiny map to count: its
-    // switch is checked, its colours not.)
+    // A raw state network has the three views already, in the plain fill, or
+    // its darker shade where a flow border covers a node whose exit flow is
+    // its flow: of the plain fill's hue. (The both view's state nodes are too
+    // small on this tiny map to count: its switch is checked, its colours not.)
+    const hue = (hex: string): number => {
+      const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+      return (Math.atan2(Math.sqrt(3) * (g - b), 2 * r - g - b) * 180) / Math.PI;
+    };
+    const sameHue = (a: string, b: string): boolean =>
+      Math.abs(hue(a) - hue(b)) < 6;
     const views = page.getByRole("radiogroup", { name: "State view" });
     await expect(views).toBeVisible();
     const show = async (view: string): Promise<void> => {
@@ -350,7 +357,14 @@ test.describe("Network Navigator smoke", () => {
     for (const view of ["state", "both", "physical"]) {
       await show(view);
       if (view !== "both")
-        await expect.poll(() => nodeColors(page)).toContain(DEFAULT_FILL);
+        await expect
+          .poll(async () => {
+            const colors = await nodeColors(page);
+            return (
+              colors.length > 0 && colors.every((c) => sameHue(c, DEFAULT_FILL))
+            );
+          })
+          .toBe(true);
     }
 
     const clusterButton = page.getByRole("button", {
@@ -382,13 +396,9 @@ test.describe("Network Navigator smoke", () => {
     }
     // The physical view's discs and wedges are the state nodes' modules, and
     // their flow borders a darker shade of them: of the same hue.
-    const hue = (hex: string): number => {
-      const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
-      return (Math.atan2(Math.sqrt(3) * (g - b), 2 * r - g - b) * 180) / Math.PI;
-    };
     for (const c of seen.physical ?? [])
       expect(
-        seen.state?.some((s) => Math.abs(hue(s) - hue(c)) < 6),
+        seen.state?.some((s) => sameHue(s, c)),
         `${c} has no module colour of its hue in the state view`,
       ).toBe(true);
     await screenshot(page, "states");

@@ -126,34 +126,33 @@ describe("buildStyle colours and flow borders", () => {
     expect(buildStyle(store, settings, null).nodeFill).toBe("#4878d0");
   });
 
-  it("draws no rings without an in-app Infomap run's boundary flow", () => {
+  it("draws no flow borders without exit flow", () => {
     const { store, settings } = setup();
     expect(buildStyle(store, settings, colors).flowBorder).toBeUndefined();
   });
 
-  it("rings every node by its boundary flow, in a darker shade of its own fill by module", () => {
+  it("gives every node a flow border of its exit flow's share, in a darker shade of its own fill by module", () => {
     const boundaryFlow = new Float32Array([0, 0.1, 0.1, 0.05]);
     const { store, settings } = setup({ ...clustered(), boundaryFlow });
     const style = buildStyle(store, settings, colors);
     expect(style.flowBorder?.flow).toBe(boundaryFlow);
     expect(style.flowBorder?.color).toBeUndefined(); // d3gl darkens the fill
-    expect(style.flowBorder?.scale(0)).toBe(0);
-    expect(style.flowBorder?.scale(0.1)).toBeCloseTo(4);
+    expect(style.flowBorder?.share).toBe(true); // exit flow over flow (d3gl#510)
     expect(fillOf(style, 2)).toBe("#00a000");
   });
 
-  it("rings only the modules of an .ftree, by the exit flow in its headers", () => {
+  it("gives only the modules of an .ftree flow borders, by the exit flow in its headers", () => {
     const moduleFlow = new Map([["1", { enterFlow: 0.05, exitFlow: 0.07 }]]);
     const { store, settings } = setup({ ...clustered(), moduleFlow });
     const ring = buildStyle(store, settings, colors).flowBorder;
     expect(ring).toBeDefined();
-    expect(ring?.flow).toBeUndefined(); // no node has a ring
+    expect(ring?.flow).toBeUndefined(); // no node has a flow border
     expect(ring?.moduleFlow?.([1])).toBe(0.07);
     expect(ring?.moduleFlow?.([2])).toBeUndefined(); // d3gl draws none
-    expect(ring?.scale(0.4)).toBeCloseTo(4); // tops out at the largest node flow
+    expect(ring?.share).toBe(true);
   });
 
-  it("rings a module by Infomap's exit flow for it, not its members' sum", () => {
+  it("gives a module the flow border of Infomap's exit flow for it, not its members' sum", () => {
     const boundaryFlow = new Float32Array([0, 0.1, 0.1, 0.05]);
     const moduleFlow = new Map([
       ["1", { enterFlow: 0.05, exitFlow: 0.07 }],

@@ -261,18 +261,21 @@ export function buildStyle(
         : color
           ? { by: "module", color }
           : DEFAULT_NODE_FILL,
-    // Rings show exit flow. A node rings only where an in-app Infomap run gave
-    // its own (checked against the modules' exit flow). A module of the
-    // hierarchy rings by Infomap's own exit flow for it (d3gl#446), from the
-    // run or an .ftree's *Links headers: summing its members' rings would
-    // count the flow between its own submodules too. Without node rings, a
-    // module without its own flow draws none (d3gl#471). By module, with no
-    // colour given, d3gl rings each glyph in a darker shade of its own fill.
+    // Flow borders show the share of a glyph's flow that leaves it, its exit
+    // flow over its flow, as a share of its area (d3gl#510): a node whose exit
+    // flow is its flow is covered. A node has one where an in-app Infomap run
+    // gave its own exit flow (checked against the modules' exit flow), or a
+    // raw network's degree flow. A module of the hierarchy takes Infomap's own
+    // exit flow for it (d3gl#446), from the run or an .ftree's *Links headers:
+    // summing its members' would count the flow between its own submodules
+    // too. Without node flow borders, a module without its own exit flow draws
+    // none (d3gl#471). By module, with no colour given, each flow border is a
+    // darker shade of its glyph's own fill.
     flowBorder:
       ring || moduleFlow
         ? {
+            share: true,
             ...(ring ? { flow: ring } : {}),
-            scale: ringScale,
             moduleFlow: (path: readonly number[]) =>
               moduleFlow?.get(pathKey(path))?.exitFlow,
             ...(flowColors ? { color: (v: number) => ringColor(v) } : {}),
