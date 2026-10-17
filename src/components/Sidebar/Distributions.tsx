@@ -23,7 +23,10 @@ export const Distributions = observer(function Distributions() {
 
   return (
     <div className="mt-1">
-      <p className="mb-1 text-xs text-neutral-500">Top members by {key}</p>
+      <p className="mb-1 text-xs text-neutral-500">
+        Top members by {key}
+        {flow && store.current?.kind === "raw" ? " (degree)" : ""}
+      </p>
       <BarChart
         width={280}
         height={120}

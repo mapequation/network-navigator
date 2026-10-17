@@ -237,14 +237,14 @@ test.describe("Network Navigator smoke", () => {
     ).toBeHidden({ timeout: MODAL_CLOSE_TIMEOUT });
     await expect(page.locator("main canvas")).toBeVisible();
 
-    // A plain network has no node flow, so no flow colours or rings, until
-    // Infomap runs.
+    // Until Infomap runs, a raw network's flow is its degree flow: flow
+    // colours, but no link flow to ring the nodes by.
     const view = page.locator("main [aria-busy]");
     const flowColors = page
       .getByRole("radiogroup", { name: "Color by" })
       .getByRole("radio", { name: "flow" });
-    await expect(flowColors).toBeDisabled();
-    await expect(page.getByText("Flow colours need node flow")).toBeVisible();
+    await expect(flowColors).toBeEnabled();
+    await expect(page.getByText("Flow colours need node flow")).toHaveCount(0);
     await expect(view).toHaveAttribute("data-flow-borders", "false");
 
     const clusterButton = page.getByRole("button", {

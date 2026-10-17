@@ -215,7 +215,8 @@ describe("NetworkStore", () => {
     const store = new NetworkStore();
     store.setNetwork(raw);
     expect(store.builtState?.physicalCount).toBe(3);
-    expect(store.physicalMax?.flow).toBe(0); // raw: no flow
+    // Raw: degree flow, state degrees 2, 3, 2, 3 of 10; alpha's is 0.5.
+    expect(store.physicalMax?.flow).toBeCloseTo(0.5, 6);
 
     store.selectFromHit(0, false, [0], 0); // the physical view's alpha
     expect(store.selection).toMatchObject({
@@ -223,7 +224,7 @@ describe("NetworkStore", () => {
       aggregate: true,
       physical: true,
       name: "alpha",
-      flow: null,
+      flow: expect.closeTo(0.5, 6),
       physicalId: 1,
     });
     store.selectFromHit(0, false, null); // the state view's alpha-in

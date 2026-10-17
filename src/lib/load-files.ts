@@ -5,6 +5,7 @@ import {
   parsePajek,
 } from "@mapequation/d3gl/network";
 import { withClustering } from "./apply-ftree";
+import { degreeFlow } from "./degree-flow";
 import { type FileKind, fileKind, isStatesText } from "./file-kinds";
 import { ftreeToNetwork } from "./ftree-graph";
 import { buildInfomapArgs, infomapArgString } from "./infomap-args";
@@ -42,6 +43,9 @@ export function networkToLoaded(
   if (isStatesText(text)) {
     const parsed = parseStates(text, filename, directedOverride ?? true);
     const g = parsed.stateGraph;
+    // Until Infomap runs: the state nodes' degree flow (the physical nodes'
+    // is its sum).
+    const nodeFlow = degreeFlow(g.stateCount, g.source, g.target, g.weight);
     return {
       kind: "raw",
       filename,
@@ -51,8 +55,8 @@ export function networkToLoaded(
       }),
       directed: parsed.stateGraph.directed ?? true,
       isStates: true,
-      graph: parsed.graph,
-      stateGraph: parsed.stateGraph,
+      graph: { ...parsed.graph, nodeFlow },
+      stateGraph: { ...parsed.stateGraph, nodeFlow },
       names: parsed.names,
       physicalNames: parsed.physicalNames,
       physicalIds: parsed.physicalIds,
@@ -80,6 +84,13 @@ export function networkToLoaded(
       target: parsed.target,
       weight: parsed.weight,
       directed,
+      // Until Infomap runs.
+      nodeFlow: degreeFlow(
+        parsed.nodeCount,
+        parsed.source,
+        parsed.target,
+        parsed.weight,
+      ),
     },
     names: [...parsed.labels],
     physicalIds,
