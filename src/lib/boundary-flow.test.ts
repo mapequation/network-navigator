@@ -85,6 +85,39 @@ describe("boundaryFlow", () => {
     expect(r.max).toBe(Math.fround(0.2));
   });
 
+  it("keys a state network's nodes by state id, and sums the flow leaving each physical node", () => {
+    const tree = toyTree([
+      toyModule([0], 0, 0),
+      toyModule([1], 0.2, 0.2),
+      toyModule([2], 0.2, 0.2),
+    ]);
+    // State nodes 10 and 20 in physical node 1, 30 in physical node 2.
+    const states = {
+      ...tree,
+      nodes: tree.nodes.map((n, i) => ({
+        ...n,
+        stateId: n.id,
+        id: [1, 1, 2][i],
+      })),
+    } as InfomapTree;
+    const r = boundaryFlow(
+      states,
+      toyFlow,
+      3,
+      (id) => dense.get(id),
+      (n) => n.stateId ?? n.id,
+      { of: [0, 0, 1], count: 2 },
+    );
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(Array.from(r.node)).toEqual([0, Math.fround(0.2), Math.fround(0.2)]);
+    // 10→20 stays in physical node 0; 20→30 leaves it, 30→10 leaves 1.
+    expect(Array.from(r.group ?? [])).toEqual([
+      Math.fround(0.2),
+      Math.fround(0.2),
+    ]);
+  });
+
   it("splits a cross-module edge's flow (both ways) between its ends", () => {
     const tree = toyTree([
       toyModule([0], 0, 0),

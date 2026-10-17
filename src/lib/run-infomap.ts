@@ -18,8 +18,9 @@ export interface InfomapRun {
   /** The JSON tree (the states variant when there is one). */
   tree: InfomapTree;
   /**
-   * The flow output of a plain network (-o flow): its nodes' and links'
-   * flow. A states network writes `flow_as_physical` instead, left out here.
+   * The flow output (-o flow): the nodes' and links' flow. A states network
+   * leaves `flow` empty and writes `flow_as_physical`, its state nodes as the
+   * nodes, keyed by state id.
    */
   flow?: string;
 }
@@ -36,5 +37,5 @@ export async function runInfomap(opts: RunInfomapOptions): Promise<InfomapRun> {
   });
   const tree: InfomapTree | undefined = result.json_states ?? result.json;
   if (!tree) throw new Error("Infomap finished without JSON output");
-  return { tree, flow: result.flow };
+  return { tree, flow: result.flow || result.flow_as_physical };
 }

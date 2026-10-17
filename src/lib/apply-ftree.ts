@@ -59,15 +59,30 @@ export function withClustering(
     );
   }
 
-  // A states network is drawn through d3gl's state views, each of its own
-  // node count, so its rings would need a physical and a state variant.
+  // A state network's views draw state nodes or physical nodes, so it gets
+  // a flow border for each: the state nodes' exit flow, and the flow leaving
+  // each physical node, for the physical view.
   let ring: Float32Array | undefined;
-  if (flowText && !net.isStates) {
-    const r = boundaryFlow(tree, flowText, net.graph.nodeCount, (id) =>
-      denseIndex.get(id),
+  let physicalRing: Float32Array | undefined;
+  const sg = net.stateGraph;
+  if (flowText) {
+    const r = boundaryFlow(
+      tree,
+      flowText,
+      net.graph.nodeCount,
+      (id) => denseIndex.get(id),
+      keyOf,
+      sg
+        ? {
+            of: sg.stateToPhysical,
+            count: sg.physicalCount ?? net.physicalNames?.length ?? 0,
+          }
+        : undefined,
     );
-    if (r.ok) ring = r.node;
-    else console.info(`No flow borders: ${r.reason}`);
+    if (r.ok) {
+      ring = r.node;
+      physicalRing = r.group;
+    } else console.info(`No flow borders: ${r.reason}`);
   }
 
   return {
@@ -85,7 +100,7 @@ export function withClustering(
     },
     infomapJson: tree,
     boundaryFlow: ring,
-    physicalBoundaryFlow: undefined,
+    physicalBoundaryFlow: physicalRing,
     moduleFlow: moduleFlowOf(tree),
   };
 }

@@ -114,7 +114,13 @@ const REL_TOL = 2e-5;
 const ABS_TOL = 1e-12;
 
 export type BoundaryFlowResult =
-  | { ok: true; node: Float32Array; max: number }
+  | {
+      ok: true;
+      node: Float32Array;
+      max: number;
+      /** With `groups`: the link flow leaving each group (see boundaryFlow). */
+      group?: Float32Array;
+    }
   | { ok: false; reason: string };
 
 /**
@@ -128,30 +134,39 @@ export type BoundaryFlowResult =
  * regularization, whose teleportation flow crosses module boundaries without
  * a link.
  *
- * `denseOf` maps an Infomap node id to the node's dense index (the ids the
- * tree's nodes are keyed by, as withClustering matches them).
+ * `denseOf` maps an Infomap node id to the node's dense index; `keyOf` gives
+ * a tree node's Infomap id as the flow links name it (a state node's state
+ * id), as withClustering matches them.
+ *
+ * With `groups` (a state network's physical nodes: `of` maps a dense node to
+ * its group), also the link flow leaving each group, by the same rule over
+ * the links whose ends are in different groups, whatever their modules. A
+ * group may span modules, so this one has no exit flow to check against.
  */
 export function boundaryFlow(
   tree: InfomapTree,
   flowText: string,
   nodeCount: number,
   denseOf: (infomapId: number) => number | undefined,
+  keyOf: (n: InfomapTree["nodes"][number]) => number = (n) => n.id,
+  groups?: { of: ArrayLike<number>; count: number },
 ): BoundaryFlowResult {
   // Bottom module of each dense node, as a small integer.
   const bottomOf = new Int32Array(nodeCount).fill(-1);
   const bottomIds = new Map<string, number>();
   const bottomKeys: string[] = [];
   let maxId = 0;
-  for (const n of tree.nodes) if (n.id > maxId) maxId = n.id;
+  for (const n of tree.nodes) if (keyOf(n) > maxId) maxId = keyOf(n);
   // Infomap ids → dense, through a typed array when the ids are compact.
   const compact = maxId <= 4 * nodeCount + 1024;
   const lookup = compact ? new Int32Array(maxId + 1).fill(-1) : null;
   const sparse = compact ? null : new Map<number, number>();
   for (const n of tree.nodes) {
-    const idx = denseOf(n.id);
+    const id = keyOf(n);
+    const idx = denseOf(id);
     if (idx === undefined) continue;
-    if (lookup) lookup[n.id] = idx;
-    else sparse?.set(n.id, idx);
+    if (lookup) lookup[id] = idx;
+    else sparse?.set(id, idx);
     const key = pathKey(n.path.slice(0, -1));
     let b = bottomIds.get(key);
     if (b === undefined) {
@@ -166,6 +181,7 @@ export function boundaryFlow(
 
   const links = parseFlowLinks(flowText);
   const ring = new Float64Array(nodeCount);
+  const group = groups ? new Float64Array(groups.count) : null;
   for (let e = 0; e < links.count; e++) {
     const s = dense(links.source[e]);
     const t = dense(links.target[e]);
@@ -175,8 +191,18 @@ export function boundaryFlow(
         reason: `a flow link names node ${s < 0 ? links.source[e] : links.target[e]}, which the tree lacks`,
       };
     }
-    if (bottomOf[s] === bottomOf[t]) continue;
     const f = links.flow[e];
+    if (group && groups) {
+      const a = groups.of[s];
+      const b = groups.of[t];
+      if (a !== b) {
+        if (links.undirected) {
+          group[a] += f / 2;
+          group[b] += f / 2;
+        } else group[a] += f;
+      }
+    }
+    if (bottomOf[s] === bottomOf[t]) continue;
     if (links.undirected) {
       ring[s] += f / 2;
       ring[t] += f / 2;
@@ -210,5 +236,10 @@ export function boundaryFlow(
   const node = Float32Array.from(ring);
   let max = 0;
   for (const v of node) if (v > max) max = v;
-  return { ok: true, node, max };
+  return {
+    ok: true,
+    node,
+    max,
+    ...(group ? { group: Float32Array.from(group) } : {}),
+  };
 }

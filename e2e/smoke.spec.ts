@@ -380,8 +380,17 @@ test.describe("Network Navigator smoke", () => {
       await show(view);
       if (view !== "both") seen[view] = await byModule();
     }
-    // The physical view's discs and wedges are the state nodes' modules.
-    for (const c of seen.physical ?? []) expect(seen.state).toContain(c);
+    // The physical view's discs and wedges are the state nodes' modules, and
+    // their flow borders a darker shade of them: of the same hue.
+    const hue = (hex: string): number => {
+      const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+      return (Math.atan2(Math.sqrt(3) * (g - b), 2 * r - g - b) * 180) / Math.PI;
+    };
+    for (const c of seen.physical ?? [])
+      expect(
+        seen.state?.some((s) => Math.abs(hue(s) - hue(c)) < 6),
+        `${c} has no module colour of its hue in the state view`,
+      ).toBe(true);
     await screenshot(page, "states");
 
     await page.getByRole("button", { name: "Module colour tone" }).click();
