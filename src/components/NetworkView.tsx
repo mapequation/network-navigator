@@ -211,7 +211,9 @@ export function buildStyle(
         ? HALF_ARROW_BEND
         : LINE_BEND
       : 0,
-    nodeBorder: { width: 1, color: "#ffffff" },
+    // Without a flow border, each node's border is a darker shade of its own
+    // fill (d3gl#506).
+    nodeBorder: { width: 1 },
     nodeRadius: {
       by: byFlow ? "flow" : "degree",
       scale: makeScale(settings.nodeScale)
