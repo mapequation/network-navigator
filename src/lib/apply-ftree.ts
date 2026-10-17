@@ -85,6 +85,7 @@ export function withClustering(
     },
     infomapJson: tree,
     boundaryFlow: ring,
+    physicalBoundaryFlow: undefined,
     moduleFlow: moduleFlowOf(tree),
   };
 }

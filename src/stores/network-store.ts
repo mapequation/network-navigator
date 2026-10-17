@@ -119,6 +119,13 @@ function maxLinkFlowOf(net: LoadedNetwork, maxLeafWeight: number): number {
 }
 
 /** The largest node flow, degree and link weight of a built graph. */
+function maxOf(values: ArrayLike<number> | undefined): number {
+  let max = 0;
+  for (let i = 0; i < (values?.length ?? 0); i++)
+    if ((values?.[i] ?? 0) > max) max = values?.[i] ?? 0;
+  return max;
+}
+
 function maximaOf(g: NetworkGraph): {
   flow: number;
   degree: number;
@@ -169,7 +176,13 @@ export class NetworkStore {
    * A state network's physical graph's largest node flow (its state nodes'
    * summed flow), degree and link weight: the physical view's scale domains.
    */
-  physicalMax: { flow: number; degree: number; weight: number } | null = null;
+  physicalMax: {
+    flow: number;
+    degree: number;
+    weight: number;
+    /** Largest physical flow border (LoadedNetwork.physicalBoundaryFlow). */
+    boundary: number;
+  } | null = null;
   /**
    * Bumped on every load (setNetwork): the view takes the network as new data,
    * lays it out from scratch and frames it. A re-clustering of a plain network
@@ -232,12 +245,12 @@ export class NetworkStore {
     this.maxWeight = max.weight;
     this.maxLinkFlow = maxLinkFlowOf(net, max.weight);
     this.physicalMax = this.builtState
-      ? maximaOf(this.builtState.physical)
+      ? {
+          ...maximaOf(this.builtState.physical),
+          boundary: maxOf(net.physicalBoundaryFlow),
+        }
       : null;
-    let maxBoundaryFlow = 0;
-    for (const v of net.boundaryFlow ?? [])
-      if (v > maxBoundaryFlow) maxBoundaryFlow = v;
-    this.maxBoundaryFlow = maxBoundaryFlow;
+    this.maxBoundaryFlow = maxOf(net.boundaryFlow);
     this.moduleTopLeaf = topLeaves(net);
   }
 

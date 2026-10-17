@@ -90,11 +90,14 @@ export interface LoadedNetwork {
   infomapJson?: InfomapTree;
   /**
    * Per dense node: the Infomap link flow leaving its bottom module from it
-   * (its exit flow, the flow-border ring). Only from an in-app Infomap run of
-   * a plain network, and only when it adds up to Infomap's module exit flow
-   * (see boundaryFlow): an .ftree has no cross-module leaf links.
+   * (its exit flow, the node's flow border). From an in-app Infomap run of a
+   * plain network, when it adds up to Infomap's module exit flow (see
+   * boundaryFlow): an .ftree has no cross-module leaf links. A raw network's
+   * is its degree flow leaving each node (degreeExitFlow) until Infomap runs.
    */
   boundaryFlow?: Float32Array;
+  /** A raw state network's physical nodes' flow borders, for the physical view (degreeExitFlow). */
+  physicalBoundaryFlow?: Float32Array;
   /** Every module's enter/exit flow, by pathKey (root ""): from the in-app Infomap run, or an .ftree's *Links headers. */
   moduleFlow?: Map<string, ModuleFlow>;
   /** Raw network file text — enables (re-)clustering with Infomap. */

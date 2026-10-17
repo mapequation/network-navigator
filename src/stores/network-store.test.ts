@@ -215,8 +215,11 @@ describe("NetworkStore", () => {
     const store = new NetworkStore();
     store.setNetwork(raw);
     expect(store.builtState?.physicalCount).toBe(3);
-    // Raw: degree flow, state degrees 2, 3, 2, 3 of 10; alpha's is 0.5.
+    // Raw: degree flow, state degrees 2, 3, 2, 3 of 10; alpha's is 0.5. No
+    // link stays inside a node, so the flow borders are the flows.
     expect(store.physicalMax?.flow).toBeCloseTo(0.5, 6);
+    expect(store.physicalMax?.boundary).toBeCloseTo(0.5, 6);
+    expect(store.maxBoundaryFlow).toBeCloseTo(0.3, 6);
 
     store.selectFromHit(0, false, [0], 0); // the physical view's alpha
     expect(store.selection).toMatchObject({

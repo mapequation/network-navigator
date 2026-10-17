@@ -103,9 +103,17 @@ const makeScale = (kind: ScaleKind) =>
  * a module's ring extrapolates on the nodes' scale, as its radius does on
  * nodeRadius's, so ring and disc grow together.
  */
+/** The flow-border width scale: over the physical nodes' flow borders in a state network's physical view. */
 function ringScaleOf(store: NetworkStore, settings: SettingsStore) {
+  const physical =
+    store.current?.isStates && settings.stateView === "physical"
+      ? store.physicalMax
+      : null;
+  const max = physical
+    ? physical.boundary || physical.flow
+    : store.maxBoundaryFlow || store.maxFlow;
   return makeScale(settings.nodeScale)
-    .domain([0, store.maxBoundaryFlow || store.maxFlow || 1])
+    .domain([0, max || 1])
     .range([0, RING_NODE_MAX_WIDTH]);
 }
 
@@ -185,7 +193,8 @@ export function buildStyle(
         ids: new Set(viewIds(f.ids, "physical", sg.stateToPhysical)),
       }))
     : stateOccurrences;
-  const ring = cur?.boundaryFlow;
+  // A state network's physical view draws its physical nodes' flow borders.
+  const ring = physical ? cur?.physicalBoundaryFlow : cur?.boundaryFlow;
   const moduleFlow = cur?.moduleFlow;
   const ringScale = ringScaleOf(store, settings);
   const ringColor = scaleLinear<string>()

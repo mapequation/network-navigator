@@ -5,7 +5,7 @@ import {
   parsePajek,
 } from "@mapequation/d3gl/network";
 import { withClustering } from "./apply-ftree";
-import { degreeFlow } from "./degree-flow";
+import { degreeExitFlow, degreeFlow } from "./degree-flow";
 import { type FileKind, fileKind, isStatesText } from "./file-kinds";
 import { ftreeToNetwork } from "./ftree-graph";
 import { buildInfomapArgs, infomapArgString } from "./infomap-args";
@@ -44,8 +44,9 @@ export function networkToLoaded(
     const parsed = parseStates(text, filename, directedOverride ?? true);
     const g = parsed.stateGraph;
     // Until Infomap runs: the state nodes' degree flow (the physical nodes'
-    // is its sum).
+    // is its sum), and each view's flow borders.
     const nodeFlow = degreeFlow(g.stateCount, g.source, g.target, g.weight);
+    const physicalCount = g.physicalCount ?? parsed.physicalNames.length;
     return {
       kind: "raw",
       filename,
@@ -62,6 +63,14 @@ export function networkToLoaded(
       physicalIds: parsed.physicalIds,
       stateIds: parsed.stateIds,
       networkText: text,
+      boundaryFlow: degreeExitFlow(g.stateCount, g.source, g.target, g.weight),
+      physicalBoundaryFlow: degreeExitFlow(
+        physicalCount,
+        g.source,
+        g.target,
+        g.weight,
+        g.stateToPhysical,
+      ),
     };
   }
   const { parsed, physicalIds } = parseWithIds(text, filename);
@@ -95,6 +104,13 @@ export function networkToLoaded(
     names: [...parsed.labels],
     physicalIds,
     networkText: text,
+    // Until Infomap runs.
+    boundaryFlow: degreeExitFlow(
+      parsed.nodeCount,
+      parsed.source,
+      parsed.target,
+      parsed.weight,
+    ),
   };
 }
 
