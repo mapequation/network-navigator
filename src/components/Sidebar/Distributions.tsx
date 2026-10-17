@@ -25,7 +25,9 @@ export const Distributions = observer(function Distributions() {
     <div className="mt-1">
       <p className="mb-1 text-xs text-neutral-500">
         Top members by {key}
-        {flow && store.current?.kind === "raw" ? " (degree)" : ""}
+        {flow && store.current?.kind === "raw" && store.current.directed
+          ? " (undirected)"
+          : ""}
       </p>
       <BarChart
         width={280}

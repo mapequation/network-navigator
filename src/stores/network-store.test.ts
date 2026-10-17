@@ -228,12 +228,17 @@ describe("NetworkStore", () => {
       physical: true,
       name: "alpha",
       flow: expect.closeTo(0.5, 6),
+      exitFlow: expect.closeTo(0.5, 6),
+      degree: 4, // one link each way with beta and with gamma
       physicalId: 1,
     });
     store.selectFromHit(0, false, null); // the state view's alpha-in
     expect(store.selection).toMatchObject({
       name: "alpha-in",
       physical: false,
+      flow: expect.closeTo(0.2, 6),
+      exitFlow: expect.closeTo(0.2, 6),
+      degree: 2, // from gamma, to beta
     });
 
     // Clustered: both-view containers (id stateCount + p), weighed by flow.

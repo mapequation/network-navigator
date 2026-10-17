@@ -28,6 +28,14 @@ export interface SelectionInfo {
    */
   modules: ModuleShare[] | null;
   flow: number | null;
+  /**
+   * The flow leaving it: a node's flow border (LoadedNetwork.boundaryFlow, a
+   * physical node's physicalBoundaryFlow), a whole module's exit flow; null
+   * when unknown.
+   */
+  exitFlow: number | null;
+  /** A node's or physical node's link count; null for an aggregate. */
+  degree: number | null;
   physicalId: number | null;
 }
 
@@ -351,6 +359,8 @@ export class NetworkStore {
         path,
         modules: shares.length > 1 ? shares : null,
         flow: sg.physical.flow?.[physical] ?? null,
+        exitFlow: cur.physicalBoundaryFlow?.[physical] ?? null,
+        degree: sg.physical.csr.degree[physical] ?? null,
         physicalId: cur.physicalIds?.[ids[0] ?? -1] ?? null,
       };
       if (path) this.breadcrumb = path;
@@ -367,6 +377,8 @@ export class NetworkStore {
         path,
         modules: null,
         flow: nodeFlow ? nodeFlow[id] : null,
+        exitFlow: cur.boundaryFlow?.[id] ?? null,
+        degree: this.built?.csr.degree[id] ?? null,
         physicalId: cur.physicalIds?.[id] ?? null,
       };
       if (path) this.breadcrumb = path.slice(0, -1);
@@ -377,6 +389,9 @@ export class NetworkStore {
       ? commonPathPrefix(ids.map((i) => cur.modules?.[i]?.path ?? []))
       : null;
     const flow = nodeFlow ? ids.reduce((sum, i) => sum + nodeFlow[i], 0) : null;
+    // A whole module's exit flow; an aggregate of part of one has none known.
+    const whole =
+      path?.length && this.leavesOfModule(path).length === ids.length;
     this.selection = {
       ids,
       aggregate: true,
@@ -385,6 +400,10 @@ export class NetworkStore {
       path,
       modules: null,
       flow,
+      exitFlow: whole
+        ? (cur.moduleFlow?.get(pathKey(path))?.exitFlow ?? null)
+        : null,
+      degree: null,
       physicalId: null,
     };
     if (path) this.breadcrumb = path;

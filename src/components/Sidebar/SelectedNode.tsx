@@ -32,12 +32,14 @@ export const SelectedNode = observer(function SelectedNode() {
         .map(({ path, share }) => `${path.join(":")} ${percent(share)}`)
         .join(", "),
     ]);
-  // A raw network's flow is its degree flow until Infomap runs.
-  if (sel.flow !== null)
-    rows.push([
-      store.current?.kind === "raw" ? "Flow (degree)" : "Flow",
-      sel.flow.toExponential(2),
-    ]);
+  // Until Infomap runs, a raw network's flow is its degree flow: a directed
+  // network's read as undirected.
+  const cur = store.current;
+  const proxy = cur?.kind === "raw" && cur.directed ? " (undirected)" : "";
+  if (sel.flow !== null) rows.push([`Flow${proxy}`, sel.flow.toExponential(2)]);
+  if (sel.exitFlow !== null)
+    rows.push([`Exit flow${proxy}`, sel.exitFlow.toExponential(2)]);
+  if (sel.degree !== null) rows.push(["Degree", sel.degree.toLocaleString()]);
   if (sel.physicalId !== null) rows.push(["Node id", String(sel.physicalId)]);
 
   return (
