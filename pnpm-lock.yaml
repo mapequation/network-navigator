@@ -15,8 +15,8 @@ importers:
         specifier: ^3.2.1
         version: 3.2.1(tailwind-merge@3.4.0)(tailwindcss@4.3.2)
       '@mapequation/c3':
-        specifier: ^2.0.0
-        version: 2.0.0
+        specifier: ^2.0.1
+        version: 2.0.1
       '@mapequation/d3gl':
         specifier: link:/Users/daniel/dev/projects/icelab/code/web/d3gl/.claude/worktrees/try-state-networks/packages/d3gl
         version: link:../../../../d3gl/.claude/worktrees/try-state-networks/packages/d3gl
@@ -233,8 +233,8 @@ packages:
   '@jridgewell/trace-mapping@0.3.31':
     resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==, tarball: https://registry.npmjs.org/@jridgewell/trace-mapping/-/trace-mapping-0.3.31.tgz}
 
-  '@mapequation/c3@2.0.0':
-    resolution: {integrity: sha512-0JbRo3feWHt+Oe/Vb0kp2R2NT2FcPyG/MW8mIT8L942hRtTWTIxlXd66bn+ezCtQlYQTgJDmPDSwV3nm95fOsQ==, tarball: https://registry.npmjs.org/@mapequation/c3/-/c3-2.0.0.tgz}
+  '@mapequation/c3@2.0.1':
+    resolution: {integrity: sha512-ji9ihzIR+F2p/7RXlhehbqmqRqmG4gBKdDS6qqvvAXwj2bHilpELo8DreF3psSfARB+cCfVXnOmeHv/VPnWDVg==, tarball: https://registry.npmjs.org/@mapequation/c3/-/c3-2.0.1.tgz}
 
   '@mapequation/infomap-parser@1.0.2':
     resolution: {integrity: sha512-38onsx9QZFxSMs6n6AHGc+kuRVTLdbNdl3saO3FS1IEwG2dS9e1OlakdqhGhGuBEN0avI/ifZBZv29YYjpUTiw==, tarball: https://registry.npmjs.org/@mapequation/infomap-parser/-/infomap-parser-1.0.2.tgz}
@@ -1471,7 +1471,7 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
 
-  '@mapequation/c3@2.0.0':
+  '@mapequation/c3@2.0.1':
     dependencies:
       d3-color: 3.1.0
       d3-scale-chromatic: 3.1.0
